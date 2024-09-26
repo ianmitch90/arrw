@@ -59,11 +59,9 @@ export default function PhotoUpload() {
       </Field>
       <Button
         fullWidth
-        type="submit"
+        className="mt-12 mb-12"
         color="primary"
         isDisabled={!photoUploaded}
-        isLoading={isSubmitting}
-        className="mt-12 mb-12"
       >
         Upload
       </Button>

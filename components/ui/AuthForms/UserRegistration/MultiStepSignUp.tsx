@@ -184,9 +184,10 @@ export default function MultiStepSignUp() {
                       : page === 3
                         ? 'Complete Sign Up'
                         : 'Continue',
-                  isDisabled: !isValid || !dirty || isSubmitting // Disable button if form is invalid, untouched, or submitting
+                  isDisabled: !isValid || !dirty || isSubmitting, // Disable button if form is invalid, untouched, or submitting
+                  isLoading: isSubmitting
                 }}
-                // onBack={onBack}
+                onBack={onBack}
                 onNext={async () => {
                   const errors = await validateForm();
                   if (Object.keys(errors).length === 0) {

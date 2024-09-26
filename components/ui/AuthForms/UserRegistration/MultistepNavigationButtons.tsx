@@ -1,14 +1,19 @@
 import type { ButtonProps } from '@nextui-org/react';
 
 import * as React from 'react';
-import { Button } from '@nextui-org/react';
+import { Button, Spinner } from '@nextui-org/react';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';
 import { ButtonWithBorderGradient } from '@/components/ui/Button/ButtonWithBorderGradient';
 
 type SimplifiedButtonProps = Pick<
   ButtonProps,
-  'disabled' | 'aria-label' | 'onPress' | 'isDisabled' | 'children'
+  | 'disabled'
+  | 'aria-label'
+  | 'onPress'
+  | 'isDisabled'
+  | 'children'
+  | 'isLoading'
 > & {
   children?: React.ReactNode;
 };
@@ -36,7 +41,7 @@ const MultistepNavigationButtons = React.forwardRef<
       )}
       {...props}
     >
-      {/* <Button
+      <Button
         className="rounded-medium border-default-200 text-medium font-medium text-default-500 lg:hidden"
         variant="bordered"
         onPress={onBack}
@@ -44,13 +49,15 @@ const MultistepNavigationButtons = React.forwardRef<
       >
         <Icon icon="solar:arrow-left-outline" width={24} />
         Go Back
-      </Button> */}
+      </Button>
 
       <ButtonWithBorderGradient
         className="text-medium font-medium"
         color="primary"
         type="submit"
         onPress={onNext}
+        spinner={<Spinner />}
+        spinnerPlacement="end"
         {...nextButtonProps}
       >
         {nextButtonProps?.children || 'Continue'}
