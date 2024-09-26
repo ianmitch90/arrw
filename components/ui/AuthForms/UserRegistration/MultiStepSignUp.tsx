@@ -176,7 +176,7 @@ export default function MultiStepSignUp() {
               {content}
               <MultistepNavigationButtons
                 backButtonProps={{ isDisabled: page === 0 }}
-                className="hidden justify-start lg:flex"
+                className="hidden justify-start lg:flex pt-5"
                 nextButtonProps={{
                   children:
                     page === 0
@@ -186,7 +186,7 @@ export default function MultiStepSignUp() {
                         : 'Continue',
                   isDisabled: !isValid || !dirty || isSubmitting // Disable button if form is invalid, untouched, or submitting
                 }}
-                onBack={onBack}
+                // onBack={onBack}
                 onNext={async () => {
                   const errors = await validateForm();
                   if (Object.keys(errors).length === 0) {

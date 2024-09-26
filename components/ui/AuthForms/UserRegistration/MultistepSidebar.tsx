@@ -59,7 +59,7 @@ const MultiStepSidebar = React.forwardRef<
         {...props}
       >
         <div className="flex hidden h-full w-[344px] flex-shrink-0 flex-col items-start gap-y-8 rounded-large bg-gradient-to-tl from-slate-900 from-0% to-stone-900 to-100% px-8 py-6 shadow-small lg:flex">
-          <Button
+          {/* <Button
             className="bg-default-50 text-small font-medium text-default-500 shadow-lg"
             isDisabled={currentPage === 0}
             radius="full"
@@ -68,13 +68,13 @@ const MultiStepSidebar = React.forwardRef<
           >
             <Icon icon="solar:arrow-left-outline" width={18} />
             Back
-          </Button>
+          </Button> */}
           <div>
             <div className="text-xl font-medium leading-7 text-default-foreground">
-              Dating App Sign Up
+              Arrw
             </div>
             <div className="mt-1 text-base font-medium leading-6 text-default-500">
-              Find your perfect match with just a few steps.
+              Find your a perfect match with a few steps.
             </div>
           </div>
           {/* Desktop Steps */}

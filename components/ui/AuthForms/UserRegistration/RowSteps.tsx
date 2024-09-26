@@ -237,7 +237,7 @@ const RowSteps = React.forwardRef<HTMLButtonElement, RowStepsProps>(
                         }
                       )}
                     >
-                      {step.title}
+                      {status !== 'complete' && step.title}
                     </div>
                   </div>
                   {stepIdx < steps.length - 1 && !hideProgressBars && (

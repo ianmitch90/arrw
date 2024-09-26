@@ -21,14 +21,14 @@ export default function PhotoUpload() {
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Show Your Best Self 📸</h2>
       <p className="text-sm text-gray-500">
-        You're almost done! 🎉 Add a photo to complete your profile.
+        You're almost done! 🎉 Want to add a photo now or later?
       </p>
       <Field name="photo">
         {({ field, form }: { field: any; form: any }) => (
-          <div>
+          <div className="pt-6 pb-3">
             <label
               htmlFor="photo"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-500 mt-6 mb-4"
             >
               Upload Photo
             </label>
@@ -58,10 +58,12 @@ export default function PhotoUpload() {
         )}
       </Field>
       <Button
+        fullWidth
         type="submit"
         color="primary"
         isDisabled={!photoUploaded}
         isLoading={isSubmitting}
+        className="mt-12 mb-12"
       >
         Upload
       </Button>
