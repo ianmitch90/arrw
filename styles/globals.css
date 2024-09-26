@@ -1,0 +1,44 @@
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --default-200: #e5e7eb;
+  --default-500: #6b7280;
+  --default-100: #f3f4f6;
+}
+
+.dark {
+  --background: #1f2937;
+  --foreground: #f9fafb;
+  --default-200: #374151;
+  --default-500: #9ca3af;
+  --default-100: #111827;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.bg-background {
+  background-color: var(--background);
+}
+
+.text-default-500 {
+  color: var(--default-500);
+}
+
+.border-default-200 {
+  border-color: var(--default-200);
+}
+
+.dark .bg-background {
+  background-color: var(--background);
+}
+
+.dark .text-default-500 {
+  color: var(--default-500);
+}
+
+.dark .border-default-200 {
+  border-color: var(--default-200);
+}
