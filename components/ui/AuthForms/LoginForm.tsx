@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button, Input, Link, Spinner } from '@nextui-org/react';
 import { Icon } from '@iconify/react';
 import { WordDivider } from '@/components/ui/WordDivider';
@@ -33,6 +33,13 @@ export default function LoginForm({ variants }: any) {
   const toggleConfirmVisibility = () => setIsConfirmVisible(!isConfirmVisible);
   const { toast } = useToast();
   const router = useRouter();
+
+  // Use useEffect for client-specific logic
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Client-side only logic
+    }
+  }, []);
 
   return (
     <Formik
@@ -95,7 +102,7 @@ export default function LoginForm({ variants }: any) {
                   variant="bordered"
                   placeholder="Enter your email"
                   isInvalid={meta.touched && Boolean(meta.error)}
-                  errorMessage={meta.touched && meta.error}
+                  errormessage={meta.touched && meta.error}
                 />
               )}
             </Field>
@@ -124,7 +131,7 @@ export default function LoginForm({ variants }: any) {
                   }
                   type={isConfirmVisible ? 'text' : 'password'}
                   isInvalid={meta.touched && Boolean(meta.error)}
-                  errorMessage={meta.touched && meta.error}
+                  errormessage={meta.touched && meta.error}
                 />
               )}
             </Field>

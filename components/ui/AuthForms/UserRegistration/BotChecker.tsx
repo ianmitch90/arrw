@@ -1,41 +1,65 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { Field, useFormikContext, FormikErrors, FormikTouched } from 'formik';
+import React from 'react';
+import { Formik, Field, Form, errormessage } from 'formik';
 import { Checkbox } from '@nextui-org/react';
+import * as Yup from 'yup';
 
 interface FormValues {
   notABot: boolean;
 }
 
-export default function BotChecker() {
-  const { errors, touched, validateForm } = useFormikContext<FormValues>();
+const validationSchema = Yup.object().shape({
+  notABot: Yup.boolean().oneOf(
+    [true],
+    'You must confirm that you are not a bot'
+  )
+});
 
-  useEffect(() => {
-    validateForm();
-  }, [validateForm]);
+export default function BotChecker({
+  onNext
+}: {
+  onNext: (values: FormValues) => void;
+}) {
+  const initialValues: FormValues = {
+    notABot: false
+  };
+
+  const handleSubmit = (values: FormValues) => {
+    onNext(values); // Call the onNext function with the values
+  };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Quick Check 🤖</h2>
-      <p className="text-sm text-gray-500">
-        We just need to make sure you're human (and hopefully your soulmate)!
-      </p>
-      <Field name="notABot">
-        {({ field, meta }: { field: any; meta: any }) => (
-          <Checkbox
-            {...field}
-            color="primary"
-            isInvalid={meta.touched && Boolean(meta.error)}
-            errorMessage={meta.touched && meta.error}
-          >
-            I confirm I am not a bot
-          </Checkbox>
-        )}
-      </Field>
-      {errors.notABot && touched.notABot && (
-        <div className="text-red-500">{errors.notABot}</div>
+    <Formik
+      initialValues={initialValues}
+      validationSchema={validationSchema}
+      onSubmit={handleSubmit}
+    >
+      {({ errors, touched }) => (
+        <Form>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Quick Check 🤖</h2>
+            <p className="text-sm text-gray-500">
+              We just need to make sure you're human (and hopefully your
+              soulmate)!
+            </p>
+            <Field name="notABot">
+              {({ field, meta }: { field: any; meta: any }) => (
+                <Checkbox
+                  {...field}
+                  color="primary"
+                  isInvalid={meta.touched && Boolean(meta.error)}
+                >
+                  I confirm I am not a bot
+                </Checkbox>
+              )}
+            </Field>
+            <errormessage name="notABot">
+              {(msg) => <div className="text-red-500">{msg}</div>}
+            </errormessage>
+          </div>
+        </Form>
       )}
-    </div>
+    </Formik>
   );
 }

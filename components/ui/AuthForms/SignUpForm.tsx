@@ -108,7 +108,7 @@ export default function SignUpForm({
                   variant="bordered"
                   placeholder="Enter your email"
                   isInvalid={meta.touched && Boolean(meta.error)}
-                  errorMessage={meta.touched && meta.error}
+                  errormessage={meta.touched && meta.error}
                 />
               )}
             </Field>
@@ -137,7 +137,7 @@ export default function SignUpForm({
                   }
                   type={isVisible ? 'text' : 'password'}
                   isInvalid={meta.touched && Boolean(meta.error)}
-                  errorMessage={meta.touched && meta.error}
+                  errormessage={meta.touched && meta.error}
                 />
               )}
             </Field>
@@ -166,7 +166,7 @@ export default function SignUpForm({
                   }
                   type={isConfirmVisible ? 'text' : 'password'}
                   isInvalid={meta.touched && Boolean(meta.error)}
-                  errorMessage={meta.touched && meta.error}
+                  errormessage={meta.touched && meta.error}
                 />
               )}
             </Field>

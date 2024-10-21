@@ -41,7 +41,7 @@ const MultistepNavigationButtons = React.forwardRef<
       )}
       {...props}
     >
-      <Button
+      {/* <Button
         className="rounded-medium border-default-200 text-medium font-medium text-default-500 lg:hidden"
         variant="bordered"
         onPress={onBack}
@@ -49,7 +49,7 @@ const MultistepNavigationButtons = React.forwardRef<
       >
         <Icon icon="solar:arrow-left-outline" width={24} />
         Go Back
-      </Button>
+      </Button> */}
 
       <ButtonWithBorderGradient
         className="text-medium font-medium"

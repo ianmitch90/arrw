@@ -37,7 +37,6 @@ export const ButtonWithBorderGradient = ({
         ...style,
         ...styleProp
       }}
-      type="submit"
     >
       {children}
     </Button>
