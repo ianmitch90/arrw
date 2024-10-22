@@ -11,6 +11,7 @@ import * as Yup from 'yup'; // Import Yup
 import { useToast } from '@/components/ui/Toasts/use-toast'; // Import the useToast hook
 // import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
+// import { handleAnonymousLogin } from '@/utils/auth-helpers/anonymousLogin';
 
 // Initialize Supabase client using the new function
 const supabase = createSupabaseClient(); // Create Supabase client
@@ -40,6 +41,38 @@ export default function LoginForm({ variants }: any) {
       // Client-side only logic
     }
   }, []);
+
+  const handleAnonymousLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      console.log(data);
+
+      if (error) {
+        console.error('Anonymous login failed:', error.message);
+        // Show toast for error
+        toast({
+          title: 'Anonymous Login Error',
+          description: error.message || 'Anonymous login failed.'
+        });
+        throw new Error('Anonymous login failed');
+      }
+
+      // Show success toast
+      toast({
+        title: 'Login Successful',
+        description: 'You have logged in anonymously successfully.'
+      });
+      // Redirect to the main app page after successful login
+      router.push('/app');
+    } catch (error) {
+      console.error('Error during anonymous login:', error);
+      // Show toast for unexpected errors
+      toast({
+        title: 'Unexpected Error',
+        description: (error as Error).message || 'An unexpected error occurred.'
+      });
+    }
+  };
 
   return (
     <Formik
@@ -151,7 +184,7 @@ export default function LoginForm({ variants }: any) {
               color="secondary"
               fullWidth
               variant="flat"
-              //  onPress={handleAnonymousLogin}
+              onPress={handleAnonymousLogin}
             >
               Login Anonymously
             </Button>
