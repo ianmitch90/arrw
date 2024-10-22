@@ -1,6 +1,19 @@
+'use client';
+import React from 'react';
+import { useAuth } from '@/utils/auth-helpers/useAuth';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LandingPage() {
+  const { session } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (session) {
+      router.push('/map');
+    }
+  }, [session, router]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <h1 className="text-6xl font-bold">Welcome to Our App</h1>

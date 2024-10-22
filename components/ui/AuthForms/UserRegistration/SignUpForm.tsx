@@ -5,6 +5,9 @@ import { Formik, Form, Field, FormikHelpers, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Input, Checkbox } from '@nextui-org/react';
 import { useFormContext } from './FormContext'; // Import the context
+import { supabase } from '@/lib/supabase';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/router';
 
 interface FormValues {
   email: string;
@@ -30,6 +33,7 @@ export default function SignUpForm({
   onNext: (values: FormValues) => void;
 }) {
   const { setValues, isValid, isDirty, isSubmitting } = useFormContext(); // Get context values
+  const router = useRouter();
 
   const initialValues: FormValues = {
     email: '',
@@ -38,13 +42,36 @@ export default function SignUpForm({
     terms: false
   };
 
-  const handleSubmit = (
+  const handleSubmit = async (
     values: FormValues,
     { setSubmitting }: FormikHelpers<FormValues>
   ) => {
-    // Call the onNext function to pass values up to MultiStepSignUp
-    onNext(values);
-    setSubmitting(false);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password
+      });
+
+      if (error) {
+        toast({
+          title: 'Signup Error',
+          description: error.message
+        });
+        return;
+      }
+
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        router.push('/map');
+      }
+    } catch (error) {
+      // ... error handling
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

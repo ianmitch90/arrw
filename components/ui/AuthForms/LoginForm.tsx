@@ -45,28 +45,29 @@ export default function LoginForm({ variants }: any) {
   const handleAnonymousLogin = async () => {
     try {
       const { data, error } = await supabase.auth.signInAnonymously();
-      console.log(data);
 
       if (error) {
-        console.error('Anonymous login failed:', error.message);
-        // Show toast for error
         toast({
           title: 'Anonymous Login Error',
           description: error.message || 'Anonymous login failed.'
         });
-        throw new Error('Anonymous login failed');
+        return;
       }
 
-      // Show success toast
-      toast({
-        title: 'Login Successful',
-        description: 'You have logged in anonymously successfully.'
-      });
-      // Redirect to the main app page after successful login
-      router.push('/app');
+      if (data.session) {
+        // Set the session
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+
+        toast({
+          title: 'Login Successful',
+          description: 'You have logged in anonymously successfully.'
+        });
+        router.push('/map');
+      }
     } catch (error) {
-      console.error('Error during anonymous login:', error);
-      // Show toast for unexpected errors
       toast({
         title: 'Unexpected Error',
         description: (error as Error).message || 'An unexpected error occurred.'
@@ -84,7 +85,7 @@ export default function LoginForm({ variants }: any) {
         const { email, password } = values;
 
         try {
-          const { error } = await supabase.auth.signInWithPassword({
+          const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
           });
@@ -96,12 +97,21 @@ export default function LoginForm({ variants }: any) {
               description: error.message || 'An error occurred during login.'
             });
           } else {
+            // The session is handled by Supabase client automatically
+            if (data.session) {
+              // Set the session
+              await supabase.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token
+              });
+            }
+
             // Show success toast
             toast({
               title: 'Login Successful',
               description: 'You have logged in successfully.'
             });
-            router.push('/app'); // Redirect to app after successful login
+            router.push('/map'); // Redirect to app after successful login
           }
         } catch (error) {
           // Show toast for unexpected errors

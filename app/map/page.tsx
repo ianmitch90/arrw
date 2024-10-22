@@ -1,18 +1,9 @@
 'use client';
-import React, { PropsWithChildren } from 'react';
-import { useUserSession } from '../../hooks/useUserSession';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 
-const LandingPage = ({ children }: PropsWithChildren) => {
-  const { user, loading } = useUserSession();
-  const router = useRouter();
-
-  // Redirect to landing page if not logged in
-  if (!loading && !user) {
-    router.push('/map/landing');
-  }
-
-  return <>{children}</>;
+const MapPage = () => {
+  // No need for auth check here since middleware handles it
+  return <div>{/* Your map content */}</div>;
 };
 
-export default LandingPage;
+export default MapPage;
