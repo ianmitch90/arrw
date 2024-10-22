@@ -1,15 +1,13 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { auth } from '@/utils/supabase/client';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
 
-  // Refresh session if expired - required for Server Components
-  const {
-    data: { session }
-  } = await supabase.auth.getSession();
+  // Get JWT from Authorization header
+  const token = req.headers.get('Authorization')?.split('Bearer ')[1];
+  const session = token ? await auth.getSession() : null;
 
   const path = req.nextUrl.pathname;
 
@@ -17,11 +15,8 @@ export async function middleware(req: NextRequest) {
   if (session) {
     // Redirect from auth routes to map if logged in
     if (path.startsWith('/auth') || path === '/landing') {
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = '/map';
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.redirect(new URL('/map', req.url));
     }
-    // Allow access to all other routes
     return res;
   }
 
@@ -33,22 +28,12 @@ export async function middleware(req: NextRequest) {
     }
 
     // Redirect all other routes to landing
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/landing';
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(new URL('/landing', req.url));
   }
 
   return res;
 }
 
-// Specify which routes should be handled by middleware
 export const config = {
-  matcher: [
-    '/app/:path*',
-    '/map/:path*',
-    '/auth/:path*',
-    '/landing',
-    '/'
-    // Add other routes that need session checking here
-  ]
+  matcher: ['/app/:path*', '/map/:path*', '/auth/:path*', '/landing', '/']
 };

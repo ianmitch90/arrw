@@ -68,7 +68,9 @@ export async function signInWithEmail(formData: FormData) {
       error.message
     );
   } else if (data) {
-    cookieStore.set('preferredSignInView', 'email_signin', { path: '/' });
+    (await cookieStore).set('preferredSignInView', 'email_signin', {
+      path: '/'
+    });
     redirectPath = getStatusRedirect(
       '/signin/email_signin',
       'Success!',
@@ -150,7 +152,9 @@ export async function signInWithPassword(formData: FormData) {
       error.message
     );
   } else if (data.user) {
-    cookieStore.set('preferredSignInView', 'password_signin', { path: '/' });
+    (await cookieStore).set('preferredSignInView', 'password_signin', {
+      path: '/'
+    });
     redirectPath = getStatusRedirect('/', 'Success!', 'You are now signed in.');
   } else {
     redirectPath = getErrorRedirect(

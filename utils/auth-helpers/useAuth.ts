@@ -1,33 +1,30 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/utils/supabase/client';
-import { Session } from '@supabase/supabase-js';
-
-interface User {
-  id: string;
-  email?: string;
-  is_anonymous?: boolean;
-}
+import { User } from '@/types/auth';
+import { auth, supabase } from '@/utils/supabase/client';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
+    // Initial session check
+    auth.getSession().then((session) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.access_token) {
+        auth.setSession(session.access_token);
+        setUser(session.user);
+      } else {
+        auth.clearSession();
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -36,5 +33,5 @@ export function useAuth() {
     };
   }, []);
 
-  return { user, session, loading };
+  return { user, loading };
 }

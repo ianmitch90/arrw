@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LandingPage() {
-  const { session } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (session) {
+    if (user) {
       router.push('/map');
     }
-  }, [session, router]);
+  }, [user, router]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">

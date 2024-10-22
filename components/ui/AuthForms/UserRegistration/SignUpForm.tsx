@@ -1,41 +1,27 @@
 'use client';
 
-import React, { forwardRef } from 'react';
-import { Formik, Form, Field, FormikHelpers, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
+import React from 'react';
+import { Formik, Form, Field, FormikHelpers } from 'formik';
 import { Input, Checkbox } from '@nextui-org/react';
-import { useFormContext } from './FormContext'; // Import the context
-import { supabase } from '@/lib/supabase';
-import { toast } from 'react-toastify';
-import { useRouter } from 'next/router';
-
-interface FormValues {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  terms: boolean;
-}
-
-const validationSchema = Yup.object().shape({
-  email: Yup.string().email('Invalid email').required('Email is required'),
-  password: Yup.string()
-    .min(8, 'Password must be at least 8 characters')
-    .required('Password is required'),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref('password')], 'Passwords must match')
-    .required('Password Confirmation is required'),
-  terms: Yup.boolean().oneOf([true], 'You must accept the terms and conditions')
-});
+import { useFormContext } from './FormContext';
+import { supabase } from '@/utils/supabase/client';
+import { useToast } from '@/components/ui/Toasts/use-toast';
+import { useRouter } from 'next/navigation';
+import { FormError } from '@/components/ui/FormError';
+import { SignUpFormValues, FieldProps } from '@/types/auth';
+import { signUpValidationSchema } from '@/utils/validation/auth';
 
 export default function SignUpForm({
   onNext
 }: {
-  onNext: (values: FormValues) => void;
+  onNext: (values: SignUpFormValues) => void;
 }) {
-  const { setValues, isValid, isDirty, isSubmitting } = useFormContext(); // Get context values
+  const { setValues } = useFormContext();
+  const { toast } = useToast();
   const router = useRouter();
 
-  const initialValues: FormValues = {
+  // Define initial values for the form
+  const initialValues: SignUpFormValues = {
     email: '',
     password: '',
     confirmPassword: '',
@@ -43,8 +29,8 @@ export default function SignUpForm({
   };
 
   const handleSubmit = async (
-    values: FormValues,
-    { setSubmitting }: FormikHelpers<FormValues>
+    values: SignUpFormValues,
+    { setSubmitting }: FormikHelpers<SignUpFormValues>
   ) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -68,7 +54,10 @@ export default function SignUpForm({
         router.push('/map');
       }
     } catch (error) {
-      // ... error handling
+      toast({
+        title: 'Unexpected Error',
+        description: (error as Error).message || 'An unexpected error occurred'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -77,11 +66,10 @@ export default function SignUpForm({
   return (
     <Formik
       initialValues={initialValues}
-      validationSchema={validationSchema}
+      validationSchema={signUpValidationSchema}
       onSubmit={handleSubmit}
     >
       {({ errors, touched, isValid, dirty, isSubmitting }) => {
-        // Update context with current form state
         setValues({ isValid, isDirty: dirty, isSubmitting });
 
         return (
@@ -91,60 +79,67 @@ export default function SignUpForm({
               <p className="text-sm text-gray-500">
                 Let's get you started on your journey to love!
               </p>
+
               <Field name="email">
-                {({ field }: { field: any }) => (
-                  <Input
-                    {...field}
-                    label="Email"
-                    type="email"
-                    placeholder="Enter your email"
-                    isInvalid={touched.email && Boolean(errors.email)}
-                    errormessage={touched.email && errors.email}
-                  />
+                {({ field, meta }: FieldProps) => (
+                  <div>
+                    <Input
+                      {...(field as any)}
+                      label="Email"
+                      type="email"
+                      placeholder="Enter your email"
+                      isInvalid={meta.touched && Boolean(meta.error)}
+                      errorMessage={meta.touched && meta.error}
+                    />
+                  </div>
                 )}
               </Field>
+
               <Field name="password">
-                {({ field }: { field: any }) => (
-                  <Input
-                    {...field}
-                    label="Password"
-                    type="password"
-                    placeholder="Create a password"
-                    isInvalid={touched.password && Boolean(errors.password)}
-                    errormessage={touched.password && errors.password}
-                  />
+                {({ field, meta }: FieldProps) => (
+                  <div>
+                    <Input
+                      {...(field as any)}
+                      label="Password"
+                      type="password"
+                      placeholder="Enter your password"
+                      isInvalid={meta.touched && Boolean(meta.error)}
+                      errorMessage={meta.touched && meta.error}
+                    />
+                  </div>
                 )}
               </Field>
+
               <Field name="confirmPassword">
-                {({ field }: { field: any }) => (
-                  <Input
-                    {...field}
-                    label="Confirm Password"
-                    type="password"
-                    placeholder="Confirm your password"
-                    isInvalid={
-                      touched.confirmPassword && Boolean(errors.confirmPassword)
-                    }
-                    errormessage={
-                      touched.confirmPassword && errors.confirmPassword
-                    }
-                  />
+                {({ field, meta }: FieldProps) => (
+                  <div>
+                    <Input
+                      {...(field as any)}
+                      label="Confirm Password"
+                      type="password"
+                      placeholder="Confirm your password"
+                      isInvalid={meta.touched && Boolean(meta.error)}
+                      errorMessage={meta.touched && meta.error}
+                    />
+                  </div>
                 )}
               </Field>
+
               <Field name="terms">
-                {({ field }: { field: any }) => (
-                  <Checkbox
-                    {...field}
-                    color="primary"
-                    isInvalid={touched.terms && Boolean(errors.terms)}
-                  >
-                    I agree to the Terms and Conditions
-                  </Checkbox>
+                {({ field, meta }: FieldProps) => (
+                  <div>
+                    <Checkbox
+                      {...(field as any)}
+                      isSelected={field.value as boolean}
+                      onValueChange={field.onChange}
+                      isInvalid={meta.touched && Boolean(meta.error)}
+                    >
+                      I agree to the Terms and Conditions
+                    </Checkbox>
+                    <FormError error={meta.error} touched={meta.touched} />
+                  </div>
                 )}
               </Field>
-              <ErrorMessage name="terms">
-                {(msg) => <div className="text-red-500">{msg}</div>}
-              </ErrorMessage>
             </div>
           </Form>
         );
