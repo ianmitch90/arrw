@@ -3,63 +3,70 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Create a single instance of the Supabase client
+// Create Supabase client with default session handling
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false, // We'll handle session persistence ourselves
-    autoRefreshToken: false, // We'll handle token refresh ourselves
-    storage: {
-      // Custom storage to use JWT instead of cookies
-      getItem: (key) => {
-        if (typeof window === 'undefined') return null;
-        return localStorage.getItem(key);
-      },
-      setItem: (key, value) => {
-        if (typeof window === 'undefined') return;
-        localStorage.setItem(key, value);
-      },
-      removeItem: (key) => {
-        if (typeof window === 'undefined') return;
-        localStorage.removeItem(key);
-      }
-    }
+    persistSession: true, // Let Supabase handle session persistence
+    autoRefreshToken: true, // Let Supabase handle token refresh
+    detectSessionInUrl: true // Handle OAuth redirects
   }
 });
 
-// Helper functions for auth
+// Enhanced auth utilities
 export const auth = {
+  // Use Supabase's built-in session management
   getSession: async () => {
-    const token = localStorage.getItem('supabase_jwt');
-    if (!token) return null;
-
-    try {
-      const {
-        data: { user },
-        error
-      } = await supabase.auth.getUser(token);
-      if (error || !user) return null;
-      return { user, token };
-    } catch {
-      return null;
-    }
-  },
-
-  setSession: (token: string) => {
-    localStorage.setItem('supabase_jwt', token);
-  },
-
-  clearSession: () => {
-    localStorage.removeItem('supabase_jwt');
-  },
-
-  refreshSession: async () => {
     const {
       data: { session },
       error
     } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      auth.setSession(session.access_token);
-    }
-    return { session, error };
+    if (error || !session) return null;
+    return session;
+  },
+
+  // Get current user with active session
+  getUser: async () => {
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser();
+    if (error || !user) return null;
+    return user;
+  },
+
+  // Age verification utilities
+  verifyAge: async (method: 'modal' | 'document') => {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not found');
+
+    const { error } = await supabase
+      .from('users')
+      .update({
+        age_verified: true,
+        age_verified_at: new Date().toISOString(),
+        age_verification_method: method
+      })
+      .eq('id', user.id);
+
+    if (error) throw error;
+    return true;
+  },
+
+  checkAgeVerification: async () => {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('age_verified')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !data) return false;
+    return data.age_verified;
   }
 };

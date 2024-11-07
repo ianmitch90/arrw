@@ -1,39 +1,89 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { auth } from '@/utils/supabase/client';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-
-  // Get JWT from Authorization header
-  const token = req.headers.get('Authorization')?.split('Bearer ')[1];
-  const session = token ? await auth.getSession() : null;
-
-  const path = req.nextUrl.pathname;
-
-  // If user is authenticated
-  if (session) {
-    // Redirect from auth routes to map if logged in
-    if (path.startsWith('/auth') || path === '/landing') {
-      return NextResponse.redirect(new URL('/map', req.url));
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers
     }
-    return res;
-  }
+  });
 
-  // If user is NOT authenticated
-  if (!session) {
-    // Allow access to auth routes and landing page
-    if (path.startsWith('/auth') || path === '/landing') {
-      return res;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          response.cookies.set({
+            name,
+            value,
+            ...options
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          response.cookies.set({
+            name,
+            value: '',
+            ...options
+          });
+        }
+      }
+    }
+  );
+
+  try {
+    // Check session
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+
+    // Protected routes check
+    if (request.nextUrl.pathname.startsWith('/app')) {
+      if (!session) {
+        return NextResponse.redirect(new URL('/auth/login', request.url));
+      }
+
+      // Check age verification
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('age_verified')
+        .eq('id', session.user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      if (!userData?.age_verified) {
+        return NextResponse.redirect(new URL('/auth/verify-age', request.url));
+      }
     }
 
-    // Redirect all other routes to landing
-    return NextResponse.redirect(new URL('/landing', req.url));
-  }
+    return response;
+  } catch (error) {
+    console.error('Middleware error:', error);
 
-  return res;
+    // Handle specific error cases
+    if (error instanceof Error) {
+      switch (error.message) {
+        case 'Session not found':
+          return NextResponse.redirect(new URL('/auth/login', request.url));
+        case 'Database error':
+          // Log error and show error page
+          return NextResponse.redirect(new URL('/error', request.url));
+        default:
+          // Handle other errors
+          return NextResponse.redirect(new URL('/error', request.url));
+      }
+    }
+
+    return response;
+  }
 }
 
 export const config = {
-  matcher: ['/app/:path*', '/map/:path*', '/auth/:path*', '/landing', '/']
+  matcher: ['/app/:path*', '/auth/verify-age']
 };
