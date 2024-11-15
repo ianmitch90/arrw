@@ -1,44 +1,53 @@
 'use client';
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ReactNode } from 'react';
+import { Button } from '@nextui-org/react';
+import { toast } from '@/components/ui/use-toast';
 
 interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
+  error?: Error;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false
   };
 
-  public static getDerivedStateFromError(_: Error): State {
-    return { hasError: true };
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+  public componentDidCatch(error: Error) {
+    console.error('Error caught by boundary:', error);
+    toast({
+      variant: 'error',
+      description: 'Something went wrong. Please try again.'
+    });
   }
+
+  private handleRetry = () => {
+    this.setState({ hasError: false });
+  };
 
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-2xl font-bold">Sorry.. there was an error</h1>
-          <button
-            className="mt-4 px-4 py-2 bg-primary text-white rounded"
-            onClick={() => this.setState({ hasError: false })}
-          >
-            Try again
-          </button>
-        </div>
+        this.props.fallback || (
+          <div className="flex flex-col items-center justify-center min-h-[200px] p-4">
+            <p className="text-danger mb-4">Something went wrong</p>
+            <Button color="danger" variant="flat" onClick={this.handleRetry}>
+              Try Again
+            </Button>
+          </div>
+        )
       );
     }
 
     return this.props.children;
   }
 }
-
-export default ErrorBoundary;

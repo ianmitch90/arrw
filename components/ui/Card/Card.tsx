@@ -1,25 +1,134 @@
-import { ReactNode } from 'react';
+'use client';
 
-interface Props {
-  title: string;
+import { ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/utils/cn';
+import { Icon } from '@iconify/react';
+import { Card as NextCard, CardBody, CardHeader, CardFooter, Divider } from '@nextui-org/react';
+
+interface CardProps {
+  title?: string | ReactNode;
   description?: string;
   footer?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
+  className?: string;
+  headerClassName?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
+  icon?: string;
+  isHoverable?: boolean;
+  isPressable?: boolean;
+  isDisabled?: boolean;
+  isFooterBlurred?: boolean;
+  disableAnimation?: boolean;
+  radius?: 'none' | 'sm' | 'md' | 'lg';
+  shadow?: 'none' | 'sm' | 'md' | 'lg';
+  onPress?: () => void;
 }
 
-export default function Card({ title, description, footer, children }: Props) {
-  return (
-    <div className="w-full max-w-3xl m-auto my-8 border rounded-md p border-zinc-700">
-      <div className="px-5 py-4">
-        <h3 className="mb-1 text-2xl font-medium">{title}</h3>
-        <p className="text-zinc-300">{description}</p>
-        {children}
-      </div>
-      {footer && (
-        <div className="p-4 border-t rounded-b-md border-zinc-700 bg-zinc-900 text-zinc-500">
-          {footer}
-        </div>
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+  hover: { scale: 1.02, transition: { duration: 0.2 } },
+  tap: { scale: 0.98 },
+  exit: { opacity: 0, y: -20 }
+};
+
+export default function Card({
+  title,
+  description,
+  footer,
+  children,
+  className,
+  headerClassName,
+  bodyClassName,
+  footerClassName,
+  icon,
+  isHoverable = false,
+  isPressable = false,
+  isDisabled = false,
+  isFooterBlurred = false,
+  disableAnimation = false,
+  radius = 'lg',
+  shadow = 'md',
+  onPress
+}: CardProps) {
+  const content = (
+    <NextCard
+      className={cn(
+        'border-default-200/50 bg-background/60 backdrop-blur-lg backdrop-saturate-150',
+        className
       )}
-    </div>
+      isHoverable={isHoverable}
+      isPressable={isPressable}
+      isDisabled={isDisabled}
+      radius={radius}
+      shadow={shadow}
+      onPress={onPress}
+    >
+      {(title || description) && (
+        <CardHeader className={cn('flex gap-3', headerClassName)}>
+          {icon && (
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Icon icon={icon} className="text-xl text-primary" />
+            </div>
+          )}
+          <div className="flex flex-col flex-grow">
+            {title && (
+              <h3 className={cn(
+                'text-lg font-medium',
+                typeof title === 'string' ? 'line-clamp-1' : ''
+              )}>
+                {title}
+              </h3>
+            )}
+            {description && (
+              <p className="text-sm text-default-500 line-clamp-2">
+                {description}
+              </p>
+            )}
+          </div>
+        </CardHeader>
+      )}
+      
+      {children && (
+        <CardBody className={cn('gap-4', bodyClassName)}>
+          {children}
+        </CardBody>
+      )}
+
+      {footer && (
+        <>
+          <Divider />
+          <CardFooter
+            className={cn(
+              isFooterBlurred && 'border-t-1 border-default-200/50 bg-background/60 backdrop-blur-lg backdrop-saturate-150',
+              footerClassName
+            )}
+          >
+            {footer}
+          </CardFooter>
+        </>
+      )}
+    </NextCard>
+  );
+
+  if (disableAnimation) {
+    return content;
+  }
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        whileHover={isHoverable ? "hover" : undefined}
+        whileTap={isPressable ? "tap" : undefined}
+      >
+        {content}
+      </motion.div>
+    </AnimatePresence>
   );
 }

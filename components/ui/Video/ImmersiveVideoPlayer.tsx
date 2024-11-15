@@ -1,25 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAR } from '@/contexts/ARContext';
-import { ARPerformanceMonitor } from '@/utils/ar-performance';
+import { useBaseVideoPlayer, BaseVideoPlayerProps, createVideoElement } from './BaseVideoPlayer';
 
-interface ImmersiveVideoPlayerProps {
-  src: string;
-  type: '360' | '180' | 'standard';
+interface ImmersiveVideoPlayerProps extends BaseVideoPlayerProps {
   enableAR?: boolean;
-  onPerformanceUpdate?: (metrics: { fps: number; quality: string }) => void;
 }
 
 export function ImmersiveVideoPlayer({
   src,
   type,
   enableAR = false,
+  onError,
   onPerformanceUpdate
 }: ImmersiveVideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const { videoRef } = useBaseVideoPlayer({ src, type, onError, onPerformanceUpdate });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { state: arState, startARSession } = useAR();
   const [isImmersive, setIsImmersive] = useState(false);
-  const performanceMonitor = ARPerformanceMonitor.getInstance();
 
   useEffect(() => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -29,7 +26,7 @@ export function ImmersiveVideoPlayer({
     const gl = canvas.getContext('webgl2');
 
     if (!gl) {
-      console.error('WebGL2 not supported');
+      onError?.(new Error('WebGL2 not supported'));
       return;
     }
 
@@ -48,74 +45,23 @@ export function ImmersiveVideoPlayer({
       new Uint8Array([0, 0, 0, 255])
     );
 
-    // Monitor performance
-    const unsubscribe = performanceMonitor.subscribe((metrics) => {
-      const quality =
-        metrics.fps > 50 ? 'high' : metrics.fps > 30 ? 'medium' : 'low';
-      onPerformanceUpdate?.({ fps: metrics.fps, quality });
-
-      // Adjust video quality based on performance
-      if (video.readyState >= 4) {
-        const targetQuality =
-          quality === 'high' ? 1080 : quality === 'medium' ? 720 : 480;
-        adjustVideoQuality(video, targetQuality);
-      }
-    });
+    // Handle AR session if enabled
+    if (enableAR && arState.isSupported) {
+      startARSession();
+    }
 
     return () => {
-      unsubscribe();
       gl.deleteTexture(texture);
     };
-  }, [src]);
-
-  const enterImmersiveMode = async () => {
-    try {
-      if (enableAR && arState.isSupported) {
-        await startARSession();
-      }
-
-      if (document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen();
-      }
-
-      setIsImmersive(true);
-    } catch (error) {
-      console.error('Failed to enter immersive mode:', error);
-    }
-  };
-
-  const adjustVideoQuality = (
-    video: HTMLVideoElement,
-    targetHeight: number
-  ) => {
-    const qualities = video.getVideoPlaybackQuality?.();
-    if (!qualities) return;
-
-    // Implement quality adjustment logic
-  };
+  }, [enableAR, arState.isSupported, startARSession, onError]);
 
   return (
-    <div className="relative w-full aspect-video">
-      <video
-        ref={videoRef}
-        src={src}
-        className={`w-full h-full ${isImmersive ? 'hidden' : ''}`}
-        controls
-        crossOrigin="anonymous"
-        playsInline
-      />
+    <div className="relative">
+      {createVideoElement({ src, type, onError, onPerformanceUpdate })}
       <canvas
         ref={canvasRef}
-        className={`w-full h-full ${!isImmersive ? 'hidden' : ''}`}
+        className={`absolute top-0 left-0 w-full h-full ${isImmersive ? 'opacity-100' : 'opacity-0'}`}
       />
-      {!isImmersive && (
-        <button
-          className="absolute bottom-4 right-4 bg-primary text-white px-4 py-2 rounded"
-          onClick={enterImmersiveMode}
-        >
-          Enter {enableAR ? 'AR' : 'VR'} Mode
-        </button>
-      )}
     </div>
   );
 }

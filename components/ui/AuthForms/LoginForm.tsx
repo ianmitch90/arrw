@@ -1,22 +1,30 @@
 'use client';
 
 import React from 'react';
-import { Button, Input, Link, Spinner } from '@nextui-org/react';
+import {
+  Button,
+  Input,
+  Link,
+  Spinner,
+  Card,
+  CardBody,
+  CardHeader,
+  Divider
+} from '@nextui-org/react';
 import { Icon } from '@iconify/react';
-import { WordDivider } from '@/components/ui/WordDivider';
 import { m } from 'framer-motion';
 import { supabase } from '@/utils/supabase/client';
-import { Formik, Form, Field, FormikHelpers } from 'formik';
-import { useToast } from '@/components/ui/Toasts/use-toast';
+import { Formik, Form } from 'formik';
+import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { LoginFormValues, FieldProps, Variants } from '@/types/auth';
+import { LoginFormValues, Variants } from '@/types/auth';
 import { loginValidationSchema } from '@/utils/validation/auth';
 import { handleMagicLinkLogin } from '@/utils/auth-helpers/magicLink';
 
 export default function LoginForm({
   variants
 }: {
-  variants: Variants; // Ensure this matches the expected type
+  variants: Variants;
 }) {
   const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
   const { toast } = useToast();
@@ -51,202 +59,165 @@ export default function LoginForm({
       }
     } catch (error) {
       toast({
-        title: 'Unexpected Error',
-        description: (error as Error).message || 'An unexpected error occurred.'
+        title: 'Error',
+        description: 'An unexpected error occurred.'
       });
     } finally {
       setIsAnonymousLoading(false);
     }
   };
 
-  const handleSubmit = async (
-    values: LoginFormValues,
-    { setSubmitting }: FormikHelpers<LoginFormValues>
-  ) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password
-      });
-
-      if (error) {
-        toast({
-          title: 'Login Error',
-          description: error.message
-        });
-        return;
-      }
-
-      if (data.session) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-
-        toast({
-          title: 'Login Successful',
-          description: 'You have logged in successfully.'
-        });
-        router.push('/map');
-      }
-    } catch (error) {
-      toast({
-        title: 'Unexpected Error',
-        description: (error as Error).message || 'An unexpected error occurred.'
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleMagicLink = async () => {
-    const email = (
-      document.querySelector('input[name="email"]') as HTMLInputElement
-    )?.value;
-
-    if (!email) {
-      toast({
-        title: 'Email Required',
-        description: 'Please enter your email address first.'
-      });
-      return;
-    }
-
-    setIsMagicLinkLoading(true);
-    try {
-      const { error } = await handleMagicLinkLogin(email);
-
-      if (error) {
-        toast({
-          title: 'Magic Link Error',
-          description: error
-        });
-        return;
-      }
-
-      toast({
-        title: 'Check your email',
-        description: 'We sent you a magic link to sign in.'
-      });
-    } catch (error) {
-      toast({
-        title: 'Unexpected Error',
-        description: (error as Error).message || 'An unexpected error occurred.'
-      });
-    } finally {
-      setIsMagicLinkLoading(false);
-    }
-  };
-
   return (
-    <Formik
-      initialValues={{ email: '', password: '' }}
-      validationSchema={loginValidationSchema}
-      onSubmit={handleSubmit}
+    <m.div
+      initial="initial"
+      animate="animate"
+      variants={variants}
+      className="w-full max-w-md mx-auto"
     >
-      {({ isSubmitting }) => (
-        <Form>
-          <m.div
-            animate="visible"
-            className="flex flex-col gap-y-3"
-            exit="hidden"
-            initial="hidden"
-            variants={variants}
+      <Card className="p-6">
+        <CardHeader>
+          <h1 className="text-2xl font-bold text-center">Welcome Back</h1>
+        </CardHeader>
+        <CardBody>
+          <Formik
+            initialValues={{
+              email: '',
+              password: ''
+            }}
+            validationSchema={loginValidationSchema}
+            onSubmit={async (
+              values: LoginFormValues,
+              { setSubmitting, setFieldError }
+            ) => {
+              try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                  email: values.email,
+                  password: values.password
+                });
+
+                if (error) {
+                  setFieldError('password', error.message);
+                  toast({
+                    title: 'Login Error',
+                    description: error.message
+                  });
+                  return;
+                }
+
+                if (data.session) {
+                  toast({
+                    title: 'Login Successful',
+                    description: 'You have logged in successfully.'
+                  });
+                  router.push('/map');
+                }
+              } catch (error) {
+                toast({
+                  title: 'Error',
+                  description: 'An unexpected error occurred.'
+                });
+              } finally {
+                setSubmitting(false);
+              }
+            }}
           >
-            <Field name="email">
-              {({ field, meta }: FieldProps) => (
-                <div>
-                  <Input
-                    {...(field as any)}
-                    autoFocus
-                    isRequired
-                    label="Email Address"
-                    type="email"
-                    variant="bordered"
-                    placeholder="Enter your email"
-                    isInvalid={meta.touched && Boolean(meta.error)}
-                    errorMessage={meta.touched && meta.error}
-                  />
+            {({ isSubmitting, errors, touched, handleChange, handleBlur }) => (
+              <Form className="space-y-4">
+                <Input
+                  name="email"
+                  type="email"
+                  label="Email"
+                  placeholder="Enter your email"
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  isInvalid={touched.email && !!errors.email}
+                  errorMessage={touched.email && errors.email}
+                  autoComplete="email"
+                />
+
+                <Input
+                  name="password"
+                  type={isConfirmVisible ? 'text' : 'password'}
+                  label="Password"
+                  placeholder="Enter your password"
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  isInvalid={touched.password && !!errors.password}
+                  errorMessage={touched.password && errors.password}
+                  autoComplete="current-password"
+                  endContent={
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmVisible(!isConfirmVisible)}
+                    >
+                      {isConfirmVisible ? (
+                        <Icon icon="solar:eye-closed-linear" className="text-2xl text-default-400" />
+                      ) : (
+                        <Icon icon="solar:eye-linear" className="text-2xl text-default-400" />
+                      )}
+                    </button>
+                  }
+                />
+
+                <div className="flex justify-end">
+                  <Link href="/auth/reset_password" size="sm">
+                    Forgot password?
+                  </Link>
                 </div>
-              )}
-            </Field>
 
-            <Field name="password">
-              {({ field, meta }: FieldProps) => (
-                <div>
-                  <Input
-                    {...(field as any)}
-                    isRequired
-                    label="Password"
-                    variant="bordered"
-                    placeholder="Enter your password"
-                    endContent={
-                      <button
-                        type="button"
-                        onClick={() => setIsConfirmVisible(!isConfirmVisible)}
-                      >
-                        <Icon
-                          className="pointer-events-none text-2xl text-default-400"
-                          icon={
-                            isConfirmVisible
-                              ? 'solar:eye-closed-linear'
-                              : 'solar:eye-bold'
-                          }
-                        />
-                      </button>
-                    }
-                    type={isConfirmVisible ? 'text' : 'password'}
-                    isInvalid={meta.touched && Boolean(meta.error)}
-                    errorMessage={meta.touched && meta.error}
-                  />
+                <Button
+                  type="submit"
+                  color="primary"
+                  className="w-full"
+                  isLoading={isSubmitting}
+                >
+                  {isSubmitting ? 'Signing in...' : 'Sign in'}
+                </Button>
+
+                <div className="relative">
+                  <Divider className="my-4" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="bg-content1 px-2 text-tiny text-default-400">
+                      Or continue with
+                    </span>
+                  </div>
                 </div>
-              )}
-            </Field>
 
-            <Button
-              color="primary"
-              type="submit"
-              spinner={<Spinner color="white" size="sm" />}
-              spinnerPlacement="end"
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
-            >
-              Log In
-            </Button>
+                <div className="space-y-2">
+                  <Button
+                    variant="bordered"
+                    className="w-full"
+                    onClick={() => handleMagicLinkLogin(toast)}
+                    isLoading={isMagicLinkLoading}
+                  >
+                    <Icon icon="material-symbols:magic-button" className="text-xl" />
+                    Magic Link
+                  </Button>
 
-            <Link className="mt-2">Forgot Password?</Link>
-            {WordDivider('OR')}
+                  <Button
+                    variant="bordered"
+                    className="w-full"
+                    onClick={handleAnonymousLogin}
+                    isLoading={isAnonymousLoading}
+                  >
+                    <Icon icon="ph:incognito" className="text-xl" />
+                    Continue Anonymously
+                  </Button>
+                </div>
 
-            <Button
-              color="secondary"
-              fullWidth
-              variant="flat"
-              onClick={handleAnonymousLogin}
-              isLoading={isAnonymousLoading}
-            >
-              Login Anonymously
-            </Button>
-
-            <Button
-              type="button"
-              onClick={handleMagicLink}
-              isLoading={isMagicLinkLoading}
-            >
-              Get Magic Link
-            </Button>
-
-            {WordDivider('Need an account?')}
-
-            <Button
-              fullWidth
-              variant="flat"
-              onClick={() => router.push('/auth/sign-up')}
-            >
-              Sign Up
-            </Button>
-          </m.div>
-        </Form>
-      )}
-    </Formik>
+                <div className="text-center text-sm">
+                  <span className="text-default-500">
+                    Don't have an account?{' '}
+                  </span>
+                  <Link href="/auth/sign-up" size="sm">
+                    Sign up
+                  </Link>
+                </div>
+              </Form>
+            )}
+          </Formik>
+        </CardBody>
+      </Card>
+    </m.div>
   );
 }

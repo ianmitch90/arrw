@@ -7,11 +7,14 @@
 }
 
 .dark {
-  --background: #1f2937;
-  --foreground: #f9fafb;
-  --default-200: #374151;
-  --default-500: #9ca3af;
-  --default-100: #111827;
+  --background: #000000;
+  --foreground: #ffffff;
+  --default-200: #333333;
+  --default-500: #666666;
+  --default-100: #1a1a1a;
+  --danger: #ff3b30;
+  --danger-50: rgba(255, 59, 48, 0.1);
+  --success: #34c759;
 }
 
 body {
@@ -41,4 +44,24 @@ body {
 
 .dark .border-default-200 {
   border-color: var(--default-200);
+}
+
+.main-content {
+  padding-top: 88px; /* Height of top bar */
+  padding-bottom: 64px; /* Height of bottom bar */
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

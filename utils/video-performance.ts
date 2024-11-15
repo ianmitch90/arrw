@@ -1,4 +1,4 @@
-import { ARPerformanceMonitor } from './ar-performance';
+import { PerformanceMonitor } from './performance';
 
 interface VideoPerformanceMetrics {
   fps: number;
@@ -13,7 +13,7 @@ export class VideoPerformanceMonitor {
   private static instance: VideoPerformanceMonitor;
   private metrics: VideoPerformanceMetrics;
   private observers: ((metrics: VideoPerformanceMetrics) => void)[] = [];
-  private arPerformance: ARPerformanceMonitor;
+  private performance: PerformanceMonitor;
 
   private constructor() {
     this.metrics = {
@@ -24,7 +24,8 @@ export class VideoPerformanceMonitor {
       quality: 'auto',
       latency: 0
     };
-    this.arPerformance = ARPerformanceMonitor.getInstance();
+    this.performance = PerformanceMonitor.getInstance();
+    this.performance.startMonitoring('video');
   }
 
   static getInstance(): VideoPerformanceMonitor {
@@ -51,11 +52,12 @@ export class VideoPerformanceMonitor {
         this.metrics.bufferHealth = bufferedEnd - video.currentTime;
       }
 
-      // Get AR performance metrics for combined analysis
-      const arMetrics = this.arPerformance.getCurrentMetrics();
+      // Get performance metrics
+      const performanceMetrics = this.performance.getMetrics('video');
+      this.metrics.fps = performanceMetrics.fps;
 
       // Adjust quality based on combined metrics
-      this.metrics.quality = this.determineOptimalQuality(arMetrics.fps);
+      this.metrics.quality = this.determineOptimalQuality();
 
       this.notifyObservers();
     };
@@ -64,8 +66,8 @@ export class VideoPerformanceMonitor {
     return () => video.removeEventListener('timeupdate', updateMetrics);
   }
 
-  private determineOptimalQuality(arFps: number): string {
-    const totalScore = (this.metrics.fps + arFps) / 2;
+  private determineOptimalQuality(): string {
+    const totalScore = this.metrics.fps;
     if (totalScore > 50 && this.metrics.bufferHealth > 5) return 'high';
     if (totalScore > 30 && this.metrics.bufferHealth > 2) return 'medium';
     return 'low';
@@ -84,5 +86,26 @@ export class VideoPerformanceMonitor {
 
   getCurrentMetrics(): VideoPerformanceMetrics {
     return { ...this.metrics };
+  }
+}
+
+export class ARPerformanceMonitor {
+  private static instance: ARPerformanceMonitor;
+  private performance: PerformanceMonitor;
+
+  private constructor() {
+    this.performance = PerformanceMonitor.getInstance();
+    this.performance.startMonitoring('ar');
+  }
+
+  static getInstance(): ARPerformanceMonitor {
+    if (!ARPerformanceMonitor.instance) {
+      ARPerformanceMonitor.instance = new ARPerformanceMonitor();
+    }
+    return ARPerformanceMonitor.instance;
+  }
+
+  getCurrentMetrics(): { fps: number; quality: string } {
+    return this.performance.getMetrics('ar');
   }
 }

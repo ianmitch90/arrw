@@ -40,8 +40,20 @@ export function RealTimeChatSystem() {
       if (locationState.currentLocation) {
         const roomId = `location-${Math.floor(locationState.currentLocation.latitude)}-${Math.floor(locationState.currentLocation.longitude)}`;
         await messaging.joinRoom(roomId, (message) => {
-          if ('sender' in message && 'timestamp' in message && 'id' in message.sender && 'name' in message.sender && 'location' in message.sender && 'latitude' in message.sender.location && 'longitude' in message.sender.location) {
-            setMessages((prev) => [...prev, message]);
+          if (
+            'sender' in message &&
+            'timestamp' in message &&
+            message.sender !== null &&
+            typeof message.sender === 'object' &&
+            'id' in message.sender &&
+            'name' in message.sender &&
+            'location' in message.sender &&
+            message.sender.location !== null &&
+            typeof message.sender.location === 'object' &&
+            'latitude' in message.sender.location &&
+            'longitude' in message.sender.location
+          ) {
+            setMessages((prev) => [...prev, message as ChatMessage]);
           }
         });
 

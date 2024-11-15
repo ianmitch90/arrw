@@ -1,27 +1,56 @@
+import { Providers } from '@/components/providers';
+import { fontSans } from '@/config/fonts';
+import { siteConfig } from '@/config/site';
+import '@/styles/globals.css';
 import { Metadata } from 'next';
-import LayoutProvider from './LayoutProvider';
-import { PropsWithChildren } from 'react';
-import { getURL } from '@/utils/helpers';
-import 'styles/main.css';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { ToastProvider } from '@shadcn/toast';
 
-const title = 'Dating App';
-const description = 'Find your perfect match nearby.';
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export const metadata: Metadata = {
-  metadataBase: new URL(getURL()),
-  title: title,
-  description: description,
-  openGraph: {
-    title: title,
-    description: description
+  title: {
+    default: siteConfig.name,
+    template: `%s - ${siteConfig.name}`
+  },
+  description: siteConfig.description,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' }
+  ],
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png'
   }
 };
 
-export default function RootLayout({ children }: PropsWithChildren) {
+export default function RootLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body className="dark text-foreground bg-background h-full w-full">
-        <LayoutProvider>{children}</LayoutProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body
+        className={cn(
+          'min-h-screen bg-background font-sans antialiased',
+          fontSans.variable
+        )}
+      >
+        <Providers
+          themeProps={{ attribute: 'class', defaultTheme: 'dark', children }}
+        >
+          <div className="relative flex flex-col h-screen">
+            <main className="container mx-auto max-w-7xl flex-grow min-h-screen">
+              <ToastProvider>{children}</ToastProvider>
+            </main>
+          </div>
+        </Providers>
       </body>
     </html>
   );

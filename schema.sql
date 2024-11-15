@@ -7,6 +7,11 @@ create table users (
   id uuid references auth.users not null primary key,
   full_name text,
   avatar_url text,
+  -- Age verification fields
+  age_verified_at timestamp with time zone,
+  age_verification_method text check (age_verification_method in ('modal', 'document')),
+  birth_date timestamp with time zone,
+  is_anonymous boolean default false,
   -- The customer's billing address, stored in JSON format.
   billing_address jsonb,
   -- Stores your customer's payment instruments.
@@ -22,8 +27,8 @@ create policy "Can update own user data." on users for update using (auth.uid() 
 create function public.handle_new_user() 
 returns trigger as $$
 begin
-  insert into public.users (id, full_name, avatar_url)
-  values (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  insert into public.users (id, full_name, avatar_url, is_anonymous)
+  values (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', false);
   return new;
 end;
 $$ language plpgsql security definer;
