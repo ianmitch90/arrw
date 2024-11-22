@@ -3,12 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Create Supabase client with default session handling
+// Create Supabase client with localStorage session handling
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true, // Let Supabase handle session persistence
-    autoRefreshToken: true, // Let Supabase handle token refresh
-    detectSessionInUrl: true // Handle OAuth redirects
+    persistSession: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
   }
 });
 
@@ -20,7 +21,7 @@ export const auth = {
       data: { session },
       error
     } = await supabase.auth.getSession();
-    if (error || !session) return null;
+    if (error) throw error;
     return session;
   },
 
@@ -30,7 +31,7 @@ export const auth = {
       data: { user },
       error
     } = await supabase.auth.getUser();
-    if (error || !user) return null;
+    if (error) throw error;
     return user;
   },
 
@@ -68,5 +69,17 @@ export const auth = {
 
     if (error || !data) return false;
     return data.age_verified;
+  },
+
+  signOut: async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('supabase.auth.token');
+    }
+  },
+
+  onAuthStateChange: (callback: (event: any, session: any) => void) => {
+    return supabase.auth.onAuthStateChange(callback);
   }
 };

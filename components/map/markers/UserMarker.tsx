@@ -4,6 +4,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { MapPin } from './MapPin'; // Assuming MapPin is a custom component
 import { AdvancedPresence } from './AdvancedPresence'; // Assuming AdvancedPresence is a custom component
+import { Source, Layer } from 'react-map-gl'; // Assuming react-map-gl is installed
+import { Tooltip } from './Tooltip'; // Assuming Tooltip is a custom component
+import { Shield } from './Shield'; // Assuming Shield is a custom component
+import cn from 'classnames'; // Assuming classnames is installed
 
 interface UserMarkerProps {
   user: {
@@ -17,6 +21,12 @@ interface UserMarkerProps {
       avatar_url?: string;
       full_name?: string;
     };
+    location: {
+      latitude: number;
+      longitude: number;
+    };
+    accuracy_meters?: number;
+    privacy_level?: 'precise' | 'approximate' | 'area';
   };
   onClick: () => void;
   distance: number;
@@ -30,6 +40,39 @@ export function UserMarker({ user, onClick, distance, longitude, latitude }: Use
 
   return (
     <>
+      {/* Privacy Radius Circle */}
+      {user.privacy_level !== 'precise' && user.accuracy_meters && (
+        <Source
+          id={`privacy-area-${user.id}`}
+          type="geojson"
+          data={{
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude]
+            },
+            properties: {}
+          }}
+        >
+          <Layer
+            id={`privacy-area-${user.id}`}
+            type="circle"
+            paint={{
+              'circle-radius': ['/', ['get', 'radius'], ['cos', ['*', ['get', 'lat'], 0.0174533]]],
+              'circle-color': user.status === 'online' ? '#22c55e' : '#71717a',
+              'circle-opacity': 0.1,
+              'circle-stroke-width': 1,
+              'circle-stroke-color': user.status === 'online' ? '#22c55e' : '#71717a',
+              'circle-stroke-opacity': 0.3
+            }}
+            properties={{
+              radius: user.accuracy_meters,
+              lat: latitude
+            }}
+          />
+        </Source>
+      )}
+
       <div
         className="relative cursor-pointer group"
         onClick={() => setShowPresence(true)}
@@ -82,6 +125,20 @@ export function UserMarker({ user, onClick, distance, longitude, latitude }: Use
             >
               {user.active_zone}
             </Chip>
+          </div>
+        )}
+
+        {/* Privacy Level Indicator */}
+        {user.privacy_level !== 'precise' && (
+          <div className="absolute -top-2 -left-2">
+            <Tooltip content={`Location accuracy: Within ${user.accuracy_meters}m`}>
+              <div className={cn(
+                "w-4 h-4 rounded-full flex items-center justify-center",
+                "bg-background/80 backdrop-blur-md border border-default-200"
+              )}>
+                <Shield className="w-3 h-3 text-default-400" />
+              </div>
+            </Tooltip>
           </div>
         )}
 

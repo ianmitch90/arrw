@@ -4,8 +4,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { Coordinates, Place, Story } from '@/types/core';
-import { Button, Card, ScrollShadow } from '@nextui-org/react';
-import { Filter, MapPin, Navigation, Plus } from 'lucide-react';
+import { Button } from '@nextui-org/react';
+import { Filter, Plus } from 'lucide-react';
 import { FilterPanel } from './FilterPanel';
 import { PlaceCard } from './PlaceCard';
 import { StoryMarker } from './StoryMarker';
@@ -13,16 +13,19 @@ import { createRoot } from 'react-dom/client';
 import { PlaceMarker } from './PlaceMarker';
 import { StoryViewer } from '../stories/StoryViewer';
 import { PlaceCreator } from './PlaceCreator';
+import '@/types/rpc'; // Import RPC type extensions
 
 // Initialize Mapbox
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+console.log('Mapbox token available:', !!token);
+mapboxgl.accessToken = token;
 
 interface MapViewProps {
   initialLocation?: Coordinates;
-  onLocationChange: (coords: Coordinates, isVisiting?: boolean) => void;
+  onLocationChange?: (coords: Coordinates, isVisiting?: boolean) => void;
 }
 
-export function MapView({ initialLocation, onLocationChange }: MapViewProps) {
+export default function MapView({ initialLocation, onLocationChange }: MapViewProps = {}) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const supabase = useSupabaseClient<Database>();
@@ -46,30 +49,68 @@ export function MapView({ initialLocation, onLocationChange }: MapViewProps) {
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [location?.longitude || -122.4194, location?.latitude || 37.7749],
-      zoom: 13
-    });
+    console.log('Initializing map with container:', mapContainer.current);
+    
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [location?.longitude || -122.4194, location?.latitude || 37.7749],
+        zoom: 13,
+        preserveDrawingBuffer: true
+      });
 
-    // Add controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true
-      }),
-      'top-right'
-    );
+      // Add CSS to ensure map canvas fills container
+      const canvas = mapContainer.current.querySelector('.mapboxgl-canvas');
+      if (canvas) {
+        (canvas as HTMLElement).style.width = '100%';
+        (canvas as HTMLElement).style.height = '100%';
+      }
 
-    // Cleanup
-    return () => {
-      map.current?.remove();
-    };
-  }, []);
+      console.log('Map instance created:', !!map.current);
+
+      // Add error handling
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+      });
+
+      map.current.on('load', () => {
+        console.log('Map loaded successfully');
+        // Force a resize to ensure the map fills its container
+        map.current?.resize();
+      });
+
+      map.current.on('style.load', () => {
+        console.log('Map style loaded successfully');
+      });
+
+      // Add controls
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.current.addControl(
+        new mapboxgl.GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true
+          },
+          trackUserLocation: true
+        }),
+        'top-right'
+      );
+
+      // Ensure map fills container on window resize
+      const resizeHandler = () => {
+        map.current?.resize();
+      };
+      window.addEventListener('resize', resizeHandler);
+
+      // Cleanup
+      return () => {
+        window.removeEventListener('resize', resizeHandler);
+        map.current?.remove();
+      };
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
+  }, [location]);
 
   // Update map when location changes
   useEffect(() => {
@@ -119,6 +160,27 @@ export function MapView({ initialLocation, onLocationChange }: MapViewProps) {
       supabase.removeChannel(channel);
     };
   }, [location, filters, supabase]);
+
+  // Handle map click for place creation
+  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isCreatingPlace) return;
+
+    // Get click coordinates relative to map container
+    const rect = mapContainer.current?.getBoundingClientRect();
+    if (!rect || !map.current) return;
+
+    const point = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+
+    // Convert point to LngLat
+    const lngLat = map.current.unproject([point.x, point.y]);
+    setNewPlaceLocation({
+      longitude: lngLat.lng,
+      latitude: lngLat.lat
+    });
+  };
 
   const fetchNearbyPlaces = async (coords: Coordinates) => {
     if (!filters.showPlaces) {
@@ -205,52 +267,36 @@ export function MapView({ initialLocation, onLocationChange }: MapViewProps) {
     });
   }, [places, stories, selectedPlace]);
 
-  const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
-    const { lng, lat } = e.lngLat;
-    
-    if (isCreatingPlace) {
-      setNewPlaceLocation({ longitude: lng, latitude: lat });
-    } else {
-      setLocation({ longitude: lng, latitude: lat });
-      onLocationChange({ longitude: lng, latitude: lat }, true);
-    }
-  };
-
   return (
-    <div className="relative h-full">
-      {/* Map Container */}
-      <div
-        ref={mapContainer}
-        className="absolute inset-0"
+    <div className="relative h-full w-full">
+      <div 
+        ref={mapContainer} 
+        className="absolute inset-0 bg-gray-200" 
         onClick={handleMapClick}
+        style={{ height: '100%', width: '100%' }}
       />
-
-      {/* Filter and Create Buttons */}
-      <div className="absolute top-4 left-4 flex gap-2">
+      
+      {/* Controls */}
+      <div className="absolute bottom-4 right-4 flex flex-col gap-2">
         <Button
           isIconOnly
           color="primary"
-          variant="solid"
-          onPress={() => setIsFilterOpen(true)}
+          aria-label="Filter"
+          onClick={() => setIsFilterOpen(true)}
         >
-          <Filter className="w-5 h-5" />
+          <Filter />
         </Button>
         <Button
           isIconOnly
-          color={isCreatingPlace ? 'default' : 'primary'}
-          variant={isCreatingPlace ? 'flat' : 'solid'}
-          onPress={() => {
-            setIsCreatingPlace(!isCreatingPlace);
-            if (isCreatingPlace) {
-              setNewPlaceLocation(undefined);
-            }
-          }}
+          color="primary"
+          aria-label="Add Place"
+          onClick={() => setIsCreatingPlace(true)}
         >
-          <Plus className="w-5 h-5" />
+          <Plus />
         </Button>
       </div>
 
-      {/* Filter Panel */}
+      {/* Filters Panel */}
       <FilterPanel
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
@@ -259,78 +305,34 @@ export function MapView({ initialLocation, onLocationChange }: MapViewProps) {
       />
 
       {/* Place Creator */}
-      {isCreatingPlace && newPlaceLocation && (
-        <Card className="absolute left-4 right-4 bottom-4 p-4">
-          <PlaceCreator
-            lat={newPlaceLocation.latitude}
-            lng={newPlaceLocation.longitude}
-            onSuccess={() => {
-              setIsCreatingPlace(false);
-              setNewPlaceLocation(undefined);
-              // Refresh places
-              if (location) {
-                fetchNearbyPlaces(location);
-              }
-            }}
-            onCancel={() => {
-              setIsCreatingPlace(false);
-              setNewPlaceLocation(undefined);
-            }}
-          />
-        </Card>
-      )}
-
-      {/* Creation Instructions */}
-      {isCreatingPlace && !newPlaceLocation && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-background/80 backdrop-blur-md rounded-lg shadow-lg">
-          <p className="text-sm text-center">
-            Click on the map to select a location for your new place
-          </p>
-        </div>
-      )}
-
-      {/* Selected Place Card */}
-      {!isCreatingPlace && selectedPlace && (
-        <Card className="absolute left-4 right-4 bottom-4 p-4">
-          <PlaceCard
-            place={selectedPlace}
-            onClose={() => setSelectedPlace(undefined)}
-          />
-        </Card>
-      )}
-
-      {/* Story Viewer */}
-      {selectedStory && (
-        <StoryViewer
-          story={selectedStory}
-          onClose={() => setSelectedStory(undefined)}
+      {newPlaceLocation && (
+        <PlaceCreator
+          location={newPlaceLocation}
+          onClose={() => {
+            setIsCreatingPlace(false);
+            setNewPlaceLocation(undefined);
+          }}
+          onSuccess={() => {
+            setIsCreatingPlace(false);
+            setNewPlaceLocation(undefined);
+            if (location) {
+              fetchNearbyPlaces(location);
+            }
+          }}
         />
       )}
 
-      {/* Location Indicator */}
-      {location && (
-        <div className="absolute bottom-20 left-4 right-4">
-          <Card className="p-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm">
-                  Viewing {filters.radius} mile radius
-                </span>
-              </div>
-              <Button
-                size="sm"
-                variant="light"
-                startContent={<Navigation className="w-4 h-4" />}
-                onPress={() => {
-                  setLocation(undefined);
-                  onLocationChange({ longitude: 0, latitude: 0 }, false);
-                }}
-              >
-                Reset Location
-              </Button>
-            </div>
-          </Card>
+      {/* Selected Place Card */}
+      {selectedPlace && (
+        <div className="absolute bottom-4 left-4 w-80">
+          <PlaceCard place={selectedPlace} onClose={() => setSelectedPlace(undefined)} />
+        </div>
+      )}
+
+      {/* Selected Story */}
+      {selectedStory && (
+        <div className="absolute inset-0 z-50">
+          <StoryViewer story={selectedStory} onClose={() => setSelectedStory(undefined)} />
         </div>
       )}
     </div>

@@ -1,55 +1,33 @@
-import { Providers } from '@/components/providers';
-import { fontSans } from '@/config/fonts';
-import { siteConfig } from '@/config/site';
-import '@/styles/globals.css';
+import './globals.css';
+import { Inter } from 'next/font/google';
+import { Providers } from './providers';
+import { AuthProvider } from '@/context/AuthContext';
 import { Metadata } from 'next';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { ToastProvider } from '@shadcn/toast';
+import { Toaster } from '@/components/ui/toaster';
+import { SessionManagerProvider } from '@/context/SessionManagerContext';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: {
-    default: siteConfig.name,
-    template: `%s - ${siteConfig.name}`
-  },
-  description: siteConfig.description,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' }
-  ],
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png'
-  }
+  title: 'ARRW',
+  description: 'Location-based social platform',
 };
 
 export default function RootLayout({
-  children
+  children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head />
-      <body
-        className={cn(
-          'min-h-screen bg-background font-sans antialiased',
-          fontSans.variable
-        )}
-      >
-        <Providers
-          themeProps={{ attribute: 'class', defaultTheme: 'dark', children }}
-        >
-          <div className="relative flex flex-col h-screen">
-            <main className="container mx-auto max-w-7xl flex-grow min-h-screen">
-              <ToastProvider>{children}</ToastProvider>
-            </main>
-          </div>
+    <html lang="en">
+      <body className={inter.className}>
+        <Providers>
+          <AuthProvider>
+            <SessionManagerProvider>
+              <Toaster />
+              {children}
+            </SessionManagerProvider>
+          </AuthProvider>
         </Providers>
       </body>
     </html>

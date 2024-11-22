@@ -1,8 +1,14 @@
-// User related types
-export interface User {
+// Auth related types
+export interface AuthUser {
   id: string;
   email?: string;
   is_anonymous?: boolean;
+}
+
+export interface AuthSession {
+  access_token: string;
+  refresh_token: string;
+  user: AuthUser;
 }
 
 // Form related types
@@ -13,9 +19,31 @@ export interface LoginFormValues {
 
 export interface SignUpFormValues extends LoginFormValues {
   confirmPassword: string;
-  terms: boolean;
+  fullName: string;
+  username: string;
+  agreeToTerms: boolean;
 }
 
+// Animation related types
+export interface Variants {
+  [key: string]: {
+    opacity?: number;
+    scale?: number;
+    x?: number;
+    y?: number;
+    rotate?: number;
+    transition?: {
+      duration?: number;
+      type?: string;
+      stiffness?: number;
+      damping?: number;
+      mass?: number;
+      velocity?: number;
+    };
+  };
+}
+
+// Field related types
 export interface FieldProps {
   field: {
     name: string;
@@ -26,16 +54,5 @@ export interface FieldProps {
   meta: {
     touched: boolean;
     error?: string;
-  };
-}
-
-// Animation related types
-export interface Variants {
-  [key: string]: {
-    opacity?: number;
-    scale?: number;
-    transition?: {
-      duration?: number;
-    };
   };
 }

@@ -1,53 +1,52 @@
-'use client';
-import { Component, ReactNode } from 'react';
-import { Button } from '@nextui-org/react';
-import { toast } from '@/components/ui/use-toast';
+'use client'
 
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
+import React from 'react'
+import { useToast } from '@/components/ui/use-toast'
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode
 }
 
-interface State {
-  hasError: boolean;
-  error?: Error;
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: Error | null
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false
-  };
-
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false, error: null }
   }
 
-  public componentDidCatch(error: Error) {
-    console.error('Error caught by boundary:', error);
-    toast({
-      variant: 'error',
-      description: 'Something went wrong. Please try again.'
-    });
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
   }
 
-  private handleRetry = () => {
-    this.setState({ hasError: false });
-  };
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo)
+  }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
-        this.props.fallback || (
-          <div className="flex flex-col items-center justify-center min-h-[200px] p-4">
-            <p className="text-danger mb-4">Something went wrong</p>
-            <Button color="danger" variant="flat" onClick={this.handleRetry}>
-              Try Again
-            </Button>
-          </div>
-        )
-      );
+        <div className="flex min-h-[400px] w-full flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-950">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Something went wrong</h2>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null })
+              window.location.reload()
+            }}
+            className="mt-4 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            Try again
+          </button>
+        </div>
+      )
     }
 
-    return this.props.children;
+    return this.props.children
   }
 }

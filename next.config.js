@@ -1,3 +1,4 @@
+/** @type {import('next').NextConfig} */
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -18,8 +19,31 @@ const withPWA = require('next-pwa')({
   ]
 });
 
-module.exports = withPWA({
+const nextConfig = {
   images: {
-    domains: ['your-supabase-project-id.supabase.co']
-  }
-});
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
+    return config;
+  },
+};
+
+// Enable experimental features based on environment
+if (process.env.NODE_ENV === 'development') {
+  nextConfig.experimental = {
+    serverActions: true
+  };
+}
+
+module.exports = withPWA(nextConfig);

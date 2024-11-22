@@ -100,15 +100,26 @@ export function FilterPanel({ isOpen, onClose, filters, onChange }: FilterPanelP
                   size="sm"
                   step={1}
                   minValue={1}
-                  maxValue={50}
+                  maxValue={20}
                   value={filters.radius}
-                  onChange={(value) => onChange({ ...filters, radius: value as number })}
+                  onChange={(value) => {
+                    // Ensure we're working with a single number
+                    const currentValue = Array.isArray(value) ? value[0] : value;
+                    // Find the closest step value
+                    const steps = [1, 10, 20];
+                    const closest = steps.reduce((prev, curr) => 
+                      Math.abs(curr - currentValue) < Math.abs(prev - currentValue) ? curr : prev
+                    );
+                    onChange({ ...filters, radius: closest });
+                  }}
                   className="max-w-md"
+                  aria-label="Search radius in miles"
+                  label="Search radius"
+                  formatOptions={{ style: 'unit', unit: 'mile' }}
                   marks={[
                     { value: 1, label: '1mi' },
                     { value: 10, label: '10mi' },
-                    { value: 25, label: '25mi' },
-                    { value: 50, label: '50mi' }
+                    { value: 20, label: '20mi' }
                   ]}
                 />
               </div>

@@ -1,149 +1,179 @@
 'use client';
 
-import React from 'react';
-import { Formik, Form, Field, FormikHelpers } from 'formik';
-import { Input, Checkbox } from '@nextui-org/react';
-import { useFormContext } from './FormContext';
-import { supabase } from '@/utils/supabase/client';
-import { useToast } from '@/components/ui/Toasts/use-toast';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FormError } from '@/components/ui/FormError';
-import { SignUpFormValues, FieldProps } from '@/types/auth';
-import { signUpValidationSchema } from '@/utils/validation/auth';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useToast } from '@/components/ui/use-toast';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 
-export default function SignUpForm({
-  onNext
-}: {
-  onNext: (values: SignUpFormValues) => void;
-}) {
-  const { setValues } = useFormContext();
-  const { toast } = useToast();
+const validationSchema = Yup.object().shape({
+  email: Yup.string()
+    .email('Invalid email address')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(8, 'Password must be at least 8 characters')
+    .required('Password is required'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords must match')
+    .required('Please confirm your password')
+});
+
+interface SignUpFormProps {
+  onSuccess?: () => void;
+}
+
+export default function SignUpForm({ onSuccess }: SignUpFormProps) {
+  const supabase = useSupabaseClient();
   const router = useRouter();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  // Define initial values for the form
-  const initialValues: SignUpFormValues = {
-    email: '',
-    password: '',
-    confirmPassword: '',
-    terms: false
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+      confirmPassword: ''
+    },
+    validationSchema,
+    onSubmit: async (values) => {
+      setLoading(true);
+      try {
+        // Validate input
+        const validatedData = validationSchema.validateSync(values);
 
-  const handleSubmit = async (
-    values: SignUpFormValues,
-    { setSubmitting }: FormikHelpers<SignUpFormValues>
-  ) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password
-      });
+        // Sign up with Supabase
+        const { data, error } = await supabase.auth.signUp({
+          email: validatedData.email,
+          password: validatedData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
 
-      if (error) {
+        if (error) throw error;
+
+        if (data.user) {
+          // Create profile
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                email: data.user.email,
+                created_at: new Date().toISOString()
+              }
+            ]);
+
+          if (profileError) throw profileError;
+
+          toast({
+            title: 'Success',
+            description: 'Please check your email to verify your account'
+          });
+
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            router.push('/login');
+          }
+        }
+      } catch (error: any) {
         toast({
-          title: 'Signup Error',
-          description: error.message
+          title: 'Error',
+          description: error.message || 'An error occurred during sign up',
+          variant: 'destructive'
         });
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      if (data.session) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-        router.push('/map');
-      }
-    } catch (error) {
-      toast({
-        title: 'Unexpected Error',
-        description: (error as Error).message || 'An unexpected error occurred'
-      });
-    } finally {
-      setSubmitting(false);
     }
-  };
+  });
 
   return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={signUpValidationSchema}
-      onSubmit={handleSubmit}
-    >
-      {({ errors, touched, isValid, dirty, isSubmitting }) => {
-        setValues({ isValid, isDirty: dirty, isSubmitting });
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="flex w-full max-w-sm flex-col gap-4 rounded-large bg-content1 px-8 pb-10 pt-6 shadow-small">
+        <p className="pb-2 text-xl font-medium">Create Account</p>
 
-        return (
-          <Form>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Create Your Account 💖</h2>
-              <p className="text-sm text-gray-500">
-                Let's get you started on your journey to love!
-              </p>
+        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
+          <div className="space-y-2">
+            <Input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={
+                formik.touched.email && formik.errors.email
+                  ? 'border-red-500'
+                  : ''
+              }
+            />
+            {formik.touched.email && formik.errors.email && (
+              <div className="text-sm text-red-500">{formik.errors.email}</div>
+            )}
 
-              <Field name="email">
-                {({ field, meta }: FieldProps) => (
-                  <div>
-                    <Input
-                      {...(field as any)}
-                      label="Email"
-                      type="email"
-                      placeholder="Enter your email"
-                      isInvalid={meta.touched && Boolean(meta.error)}
-                      errorMessage={meta.touched && meta.error}
-                    />
-                  </div>
-                )}
-              </Field>
+            <Input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={
+                formik.touched.password && formik.errors.password
+                  ? 'border-red-500'
+                  : ''
+              }
+            />
+            {formik.touched.password && formik.errors.password && (
+              <div className="text-sm text-red-500">
+                {formik.errors.password}
+              </div>
+            )}
 
-              <Field name="password">
-                {({ field, meta }: FieldProps) => (
-                  <div>
-                    <Input
-                      {...(field as any)}
-                      label="Password"
-                      type="password"
-                      placeholder="Enter your password"
-                      isInvalid={meta.touched && Boolean(meta.error)}
-                      errorMessage={meta.touched && meta.error}
-                    />
-                  </div>
-                )}
-              </Field>
+            <Input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              value={formik.values.confirmPassword}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={
+                formik.touched.confirmPassword && formik.errors.confirmPassword
+                  ? 'border-red-500'
+                  : ''
+              }
+            />
+            {formik.touched.confirmPassword &&
+              formik.errors.confirmPassword && (
+                <div className="text-sm text-red-500">
+                  {formik.errors.confirmPassword}
+                </div>
+              )}
+          </div>
 
-              <Field name="confirmPassword">
-                {({ field, meta }: FieldProps) => (
-                  <div>
-                    <Input
-                      {...(field as any)}
-                      label="Confirm Password"
-                      type="password"
-                      placeholder="Confirm your password"
-                      isInvalid={meta.touched && Boolean(meta.error)}
-                      errorMessage={meta.touched && meta.error}
-                    />
-                  </div>
-                )}
-              </Field>
+          <div className="space-y-2">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || !formik.isValid}
+            >
+              {loading ? 'Creating account...' : 'Create account'}
+            </Button>
 
-              <Field name="terms">
-                {({ field, meta }: FieldProps) => (
-                  <div>
-                    <Checkbox
-                      {...(field as any)}
-                      isSelected={field.value as boolean}
-                      onValueChange={field.onChange}
-                      isInvalid={meta.touched && Boolean(meta.error)}
-                    >
-                      I agree to the Terms and Conditions
-                    </Checkbox>
-                    <FormError error={meta.error} touched={meta.touched} />
-                  </div>
-                )}
-              </Field>
-            </div>
-          </Form>
-        );
-      }}
-    </Formik>
+            <p className="text-center text-sm">
+              Already have an account?{' '}
+              <a href="/login" className="text-primary hover:underline">
+                Sign in
+              </a>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

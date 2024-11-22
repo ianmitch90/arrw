@@ -1,10 +1,9 @@
 'use client';
 
-import cn from 'classnames';
-import React, { forwardRef, useRef, ButtonHTMLAttributes } from 'react';
+import { ButtonHTMLAttributes, forwardRef, useRef } from 'react';
+import cn from 'clsx';
 import { mergeRefs } from 'react-merge-refs';
-
-import LoadingDots from '@/components/ui/LoadingDots';
+import { Spinner } from '@nextui-org/react';
 
 import styles from './Button.module.css';
 
@@ -13,7 +12,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
   width?: number;
   loading?: boolean;
-  Component?: React.ComponentType;
+  Component?: string | React.ComponentType;
 }
 
 const Button = forwardRef<HTMLButtonElement, Props>((props, buttonRef) => {
@@ -29,7 +28,8 @@ const Button = forwardRef<HTMLButtonElement, Props>((props, buttonRef) => {
     Component = 'button',
     ...rest
   } = props;
-  const ref = useRef(null);
+  const ref = useRef<HTMLButtonElement>(null);
+
   const rootClassName = cn(
     styles.root,
     {
@@ -39,6 +39,7 @@ const Button = forwardRef<HTMLButtonElement, Props>((props, buttonRef) => {
     },
     className
   );
+
   return (
     <Component
       aria-pressed={active}
@@ -52,15 +53,15 @@ const Button = forwardRef<HTMLButtonElement, Props>((props, buttonRef) => {
       }}
       {...rest}
     >
-      {children}
-      {loading && (
-        <i className="flex pl-2 m-0">
-          <LoadingDots />
-        </i>
+      {loading ? (
+        <Spinner size="sm" color="current" />
+      ) : (
+        children
       )}
     </Component>
   );
 });
+
 Button.displayName = 'Button';
 
 export default Button;

@@ -10,7 +10,9 @@ import { createRoot } from 'react-dom/client';
 import { ProposalCluster } from './ProposalCluster';
 
 // Initialize Mapbox
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+console.log('Mapbox token available:', !!token);
+mapboxgl.accessToken = token;
 
 interface ProposalMapProps {
   initialLocation?: Coordinates;
@@ -28,32 +30,90 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current) {
+      console.error('Map container not found');
+      return;
+    }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [location?.longitude || -122.4194, location?.latitude || 37.7749],
-      zoom: 13
+    // Debug container dimensions
+    const rect = mapContainer.current.getBoundingClientRect();
+    console.log('Map container dimensions:', {
+      width: rect.width,
+      height: rect.height,
+      offsetWidth: mapContainer.current.offsetWidth,
+      offsetHeight: mapContainer.current.offsetHeight,
+      clientWidth: mapContainer.current.clientWidth,
+      clientHeight: mapContainer.current.clientHeight
     });
 
-    // Add controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true
-      }),
-      'top-right'
-    );
+    // Wait for container to have dimensions
+    if (rect.width === 0 || rect.height === 0) {
+      console.log('Container has no dimensions, waiting...');
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          console.log('Container now has dimensions:', entry.contentRect);
+          observer.disconnect();
+          initializeMap();
+        }
+      });
+      observer.observe(mapContainer.current);
+      return () => observer.disconnect();
+    }
+
+    initializeMap();
 
     // Cleanup
     return () => {
-      map.current?.remove();
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
     };
-  }, []);
+  }, [location]);
+
+  const initializeMap = () => {
+    if (!mapContainer.current || map.current) return;
+
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [location?.longitude || -122.4194, location?.latitude || 37.7749],
+        zoom: 13,
+        preserveDrawingBuffer: true // This can help with rendering issues
+      });
+
+      // Debug map initialization
+      map.current.on('load', () => {
+        console.log('Map loaded successfully');
+        
+        // Force a resize after load
+        setTimeout(() => {
+          map.current?.resize();
+          console.log('Forced map resize');
+        }, 100);
+      });
+
+      map.current.on('error', (e) => {
+        console.error('Map error:', e);
+      });
+
+      // Add controls
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.current.addControl(
+        new mapboxgl.GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true
+          },
+          trackUserLocation: true
+        }),
+        'top-right'
+      );
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
+  };
 
   // Update map when location changes
   useEffect(() => {
@@ -135,11 +195,12 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
   };
 
   return (
-    <div className="relative h-full">
+    <div className="relative w-full h-full">
       {/* Map Container */}
       <div
         ref={mapContainer}
         className="absolute inset-0"
+        style={{ width: '100%', height: '100%' }}
       />
 
       {/* Selected Cluster */}

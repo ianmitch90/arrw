@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      age_verifications: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          birth_date: string | null
+          created_at: string
+          id: string
+          method: string | null
+          updated_at: string
+          user_id: string
+          verified: boolean | null
+          verified_at: string | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          birth_date?: string | null
+          created_at?: string
+          id?: string
+          method?: string | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean | null
+          verified_at?: string | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          birth_date?: string | null
+          created_at?: string
+          id?: string
+          method?: string | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           id: string
@@ -21,6 +60,92 @@ export type Database = {
         Update: {
           id?: string
           stripe_customer_id?: string | null
+        }
+        Relationships: []
+      }
+      place_proposals: {
+        Row: {
+          changes: Json
+          created_at: string
+          id: string
+          place_id: string | null
+          proposed_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          changes: Json
+          created_at?: string
+          id?: string
+          place_id?: string | null
+          proposed_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          changes?: Json
+          created_at?: string
+          id?: string
+          place_id?: string | null
+          proposed_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_proposals_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      places: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          location: unknown
+          metadata: Json | null
+          name: string
+          status: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          location: unknown
+          metadata?: Json | null
+          name: string
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          location?: unknown
+          metadata?: Json | null
+          name?: string
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -71,7 +196,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       products: {
@@ -98,6 +223,207 @@ export type Database = {
           image?: string | null
           metadata?: Json | null
           name?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avg_response_time: unknown | null
+          blocked_users: string[] | null
+          body_type: string | null
+          boost_active_until: string | null
+          cannabis_status: string | null
+          children_status: string | null
+          company: string | null
+          completion_percentage: number | null
+          deal_breakers: string[] | null
+          diet_preferences: string[] | null
+          display_name: string | null
+          drinking_status: string | null
+          education_level: string | null
+          endowment: string | null
+          ethnicity: string[] | null
+          expression: string[] | null
+          eye_color: string | null
+          favorite_users: string[] | null
+          followers_count: number | null
+          following_count: number | null
+          gallery_picture_urls: string[] | null
+          hair_color: string | null
+          height: number | null
+          hiv_status: string | null
+          hiv_tested_date: string | null
+          hobbies: string[] | null
+          i_carry: string[] | null
+          id: string
+          income_range: string | null
+          interests: string[] | null
+          into_public: string[] | null
+          is_featured: boolean | null
+          kinks: string[] | null
+          languages: string[] | null
+          last_updated: string | null
+          like_count: number | null
+          looking_for: string[] | null
+          match_count: number | null
+          not_comfortable_with: string[] | null
+          occupation: string | null
+          orientation: Database["public"]["Enums"]["sexual_orientation"] | null
+          pets: string[] | null
+          political_views: string | null
+          position: string | null
+          position_preferences: string[] | null
+          practices: string[] | null
+          profile_picture_url: string | null
+          profile_quality_score: number | null
+          profile_slug: string | null
+          profile_views: number | null
+          relationship_status: Database["public"]["Enums"]["relationship_status"] | null
+          religion: string | null
+          response_rate: number | null
+          safeguards: string[] | null
+          school: string | null
+          smoking_status: string | null
+          sti_tested_date: string | null
+          vaccination_status: Json | null
+          verification_date: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"] | null
+          verified_badges: string[] | null
+          video_urls: string[] | null
+          voice_intro_url: string | null
+          weight: number | null
+        }
+        Insert: {
+          avg_response_time?: unknown | null
+          blocked_users?: string[] | null
+          body_type?: string | null
+          boost_active_until?: string | null
+          cannabis_status?: string | null
+          children_status?: string | null
+          company?: string | null
+          completion_percentage?: number | null
+          deal_breakers?: string[] | null
+          diet_preferences?: string[] | null
+          display_name?: string | null
+          drinking_status?: string | null
+          education_level?: string | null
+          endowment?: string | null
+          ethnicity?: string[] | null
+          expression?: string[] | null
+          eye_color?: string | null
+          favorite_users?: string[] | null
+          followers_count?: number | null
+          following_count?: number | null
+          gallery_picture_urls?: string[] | null
+          hair_color?: string | null
+          height?: number | null
+          hiv_status?: string | null
+          hiv_tested_date?: string | null
+          hobbies?: string[] | null
+          i_carry?: string[] | null
+          id: string
+          income_range?: string | null
+          interests?: string[] | null
+          into_public?: string[] | null
+          is_featured?: boolean | null
+          kinks?: string[] | null
+          languages?: string[] | null
+          last_updated?: string | null
+          like_count?: number | null
+          looking_for?: string[] | null
+          match_count?: number | null
+          not_comfortable_with?: string[] | null
+          occupation?: string | null
+          orientation?: Database["public"]["Enums"]["sexual_orientation"] | null
+          pets?: string[] | null
+          political_views?: string | null
+          position?: string | null
+          position_preferences?: string[] | null
+          practices?: string[] | null
+          profile_picture_url?: string | null
+          profile_quality_score?: number | null
+          profile_slug?: string | null
+          profile_views?: number | null
+          relationship_status?: Database["public"]["Enums"]["relationship_status"] | null
+          religion?: string | null
+          response_rate?: number | null
+          safeguards?: string[] | null
+          school?: string | null
+          smoking_status?: string | null
+          sti_tested_date?: string | null
+          vaccination_status?: Json | null
+          verification_date?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"] | null
+          verified_badges?: string[] | null
+          video_urls?: string[] | null
+          voice_intro_url?: string | null
+          weight?: number | null
+        }
+        Update: {
+          avg_response_time?: unknown | null
+          blocked_users?: string[] | null
+          body_type?: string | null
+          boost_active_until?: string | null
+          cannabis_status?: string | null
+          children_status?: string | null
+          company?: string | null
+          completion_percentage?: number | null
+          deal_breakers?: string[] | null
+          diet_preferences?: string[] | null
+          display_name?: string | null
+          drinking_status?: string | null
+          education_level?: string | null
+          endowment?: string | null
+          ethnicity?: string[] | null
+          expression?: string[] | null
+          eye_color?: string | null
+          favorite_users?: string[] | null
+          followers_count?: number | null
+          following_count?: number | null
+          gallery_picture_urls?: string[] | null
+          hair_color?: string | null
+          height?: number | null
+          hiv_status?: string | null
+          hiv_tested_date?: string | null
+          hobbies?: string[] | null
+          i_carry?: string[] | null
+          id?: string
+          income_range?: string | null
+          interests?: string[] | null
+          into_public?: string[] | null
+          is_featured?: boolean | null
+          kinks?: string[] | null
+          languages?: string[] | null
+          last_updated?: string | null
+          like_count?: number | null
+          looking_for?: string[] | null
+          match_count?: number | null
+          not_comfortable_with?: string[] | null
+          occupation?: string | null
+          orientation?: Database["public"]["Enums"]["sexual_orientation"] | null
+          pets?: string[] | null
+          political_views?: string | null
+          position?: string | null
+          position_preferences?: string[] | null
+          practices?: string[] | null
+          profile_picture_url?: string | null
+          profile_quality_score?: number | null
+          profile_slug?: string | null
+          profile_views?: number | null
+          relationship_status?: Database["public"]["Enums"]["relationship_status"] | null
+          religion?: string | null
+          response_rate?: number | null
+          safeguards?: string[] | null
+          school?: string | null
+          smoking_status?: string | null
+          sti_tested_date?: string | null
+          vaccination_status?: Json | null
+          verification_date?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"] | null
+          verified_badges?: string[] | null
+          video_urls?: string[] | null
+          voice_intro_url?: string | null
+          weight?: number | null
         }
         Relationships: []
       }
@@ -160,7 +486,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "prices"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       users: {
@@ -188,15 +514,11 @@ export type Database = {
         Relationships: []
       }
     }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
     Enums: {
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
+      relationship_status: "single" | "dating" | "married" | "open" | "polyamorous"
+      sexual_orientation: "straight" | "gay" | "lesbian" | "bisexual" | "pansexual" | "queer" | "asexual"
       subscription_status:
         | "trialing"
         | "active"
@@ -206,9 +528,38 @@ export type Database = {
         | "past_due"
         | "unpaid"
         | "paused"
+      verification_status: "unverified" | "pending" | "verified" | "rejected"
     }
-    CompositeTypes: {
-      [_ in never]: never
+    Functions: {
+      get_nearby_places: {
+        Args: {
+          lat: number
+          lng: number
+          radius: number
+        }
+        Returns: {
+          id: string
+          name: string
+          description: string
+          category: string
+          location: unknown
+          distance: number
+        }[]
+      }
+      get_nearby_stories: {
+        Args: {
+          lat: number
+          lng: number
+          radius: number
+        }
+        Returns: {
+          id: string
+          title: string
+          content: string
+          location: unknown
+          distance: number
+        }[]
+      }
     }
   }
 }

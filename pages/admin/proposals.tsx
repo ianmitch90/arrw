@@ -83,7 +83,18 @@ export default function ProposalsPage() {
             onSelectionChange={(key) => setSelectedTab(key.toString())}
           >
             <Tab key="map" title="Map View">
-              <div className="h-[calc(100vh-200px)]">
+              <div 
+                className="h-[calc(100vh-200px)]"
+                style={{ minHeight: '500px' }}
+                onLoad={(e) => {
+                  const el = e.currentTarget;
+                  console.log('Parent container dimensions:', {
+                    offsetHeight: el.offsetHeight,
+                    clientHeight: el.clientHeight,
+                    scrollHeight: el.scrollHeight
+                  });
+                }}
+              >
                 <ProposalMap />
               </div>
             </Tab>

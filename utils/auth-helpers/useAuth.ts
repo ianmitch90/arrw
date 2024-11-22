@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { User } from '@/types/auth';
-import { auth, supabase } from '@/utils/supabase/client';
+import { supabase } from '@/utils/supabase/client';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -9,7 +9,7 @@ export function useAuth() {
 
   useEffect(() => {
     // Initial session check
-    auth.getSession().then((session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -19,10 +19,8 @@ export function useAuth() {
       data: { subscription }
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.access_token) {
-        auth.setSession(session.access_token);
         setUser(session.user);
       } else {
-        auth.clearSession();
         setUser(null);
       }
       setLoading(false);

@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
@@ -13,15 +15,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       attribute="class"
       defaultTheme="dark"
       enableSystem={false}
+      forcedTheme={!mounted ? 'dark' : undefined}
     >
-      <div
-        className={
-          mounted ? 'dark text-foreground bg-background h-full w-full' : ''
-        }
-        style={{ visibility: mounted ? 'visible' : 'hidden' }}
-      >
-        {children}
-      </div>
+      {children}
     </NextThemesProvider>
   );
 }

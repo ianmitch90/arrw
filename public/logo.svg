@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="248" fill="#0070F3" stroke="white" stroke-width="16"/>
+  
+  <!-- Arrow -->
+  <path d="M256 120L352 280H288V392H224V280H160L256 120Z" 
+        fill="white" 
+        stroke="white" 
+        stroke-width="8" 
+        stroke-linejoin="round"/>
+  
+  <!-- Location Ring -->
+  <circle cx="256" cy="256" r="64" 
+          stroke="white" 
+          stroke-width="16" 
+          stroke-dasharray="16 8" 
+          fill="none"/>
+</svg>

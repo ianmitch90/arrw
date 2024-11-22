@@ -9,13 +9,28 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const supabase = createServerComponentClient({ cookies });
-  const {
-    data: { session }
-  } = await supabase.auth.getSession();
+  
+  try {
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
 
-  if (!session) {
+    // Check both session and JWT token
+    if (!session?.access_token) {
+      redirect('/login');
+    }
+
+    // Verify the JWT token
+    const { data: { user }, error } = await supabase.auth.getUser(session.access_token);
+    
+    if (error || !user) {
+      // If token is invalid or expired, redirect to login
+      redirect('/login');
+    }
+
+    return <ProtectedLayoutProvider>{children}</ProtectedLayoutProvider>;
+  } catch (error) {
+    console.error('Auth error:', error);
     redirect('/login');
   }
-
-  return <ProtectedLayoutProvider>{children}</ProtectedLayoutProvider>;
 }

@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
 const Map: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -55,7 +55,7 @@ const Map: React.FC = () => {
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, []);
 
-  return <div ref={mapContainer} style={{ width: '100%', height: '400px' }} />;
+  return <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />;
 };
 
 export default Map;
