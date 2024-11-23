@@ -43,6 +43,7 @@ certificates
 
 # additional ignores
 /example-images/
+/messaging-application/
 /plan.md
 
 

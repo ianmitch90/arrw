@@ -1,50 +1,89 @@
-import { Button } from '@nextui-org/react';
-import { Icon } from '@iconify/react';
-import { usePathname } from 'next/navigation';
+"use client";
 
-export function BottomBar() {
+import type { NavbarProps } from "@nextui-org/react";
+import { Navbar, NavbarContent, NavbarItem, Link } from "@nextui-org/react";
+import { usePathname } from "next/navigation";
+import { MapIcon, MessageCircleIcon, UsersIcon, UserIcon } from "lucide-react";
+import { useChatOverlay, ChatType } from '@/hooks/useChatOverlay';
+
+const navigationItems = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: UserIcon,
+  },
+  {
+    label: "Map",
+    href: "/map",
+    icon: MapIcon,
+  },
+  {
+    label: "Messages",
+    href: "/messages",
+    icon: MessageCircleIcon,
+  },
+  {
+    label: "Global",
+    href: "/global",
+    icon: UsersIcon,
+  },
+];
+
+export default function BottomBar() {
+  const { openChat, chatType } = useChatOverlay();
   const pathname = usePathname();
 
+  const handleChatClick = (type: ChatType) => {
+    openChat(type === chatType ? null : type);
+  };
+
   return (
-    <div className="fixed bottom-0 w-full px-4 py-2 bg-background/80 backdrop-blur-md z-50 border-t border-default-200">
-      <div className="flex items-center justify-around max-w-md mx-auto">
-        <Button
-          isIconOnly
-          variant="light"
-          aria-label="Profile"
-          className={pathname === '/profile' ? 'text-danger' : ''}
+    <div className="fixed bottom-0 z-50 w-full flex justify-center pb-safe">
+      <nav className="relative mx-4 mb-4 flex h-16 w-full max-w-md items-center justify-around rounded-2xl border border-white/10 bg-black/60 px-6 backdrop-blur-lg">
+        <button
+          onClick={() => navigationItems[0].href === pathname ? null : navigationItems[0].href}
+          className={[
+            'flex flex-col items-center justify-center',
+            pathname === navigationItems[0].href ? 'text-primary' : 'text-foreground/60'
+          ].join(" ")}
         >
-          <Icon icon="lucide:user" className="text-2xl" />
-        </Button>
+          <UserIcon size={20} />
+          <span className="mt-1 text-xs">{navigationItems[0].label}</span>
+        </button>
 
-        <Button
-          isIconOnly
-          variant="solid"
-          color="danger"
-          aria-label="Map"
-          className="scale-110 bg-danger/10 text-danger"
+        <button
+          onClick={() => navigationItems[1].href === pathname ? null : navigationItems[1].href}
+          className={[
+            'flex flex-col items-center justify-center',
+            pathname === navigationItems[1].href ? 'text-primary' : 'text-foreground/60'
+          ].join(" ")}
         >
-          <Icon icon="lucide:map" className="text-2xl" />
-        </Button>
+          <MapIcon size={20} />
+          <span className="mt-1 text-xs">{navigationItems[1].label}</span>
+        </button>
 
-        <Button
-          isIconOnly
-          variant="light"
-          aria-label="Messages"
-          className={pathname === '/messages' ? 'text-danger' : ''}
+        <button
+          onClick={() => handleChatClick('messages')}
+          className={[
+            'flex flex-col items-center justify-center',
+            chatType === 'messages' ? 'text-primary' : 'text-foreground/60'
+          ].join(" ")}
         >
-          <Icon icon="lucide:message-circle" className="text-2xl" />
-        </Button>
+          <MessageCircleIcon size={20} />
+          <span className="mt-1 text-xs">{navigationItems[2].label}</span>
+        </button>
 
-        <Button
-          isIconOnly
-          variant="light"
-          aria-label="Settings"
-          className={pathname === '/settings' ? 'text-danger' : ''}
+        <button
+          onClick={() => handleChatClick('global')}
+          className={[
+            'flex flex-col items-center justify-center',
+            chatType === 'global' ? 'text-primary' : 'text-foreground/60'
+          ].join(" ")}
         >
-          <Icon icon="lucide:lock" className="text-2xl" />
-        </Button>
-      </div>
+          <UsersIcon size={20} />
+          <span className="mt-1 text-xs">{navigationItems[3].label}</span>
+        </button>
+      </nav>
     </div>
   );
 }

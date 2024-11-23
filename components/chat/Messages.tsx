@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { ChatProvider } from '@/components/contexts/ChatContext';
-import ChatList from '@/components/chat/ChatList';
-import ChatWindow from '@/components/chat/ChatWindow';
+import { useUser } from "@/components/contexts/UserContext";
+import { useChat } from "@/components/contexts/ChatContext";
+import ChatList from "./ChatList";
+import ChatWindow from "./ChatWindow";
+import { useState } from "react";
 
-function MessagesContent() {
+export default function Messages() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4">
+    <div className="flex h-full gap-4">
       {/* Chat List - hidden on mobile when chat is selected */}
       <div className={`w-full md:w-80 flex-shrink-0 ${selectedChat ? 'hidden md:block' : ''}`}>
         <ChatList onSelectChat={setSelectedChat} selectedChatId={selectedChat} />
@@ -26,13 +27,5 @@ function MessagesContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function MessagesPage() {
-  return (
-    <ChatProvider>
-      <MessagesContent />
-    </ChatProvider>
   );
 }

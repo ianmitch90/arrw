@@ -3,8 +3,8 @@ export interface Message {
   senderId: string;
   content: string;
   timestamp: Date;
-  status?: 'sent' | 'delivered' | 'read';
-  type?: 'text' | 'image' | 'video' | 'file' | 'ephemeral-image' | 'ephemeral-video';
+  status: 'sent' | 'delivered' | 'read';
+  type: 'text' | 'image' | 'video' | 'file' | 'ephemeral-image' | 'ephemeral-video';
   metadata?: {
     fileName?: string;
     fileSize?: number;
@@ -28,18 +28,38 @@ export interface ChatUser {
   id: string;
   name: string;
   avatarUrl: string;
-  status?: 'online' | 'offline' | 'away';
-  lastSeen?: Date;
+  status: 'online' | 'offline' | 'away';
+  lastSeen: Date;
+  presence?: {
+    typing?: {
+      chatId: string;
+      timestamp: Date;
+    };
+    lastActive: Date;
+  };
 }
 
 export interface ChatRoom {
   id: string;
-  type: 'direct' | 'group';
+  type: 'direct' | 'group' | 'global';
   participants: ChatUser[];
   lastMessage?: Message;
-  unreadCount?: number;
+  unreadCount: number;
   createdAt: Date;
   updatedAt: Date;
+  metadata?: {
+    groupName?: string;
+    groupAvatar?: string;
+    description?: string;
+    isArchived?: boolean;
+    isPinned?: boolean;
+  };
+}
+
+export interface ChatList {
+  rooms: ChatRoom[];
+  unreadTotal: number;
+  activeRoom?: string;
 }
 
 export interface MediaViewerItem {
