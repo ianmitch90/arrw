@@ -15,15 +15,15 @@ interface ChatMessageProps {
 export function ChatMessage({ message, isOwn, className }: ChatMessageProps) {
   const { rooms = [] } = useChat();
   
-  const sender = (rooms ?? [])
-    .flatMap(room => room.participants ?? [])
-    .find((p: ChatUser) => p.id === message.senderId) || {
-      id: message.senderId,
-      name: 'Unknown User',
-      avatarUrl: undefined,
-      status: 'offline' as const,
-      lastSeen: new Date()
-    };
+  // Find the sender from the room's participants
+  const room = rooms.find(r => r.id === message.roomId);
+  const sender = room?.participants.find(p => p.id === message.senderId) || {
+    id: message.senderId,
+    name: message.senderId === 'current-user' ? 'You' : 'Unknown User',
+    avatarUrl: undefined,
+    status: 'offline' as const,
+    lastSeen: new Date()
+  };
 
   return (
     <div
@@ -35,8 +35,8 @@ export function ChatMessage({ message, isOwn, className }: ChatMessageProps) {
     >
       {!isOwn && (
         <Avatar
-          src={sender?.avatarUrl}
-          name={sender?.name || 'User'}
+          src={sender.avatarUrl}
+          name={sender.name}
           size="sm"
           className="mt-1 flex-none"
         />
@@ -50,7 +50,7 @@ export function ChatMessage({ message, isOwn, className }: ChatMessageProps) {
       >
         {!isOwn && (
           <span className="px-2 text-tiny text-default-500">
-            {sender?.name}
+            {sender.name}
           </span>
         )}
         

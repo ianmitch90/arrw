@@ -34,8 +34,8 @@ const stubUsers: (User & { profile?: Profile })[] = [
       username: 'AliceJ',
       display_name: 'Alice',
       avatar_url: 'https://i.pravatar.cc/150?u=alice',
-      height: 170, // 5'7"
-      weight: 61, // 134lbs
+      height: 170,
+      weight: 61,
       body_type: 'Athletic',
       sexual_positions: ['Versatile'],
       is_verified: true,
@@ -56,8 +56,8 @@ const stubUsers: (User & { profile?: Profile })[] = [
     profile: {
       id: 'bob-profile',
       avatar_url: 'https://i.pravatar.cc/150?u=bob',
-      height: 183, // 6'0"
-      weight: 79, // 175lbs
+      height: 183,
+      weight: 79,
       body_type: 'Muscular',
       sexual_positions: ['Top'],
       is_verified: false,
@@ -81,8 +81,8 @@ const stubUsers: (User & { profile?: Profile })[] = [
       username: 'CharlieD',
       display_name: 'Charlie',
       avatar_url: 'https://i.pravatar.cc/150?u=charlie',
-      height: 175, // 5'9"
-      weight: 70, // 154lbs
+      height: 175,
+      weight: 70,
       body_type: 'Slim',
       sexual_positions: ['Bottom'],
       is_verified: true,
@@ -91,52 +91,58 @@ const stubUsers: (User & { profile?: Profile })[] = [
   }
 ];
 
-// Stub rooms with updated participant info
+// Mock chat users from stub users
+const chatUsers: ChatUser[] = stubUsers.map(user => ({
+  id: user.id,
+  name: user.profile?.display_name || user.username || 'Anonymous User',
+  avatarUrl: user.profile?.avatar_url,
+  status: 'online',
+  lastSeen: new Date(user.profile?.last_active || Date.now())
+}));
+
+// Stub rooms with chat users
 const stubRooms: ChatRoom[] = [
   {
     id: '1',
     type: 'direct',
     name: 'Alice Johnson',
-    is_pinned: false,
-    last_message_preview: 'Hey, how are you doing?',
-    last_message_timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    participants: [
-      {
-        id: 'alice',
-        unread_count: 3,
-        last_read: new Date(Date.now() - 1000 * 60 * 60).toISOString()
-      }
-    ]
+    participants: [chatUsers[0]],
+    lastMessage: {
+      id: 'msg1',
+      roomId: '1',
+      senderId: 'alice',
+      content: 'Hey, how are you?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 5),
+      type: 'text'
+    }
   },
   {
     id: '2',
     type: 'direct',
     name: 'Bob Anonymous',
-    is_pinned: true,
-    last_message_preview: 'Are you free tonight?',
-    last_message_timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    participants: [
-      {
-        id: 'bob',
-        unread_count: 1,
-        last_read: new Date(Date.now() - 1000 * 60 * 10).toISOString()
-      }
-    ]
+    participants: [chatUsers[1]],
+    lastMessage: {
+      id: 'msg2',
+      roomId: '2',
+      senderId: 'bob',
+      content: 'Looking to meet up?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 30),
+      type: 'text'
+    }
   },
   {
     id: '3',
     type: 'direct',
     name: 'Charlie Davis',
-    is_pinned: false,
-    last_message_preview: 'See you at the gym!',
-    last_message_timestamp: new Date().toISOString(),
-    participants: [
-      {
-        id: 'charlie',
-        unread_count: 0,
-        last_read: new Date().toISOString()
-      }
-    ]
+    participants: [chatUsers[2]],
+    lastMessage: {
+      id: 'msg3',
+      roomId: '3',
+      senderId: 'charlie',
+      content: 'What are you up to tonight?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 15),
+      type: 'text'
+    }
   }
 ];
 
@@ -164,6 +170,30 @@ const stubMessages: Message[] = [
     senderId: 'charlie',
     content: 'What are you up to tonight?',
     timestamp: new Date(Date.now() - 1000 * 60 * 15),
+    type: 'text'
+  },
+  {
+    id: 'msg4',
+    roomId: '1',
+    senderId: 'current-user',
+    content: 'I\'m doing great! How about you?',
+    timestamp: new Date(Date.now() - 1000 * 60 * 4),
+    type: 'text'
+  },
+  {
+    id: 'msg5',
+    roomId: '2',
+    senderId: 'current-user',
+    content: 'Sure, what time works for you?',
+    timestamp: new Date(Date.now() - 1000 * 60 * 29),
+    type: 'text'
+  },
+  {
+    id: 'msg6',
+    roomId: '3',
+    senderId: 'current-user',
+    content: 'Just finished work, thinking about grabbing dinner',
+    timestamp: new Date(Date.now() - 1000 * 60 * 14),
     type: 'text'
   }
 ];

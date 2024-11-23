@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { ScrollShadow, Button } from "@nextui-org/react";
+import { ScrollShadow } from "@nextui-org/react";
 import { cn } from "@/utils/cn";
 import { useChat } from "@/components/contexts/ChatContext";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { Mic } from "lucide-react";
 
 interface ChatWindowProps {
   chatId: string;
@@ -16,7 +15,7 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ chatId, onBack, className }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { rooms = [], messages = [] } = useChat();
+  const { rooms = [], messages = [], sendMessage } = useChat();
   
   const room = rooms.find(r => r.id === chatId);
   const chatMessages = messages.filter(m => m.roomId === chatId);
@@ -33,6 +32,15 @@ export default function ChatWindow({ chatId, onBack, className }: ChatWindowProp
     return null;
   }
 
+  const handleSendMessage = (content: string) => {
+    sendMessage({
+      roomId: chatId,
+      content,
+      senderId: 'current-user',
+      type: 'text'
+    });
+  };
+
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Messages */}
@@ -41,7 +49,7 @@ export default function ChatWindow({ chatId, onBack, className }: ChatWindowProp
         hideScrollBar
       >
         <div className="flex flex-col gap-3 py-6">
-          {chatMessages.map((message, i) => (
+          {chatMessages.map((message) => (
             <ChatMessage
               key={message.id}
               message={message}
@@ -54,11 +62,8 @@ export default function ChatWindow({ chatId, onBack, className }: ChatWindowProp
 
       {/* Input Area */}
       <div className="flex items-end gap-2 border-t border-divider bg-background p-4">
-
         <ChatInput
-          onSend={(content) => {
-            // Handle send
-          }}
+          onSend={handleSendMessage}
           className="flex-1"
         />
       </div>
