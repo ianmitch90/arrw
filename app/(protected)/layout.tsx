@@ -56,7 +56,7 @@ export default function ProtectedLayout({
         <MapProvider>
           <div className="min-h-screen bg-background">
             {/* <TopNav /> */}
-            <main className="pb-24">
+            <main>
               {/* Show map by default on map route or when chat is open */}
               {(pathname === '/map' || chatType) && (
                 <div className="fixed inset-0 z-0">

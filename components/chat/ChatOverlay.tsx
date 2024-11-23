@@ -38,11 +38,12 @@ export function ChatOverlay({ children, isOpen, onClose, chatId, onBack }: ChatO
           transition={{ type: 'tween' }}
           className={cn(
             "fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-background shadow-xl sm:w-[400px]",
+            "md:fixed md:inset-y-auto md:top-[16vh] md:bottom-[16vh] md:right-4 md:h-[68vh] md:rounded-lg md:border",
             isPinned && "relative"
           )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b px-4 py-4">
+          <div className="flex items-center justify-between border-b px-4 py-4 pb-6">
             <div className="flex items-center gap-2">
               {/* Back button */}
               {onBack && (

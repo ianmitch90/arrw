@@ -39,7 +39,7 @@ export default function BottomBar() {
 
   return (
     <div className="fixed bottom-0 z-50 w-full flex justify-center pb-safe">
-      <nav className="relative mx-4 mb-4 flex h-16 w-full max-w-md items-center justify-around rounded-2xl border border-white/10 bg-black/60 px-6 backdrop-blur-lg">
+      <nav className="relative mx-4 mb-4 flex h-16 w-full max-w-md items-center justify-around rounded-2xl border border-white/10 bg-black/10  px-6 backdrop-blur-lg">
         <button
           onClick={() => navigationItems[0].href === pathname ? null : navigationItems[0].href}
           className={[
