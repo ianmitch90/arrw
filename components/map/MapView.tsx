@@ -49,6 +49,7 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     showStories: true,
     showPlaces: true
   });
+  const [geolocationAvailable, setGeolocationAvailable] = useState<boolean>(false);
 
   // Get user's location and update in Supabase
   const updateUserLocation = useCallback(async (coords: Coordinates) => {
@@ -108,9 +109,14 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
 
   // Initialize user location tracking
   useEffect(() => {
-    // Check if geolocation is available
-    if (!user || !navigator?.geolocation) {
-      console.warn('Geolocation is not available');
+    // Check if we're on the client and geolocation is available
+    if (typeof window === 'undefined') return;
+    
+    const isGeolocationAvailable = 'geolocation' in navigator;
+    setGeolocationAvailable(isGeolocationAvailable);
+
+    if (!user || !isGeolocationAvailable) {
+      console.warn('Geolocation is not available or user not logged in');
       return;
     }
 
@@ -125,14 +131,13 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     };
 
     // Get initial position
-    const positionPromise = navigator.geolocation.getCurrentPosition(
+    navigator.geolocation.getCurrentPosition(
       handlePositionUpdate,
       errorHandler,
       options
     );
-
-    let watchId: number | null = null;
     
+    let watchId: number | null = null;
     try {
       // Set up location watching
       watchId = navigator.geolocation.watchPosition(
@@ -150,15 +155,17 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     // Cleanup function
     return () => {
       try {
-        if (watchId !== null && navigator?.geolocation) {
-          navigator.geolocation.clearWatch(watchId);
+        if (typeof window !== 'undefined' && 
+            'geolocation' in navigator && 
+            watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
         }
       } catch (error) {
-        console.error('Error cleaning up location watch:', error);
+        console.error('Error cleaning up geolocation watch:', error);
       }
     };
-  }, [user, handlePositionUpdate]);
+  }, [user]); // Only depend on user changes
 
   // Fetch current user profile
   useEffect(() => {
