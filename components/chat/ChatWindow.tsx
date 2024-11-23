@@ -15,58 +15,52 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ chatId, onBack, className }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { rooms = [], messages = [], sendMessage } = useChat();
-  
+  const { rooms, sendMessage, markAsRead } = useChat();
   const room = rooms.find(r => r.id === chatId);
-  const chatMessages = messages.filter(m => m.roomId === chatId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
+    if (room) {
+      markAsRead(room.id);
+    }
     scrollToBottom();
-  }, [messages]);
+  }, [room, markAsRead]);
 
   if (!room) {
     return null;
   }
 
-  const handleSendMessage = (content: string) => {
-    sendMessage({
-      roomId: chatId,
-      content,
-      senderId: 'current-user',
-      type: 'text'
-    });
+  const handleSendMessage = async (content: string) => {
+    try {
+      await sendMessage(chatId, content);
+      scrollToBottom();
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
   };
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
-      {/* Messages */}
       <ScrollShadow 
         className="flex-1 overflow-y-auto"
         hideScrollBar
       >
         <div className="flex flex-col gap-3 py-6">
-          {chatMessages.map((message) => (
+          {room.messages?.map((message) => (
             <ChatMessage
               key={message.id}
               message={message}
-              isOwn={message.senderId === 'current-user'}
+              isSender={message.senderId === room.createdBy}
             />
           ))}
           <div ref={messagesEndRef} />
         </div>
       </ScrollShadow>
 
-      {/* Input Area */}
-      <div className="flex items-end gap-2 border-t border-divider bg-background p-4">
-        <ChatInput
-          onSend={handleSendMessage}
-          className="flex-1"
-        />
-      </div>
+      <ChatInput onSendMessage={handleSendMessage} />
     </div>
   );
 }

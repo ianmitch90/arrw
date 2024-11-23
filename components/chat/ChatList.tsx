@@ -1,10 +1,10 @@
-"use client";
-
 import React from "react";
-import { ScrollShadow, Avatar, Badge } from "@nextui-org/react";
-import { formatRelativeTime } from "@/utils/chat";
+import { ScrollShadow } from "@nextui-org/react";
+import { formatDistanceToNow } from 'date-fns';
+import { getMessagePreview } from "@/types/chat";
 import { useChat } from "@/components/contexts/ChatContext";
 import { cn } from "@/utils/cn";
+import {ChatAvatar} from "@/components/chat/ChatAvatar";
 
 interface ChatListProps {
   className?: string;
@@ -13,78 +13,53 @@ interface ChatListProps {
 }
 
 export default function ChatList({ onSelectChat, selectedChatId, className }: ChatListProps) {
-  const { rooms, activeRoom } = useChat();
+  const { rooms } = useChat();
 
   return (
     <ScrollShadow className={cn("flex h-full w-full flex-col gap-1 p-1", className)}>
-      {rooms.map((room) => (
-        <button
-          key={room.id}
-          onClick={() => onSelectChat(room.id)}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-lg p-3 text-left transition-all",
-            selectedChatId === room.id
-              ? "bg-primary text-primary-foreground"
-              : "hover:bg-default-100",
-            activeRoom === room.id && "bg-default-100",
-            "focus:outline-none focus:ring-2 focus:ring-primary/20"
-          )}
-        >
-          <div className="relative">
-            {room.type === "group" ? (
-              <Avatar
-                src={room.metadata?.groupAvatar}
-                name={room.metadata?.groupName || room.name}
-                size="lg"
-                isBordered={activeRoom === room.id}
-              />
-            ) : (
-              <Avatar
-                src={room.participants[0]?.avatarUrl}
-                name={room.participants[0]?.name}
-                size="lg"
-                isBordered={activeRoom === room.id}
-              />
-            )}
-            {room.participants[0]?.status === "online" && (
-              <Badge
-                isOneChar
-                content=""
-                color="success"
-                placement="bottom-right"
-                className="border-2 border-background"
-              />
-            )}
-          </div>
+      {rooms.map((room) => {
+        const isSelected = room.id === selectedChatId;
+        const lastMessageTime = room.lastMessageTimestamp
+          ? formatDistanceToNow(room.lastMessageTimestamp, { addSuffix: true })
+          : '';
 
-          <div className="flex flex-1 flex-col gap-1 overflow-hidden">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-small font-semibold">
-                {room.type === "group" ? room.metadata?.groupName : room.participants[0]?.name}
-              </span>
-              {room.lastMessage && (
-                <span className="text-tiny text-default-400">
-                  {formatRelativeTime(room.lastMessage.timestamp)}
-                </span>
-              )}
+        // Find current user's participant record
+        const currentUserParticipant = room.participants.find(p => p.id === room.createdBy);
+        const unreadCount = currentUserParticipant?.unreadCount || 0;
+
+        return (
+          <button
+            key={room.id}
+            onClick={() => onSelectChat(room.id)}
+            className={cn(
+              "flex w-full items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-default-100",
+              isSelected ? "bg-default-100" : "",
+              "focus:outline-none focus:ring-2 focus:ring-primary/20"
+            )}
+          >
+            <div className="relative">
+              <ChatAvatar
+                room={room}
+                isActive={selectedChatId === room.id}
+              />
             </div>
-            {room.lastMessage && (
-              <p className="truncate text-tiny text-default-400">
-                {room.lastMessage.content}
-              </p>
-            )}
-          </div>
 
-          {room.unreadCount > 0 && (
-            <Badge
-              content={room.unreadCount}
-              color="primary"
-              shape="circle"
-              size="sm"
-            />
-          )}
-        </button>
-      ))}
+            <div className="flex flex-col flex-grow min-w-0">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold truncate">
+                  {room.type === "group" ? room.metadata?.groupName || room.name : room.participants[0]?.fullName}
+                </span>
+                {lastMessageTime && (
+                  <span className="text-xs text-default-400">{lastMessageTime}</span>
+                )}
+              </div>
+              <span className="text-xs text-default-400 truncate">
+                {room.lastMessagePreview}
+              </span>
+            </div>
+          </button>
+        );
+      })}
     </ScrollShadow>
   );
 }
