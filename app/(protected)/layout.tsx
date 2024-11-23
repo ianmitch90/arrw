@@ -1,35 +1,24 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Spinner } from '@nextui-org/react';
-import BottomBar from '@/components/Navigation/BottomBar';
 import { MapProvider } from '@/components/contexts/MapContext';
 import { UserProvider } from '@/components/contexts/UserContext';
 import { ChatProvider } from '@/components/contexts/ChatContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ChatOverlay } from '@/components/chat/ChatOverlay';
 import { useChatOverlay } from '@/hooks/useChatOverlay';
 import TopNav from '@/components/ui/TopNav';
 import MapView from '@/components/map/MapView';
 import Messages from '@/components/chat/Messages';
-import GlobalChat from '@/components/chat/GlobalChat';
+import { Spinner } from '@nextui-org/react';
+import BottomBar from '@/components/Navigation/BottomBar';
 
-const pageTransitionVariants = {
-  initial: { opacity: 0, y: 20 },
-  enter: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 }
-};
-
-const LoadingSpinner = () => (
-  <div className="flex h-[80vh] items-center justify-center">
-    <Spinner size="lg" color="primary" />
-  </div>
-);
 
 export default function ProtectedLayout({
-  children
+  children,
 }: {
   children: React.ReactNode;
 }) {
@@ -37,8 +26,22 @@ export default function ProtectedLayout({
   const { isOpen, chatType, onClose } = useChatOverlay();
   const pathname = usePathname();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
+    if (!loading && !user) {
+      router.replace('/login');
+    }
+  }, [loading, user, router, mounted]);
+
+  if (!mounted || loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Spinner size="lg" />
@@ -47,7 +50,11 @@ export default function ProtectedLayout({
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   return (
@@ -63,40 +70,55 @@ export default function ProtectedLayout({
                   <MapView />
                 </div>
               )}
-              
+
               {/* Show chat in overlay if chat is open, otherwise show normal content */}
               {chatType ? (
-                <ChatOverlay 
-                  isOpen={isOpen} 
+                <ChatOverlay
+                  isOpen={isOpen}
                   onClose={onClose}
                   chatId={selectedChatId}
-                  onBack={selectedChatId ? () => setSelectedChatId(null) : undefined}
+                  onBack={
+                    selectedChatId ? () => setSelectedChatId(null) : undefined
+                  }
                 >
                   {/* Render appropriate chat component based on type */}
                   {chatType === 'messages' ? (
-                    <Messages 
+                    <Messages
                       selectedChatId={selectedChatId}
                       onSelectChat={setSelectedChatId}
                     />
                   ) : chatType === 'global' ? (
-                    <GlobalChat />
+                    <Messages
+                      selectedChatId={selectedChatId}
+                      onSelectChat={setSelectedChatId}
+                    />
                   ) : null}
                 </ChatOverlay>
               ) : (
                 <motion.div
                   key={pathname}
                   className="relative z-10"
-                  variants={pageTransitionVariants}
+                  variants={{
+                    initial: { opacity: 0, y: 20 },
+                    enter: { opacity: 1, y: 0 },
+                    exit: { opacity: 0, y: -20 }
+                  }}
                   initial="initial"
                   animate="enter"
                   exit="exit"
-                  transition={{ 
-                    type: "spring",
+                  transition={{
+                    type: 'spring',
                     stiffness: 380,
                     damping: 30
                   }}
                 >
-                  <Suspense fallback={<LoadingSpinner />}>
+                  <Suspense
+                    fallback={
+                      <div className="flex h-[80vh] items-center justify-center">
+                        <Spinner size="lg" color="primary" />
+                      </div>
+                    }
+                  >
                     {children}
                   </Suspense>
                 </motion.div>

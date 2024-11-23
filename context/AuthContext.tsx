@@ -54,11 +54,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session) => {
       if (event === 'SIGNED_IN' && session) {
         setSession(session);
         setUser(session.user);
-        router.replace('/map');
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          // If profile doesn't exist, try to create it
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ 
+              id: session.user.id,
+              created_at: new Date().toISOString(),
+              status: 'online'
+            }]);
+          
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            toast({
+              title: 'Error',
+              description: 'Failed to create user profile',
+              variant: 'destructive',
+            });
+            return;
+          }
+        }
+        
+        router.replace('/(protected)/map');
       } else if (event === 'SIGNED_OUT') {
         sessionManager.clearSession();
         setSession(null);
@@ -72,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, router]);
+  }, [supabase, router, toast]);
 
   // Handle client-side route protection
   useEffect(() => {
@@ -84,10 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session) {
         if (path === '/login' || path === '/signup' || path === '/') {
-          router.replace('/map');
+          router.replace('/(protected)/map');
         }
       } else {
-        if (path.startsWith('/map') || path.startsWith('/profile')) {
+        if (path.includes('/map') || path.includes('/profile')) {
           router.replace('/login');
         }
       }

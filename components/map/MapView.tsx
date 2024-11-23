@@ -193,11 +193,9 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     fetchCurrentUser();
   }, [user, supabase]);
 
-  // Initialize map with user's location
+  // Initialize map
   useEffect(() => {
     if (!mapContainer.current) return;
-
-    console.log('Initializing map with container:', mapContainer.current);
     
     try {
       map.current = new mapboxgl.Map({
@@ -234,17 +232,20 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
         console.log('Map style loaded successfully');
       });
 
-      // Add controls
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-      map.current.addControl(
-        new mapboxgl.GeolocateControl({
-          positionOptions: {
-            enableHighAccuracy: true
-          },
-          trackUserLocation: true
-        }),
-        'top-right'
-      );
+      // Add navigation control
+      const nav = new mapboxgl.NavigationControl();
+      map.current.addControl(nav, 'top-right');
+
+      // Add geolocation control with trackUserLocation disabled
+      // We'll handle user location tracking ourselves
+      const geolocate = new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: false,
+        showAccuracyCircle: false
+      });
+      map.current.addControl(geolocate, 'top-right');
 
       // Ensure map fills container on window resize
       const resizeHandler = () => {
@@ -255,7 +256,17 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
       // Cleanup
       return () => {
         window.removeEventListener('resize', resizeHandler);
-        map.current?.remove();
+        if (map.current) {
+          try {
+            // Remove controls first
+            map.current.removeControl(nav);
+            map.current.removeControl(geolocate);
+            // Then remove map
+            map.current.remove();
+          } catch (error) {
+            console.error('Error cleaning up map:', error);
+          }
+        }
       };
     } catch (error) {
       console.error('Error initializing map:', error);
@@ -375,78 +386,109 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
 
   // Add markers to map
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || typeof window === 'undefined') return;
 
-    // Clear existing markers
-    const markers = document.getElementsByClassName('mapboxgl-marker');
-    while (markers[0]) {
-      markers[0].remove();
+    try {
+      // Clear existing markers
+      const markers = document.getElementsByClassName('mapboxgl-marker');
+      while (markers[0]) {
+        markers[0].remove();
+      }
+
+      // Add current user marker
+      if (currentUser && currentLocation && map.current.loaded()) {
+        const el = document.createElement('div');
+        const root = createRoot(el);
+        root.render(
+          <UserMarker
+            user={{
+              ...currentUser,
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
+              status: 'online'
+            }}
+            isCurrentUser
+          />
+        );
+        
+        new mapboxgl.Marker(el)
+          .setLngLat([currentLocation.longitude, currentLocation.latitude])
+          .addTo(map.current);
+      }
+
+      // Add nearby user markers
+      if (nearbyUsers && map.current.loaded()) {
+        nearbyUsers
+          .filter(nearbyUser => nearbyUser?.id && nearbyUser.id !== currentUser?.id)
+          .forEach(user => {
+            if (!user?.latitude || !user?.longitude) return;
+            
+            const el = document.createElement('div');
+            const root = createRoot(el);
+            root.render(
+              <UserMarker
+                user={user}
+                onClick={() => {
+                  console.log('Clicked on user:', user);
+                }}
+              />
+            );
+            
+            new mapboxgl.Marker(el)
+              .setLngLat([user.longitude, user.latitude])
+              .addTo(map.current!);
+          });
+      }
+
+      // Add place markers
+      if (places && map.current.loaded()) {
+        places.forEach(place => {
+          if (!place?.location?.longitude || !place?.location?.latitude) return;
+          
+          const el = document.createElement('div');
+          const root = createRoot(el);
+          root.render(
+            <PlaceMarker
+              place={place}
+              onClick={() => setSelectedPlace(place)}
+              isSelected={selectedPlace?.id === place.id}
+            />
+          );
+          
+          new mapboxgl.Marker(el)
+            .setLngLat([place.location.longitude, place.location.latitude])
+            .addTo(map.current!);
+        });
+      }
+
+      // Add story markers
+      if (stories && map.current.loaded()) {
+        stories.forEach(story => {
+          if (!story?.location?.longitude || !story?.location?.latitude) return;
+          
+          const el = document.createElement('div');
+          const root = createRoot(el);
+          root.render(
+            <StoryMarker
+              story={story}
+              onClick={() => setSelectedStory(story)}
+            />
+          );
+          
+          new mapboxgl.Marker(el)
+            .setLngLat([story.location.longitude, story.location.latitude])
+            .addTo(map.current!);
+        });
+      }
+    } catch (error) {
+      console.error('Error adding markers:', error);
     }
-
-    // Add place markers
-    places.forEach(place => {
-      const el = document.createElement('div');
-      const root = createRoot(el);
-      root.render(
-        <PlaceMarker
-          place={place}
-          onClick={() => setSelectedPlace(place)}
-          isSelected={selectedPlace?.id === place.id}
-        />
-      );
-      
-      new mapboxgl.Marker(el)
-        .setLngLat([place.location.longitude, place.location.latitude])
-        .addTo(map.current!);
-    });
-
-    // Add story markers
-    stories.forEach(story => {
-      const el = document.createElement('div');
-      const root = createRoot(el);
-      root.render(
-        <StoryMarker
-          story={story}
-          onClick={() => setSelectedStory(story)}
-        />
-      );
-      
-      new mapboxgl.Marker(el)
-        .setLngLat([story.location.longitude, story.location.latitude])
-        .addTo(map.current!);
-    });
-  }, [places, stories, selectedPlace]);
+  }, [places, stories, selectedPlace, currentUser, currentLocation, nearbyUsers]);
 
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" onClick={handleMapClick} />
       
-      {/* User Markers */}
-      {currentUser && currentLocation && (
-        <UserMarker
-          user={{
-            ...currentUser,
-            latitude: currentLocation.latitude,
-            longitude: currentLocation.longitude,
-            status: 'online' // Current user is always online
-          }}
-          isCurrentUser
-        />
-      )}
-      
-      {nearbyUsers
-        .filter(nearbyUser => nearbyUser.id !== currentUser?.id) // Don't show current user twice
-        .map(user => (
-          <UserMarker
-            key={user.id}
-            user={user}
-            onClick={() => {
-              // Handle click on nearby user
-              console.log('Clicked on user:', user);
-            }}
-          />
-        ))}
-
       {/* Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-2">
         <Button

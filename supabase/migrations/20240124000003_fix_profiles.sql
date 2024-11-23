@@ -2,13 +2,14 @@
 create table if not exists
   profiles (
     id uuid references auth.users on delete cascade primary key,
-    username text unique,
+    username text unique null,
     full_name text,
     avatar_url text,
     latitude double precision,
     longitude double precision,
     last_updated timestamp with time zone,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    status text default 'online'
   );
 
 -- Add location columns to profiles if they don't exist
@@ -19,6 +20,9 @@ begin
   end if;
   if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'longitude') then
     alter table profiles add column longitude double precision;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'status') then
+    alter table profiles add column status text default 'online';
   end if;
 end $$;
 
@@ -40,7 +44,8 @@ with
 
 create policy "Users can update their own profile" on profiles
 for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 -- Create function to handle new user creation
 create or replace function public.handle_new_user()
@@ -50,9 +55,51 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, username, avatar_url)
-  values (new.id, new.raw_user_meta_data->>'username', new.raw_user_meta_data->>'avatar_url');
+  -- For anonymous users, create a minimal profile
+  if new.is_anonymous then
+    insert into public.profiles (
+      id,
+      created_at,
+      status
+    )
+    values (
+      new.id,
+      now(),
+      'online'
+    );
+  else
+    -- For regular users, try to include metadata
+    insert into public.profiles (
+      id,
+      username,
+      avatar_url,
+      created_at,
+      status
+    )
+    values (
+      new.id,
+      new.raw_user_meta_data->>'username',
+      new.raw_user_meta_data->>'avatar_url',
+      now(),
+      'online'
+    );
+  end if;
+  
   return new;
+exception
+  when others then
+    -- If any error occurs, try with just the required fields
+    insert into public.profiles (
+      id,
+      created_at,
+      status
+    )
+    values (
+      new.id,
+      now(),
+      'online'
+    );
+    return new;
 end;
 $$;
 
