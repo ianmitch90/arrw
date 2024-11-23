@@ -3,14 +3,17 @@ import {
   LocationState,
   LocationContextType,
   Coordinates,
-  CityBoundary
+  CityBoundary,
+  toPostGISPoint
 } from '@/types/location.types';
 import { supabase } from '@/utils/supabase/client';
 
+/** React context for location management */
 const LocationContext = createContext<LocationContextType | undefined>(
   undefined
 );
 
+/** Provider component for location context */
 export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<LocationState>({
     currentLocation: null,
@@ -29,11 +32,13 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const updateLocation = async (coords: Coordinates) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
+      const postgisPoint = toPostGISPoint(coords);
+      
       // Update user's location in database
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          location: `POINT(${coords.longitude} ${coords.latitude})`,
+          location: postgisPoint,
           last_location_update: new Date().toISOString()
         })
         .eq('id', (await supabase.auth.getUser()).data.user?.id);
@@ -42,7 +47,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
       setState((prev) => ({
         ...prev,
-        currentLocation: coords,
+        currentLocation: postgisPoint,
         isLoading: false
       }));
     } catch (error) {
@@ -112,10 +117,11 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useLocation = () => {
+/** Hook to use location context */
+export function useLocation() {
   const context = useContext(LocationContext);
   if (context === undefined) {
     throw new Error('useLocation must be used within a LocationProvider');
   }
   return context;
-};
+}

@@ -6,6 +6,27 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type TrustLevel = 'precise' | 'approximate' | 'area'
+export type UserRole = 'admin' | 'moderator' | 'subscriber' | 'free' | 'anon'
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'banned' | 'deleted' | 'pending_verification'
+export type SubscriptionTier = 'free' | 'basic' | 'premium' | 'enterprise' | 'lifetime' | 'trial'
+export type AgeVerificationMethod = 'modal' | 'document' | 'id_check' | 'credit_card' | 'phone'
+
+export interface PrivacySettings {
+  show_online_status: boolean;
+  show_last_active: boolean;
+  show_location: 'friends' | 'public' | 'none';
+  show_stories: 'public' | 'friends' | 'none';
+  allow_messages: 'all' | 'verified' | 'friends' | 'none';
+}
+
+export interface DefaultPrivacyRules {
+  strangers: TrustLevel;
+  authenticated: TrustLevel;
+  trusted: TrustLevel;
+  schedule_enabled: boolean;
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -16,7 +37,7 @@ export type Database = {
           birth_date: string | null
           created_at: string
           id: string
-          method: string | null
+          method: AgeVerificationMethod | null
           updated_at: string
           user_id: string
           verified: boolean | null
@@ -28,7 +49,7 @@ export type Database = {
           birth_date?: string | null
           created_at?: string
           id?: string
-          method?: string | null
+          method?: AgeVerificationMethod | null
           updated_at?: string
           user_id: string
           verified?: boolean | null
@@ -40,7 +61,7 @@ export type Database = {
           birth_date?: string | null
           created_at?: string
           id?: string
-          method?: string | null
+          method?: AgeVerificationMethod | null
           updated_at?: string
           user_id?: string
           verified?: boolean | null
@@ -114,7 +135,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
-          location: unknown
+          location: PostGISPoint
           metadata: Json | null
           name: string
           status: string | null
@@ -127,7 +148,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
-          location: unknown
+          location: PostGISPoint
           metadata?: Json | null
           name: string
           status?: string | null
@@ -140,7 +161,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
-          location?: unknown
+          location?: PostGISPoint
           metadata?: Json | null
           name?: string
           status?: string | null
@@ -262,6 +283,7 @@ export type Database = {
           is_featured: boolean | null
           kinks: string[] | null
           languages: string[] | null
+          last_location: PostGISPoint | null
           last_updated: string | null
           like_count: number | null
           looking_for: string[] | null
@@ -274,6 +296,7 @@ export type Database = {
           position: string | null
           position_preferences: string[] | null
           practices: string[] | null
+          privacy_settings: PrivacySettings | null
           profile_picture_url: string | null
           profile_quality_score: number | null
           profile_slug: string | null
@@ -285,6 +308,9 @@ export type Database = {
           school: string | null
           smoking_status: string | null
           sti_tested_date: string | null
+          subscription_tier: SubscriptionTier | null
+          user_role: UserRole | null
+          user_status: UserStatus | null
           vaccination_status: Json | null
           verification_date: string | null
           verification_status: Database["public"]["Enums"]["verification_status"] | null
@@ -328,6 +354,7 @@ export type Database = {
           is_featured?: boolean | null
           kinks?: string[] | null
           languages?: string[] | null
+          last_location?: PostGISPoint | null
           last_updated?: string | null
           like_count?: number | null
           looking_for?: string[] | null
@@ -340,6 +367,7 @@ export type Database = {
           position?: string | null
           position_preferences?: string[] | null
           practices?: string[] | null
+          privacy_settings?: PrivacySettings | null
           profile_picture_url?: string | null
           profile_quality_score?: number | null
           profile_slug?: string | null
@@ -351,6 +379,9 @@ export type Database = {
           school?: string | null
           smoking_status?: string | null
           sti_tested_date?: string | null
+          subscription_tier?: SubscriptionTier | null
+          user_role?: UserRole | null
+          user_status?: UserStatus | null
           vaccination_status?: Json | null
           verification_date?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"] | null
@@ -394,6 +425,7 @@ export type Database = {
           is_featured?: boolean | null
           kinks?: string[] | null
           languages?: string[] | null
+          last_location?: PostGISPoint | null
           last_updated?: string | null
           like_count?: number | null
           looking_for?: string[] | null
@@ -406,6 +438,7 @@ export type Database = {
           position?: string | null
           position_preferences?: string[] | null
           practices?: string[] | null
+          privacy_settings?: PrivacySettings | null
           profile_picture_url?: string | null
           profile_quality_score?: number | null
           profile_slug?: string | null
@@ -417,6 +450,9 @@ export type Database = {
           school?: string | null
           smoking_status?: string | null
           sti_tested_date?: string | null
+          subscription_tier?: SubscriptionTier | null
+          user_role?: UserRole | null
+          user_status?: UserStatus | null
           vaccination_status?: Json | null
           verification_date?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"] | null
@@ -528,6 +564,10 @@ export type Database = {
         | "past_due"
         | "unpaid"
         | "paused"
+      subscription_tier: SubscriptionTier
+      trust_level: TrustLevel
+      user_role: UserRole
+      user_status: UserStatus
       verification_status: "unverified" | "pending" | "verified" | "rejected"
     }
     Functions: {
@@ -542,7 +582,7 @@ export type Database = {
           name: string
           description: string
           category: string
-          location: unknown
+          location: PostGISPoint
           distance: number
         }[]
       }
@@ -556,7 +596,7 @@ export type Database = {
           id: string
           title: string
           content: string
-          location: unknown
+          location: PostGISPoint
           distance: number
         }[]
       }
@@ -564,7 +604,18 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+export interface PostGISPoint {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+  crs: {
+    type: 'name';
+    properties: {
+      name: 'EPSG:4326';
+    };
+  };
+}
+
+export type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   PublicTableNameOrOptions extends

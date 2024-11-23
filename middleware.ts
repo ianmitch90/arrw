@@ -31,9 +31,12 @@ const STATIC_PAGES = [
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // Normalize the path by removing (protected) prefix
+  const normalizedPath = pathname.replace('/(protected)', '');
 
   // Allow access to static informational pages
-  if (STATIC_PAGES.some(route => pathname.startsWith(route))) {
+  if (STATIC_PAGES.some(route => normalizedPath.startsWith(route))) {
     return NextResponse.next();
   }
 
@@ -52,16 +55,16 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      if (AUTH_ROUTES.some(route => pathname === route || pathname === `/auth${route}`)) {
+      if (AUTH_ROUTES.some(route => normalizedPath === route || normalizedPath === `/auth${route}`)) {
         return NextResponse.next();
       }
       const redirectUrl = new URL('/login', request.url);
-      redirectUrl.searchParams.set('redirect', pathname);
+      redirectUrl.searchParams.set('redirect', normalizedPath);
       return NextResponse.redirect(redirectUrl);
     }
 
     // Check age verification for protected routes
-    if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
+    if (PROTECTED_ROUTES.some(route => normalizedPath.startsWith(route))) {
       // Check both verification sources in parallel
       const [{ data: verification }, { data: userData }] = await Promise.all([
         supabase
@@ -79,7 +82,7 @@ export async function middleware(request: NextRequest) {
       // If they haven't even acknowledged the age check, send them to login
       if (!verification?.acknowledged) {
         const redirectUrl = new URL('/login', request.url);
-        redirectUrl.searchParams.set('redirect', pathname);
+        redirectUrl.searchParams.set('redirect', normalizedPath);
         return NextResponse.redirect(redirectUrl);
       }
 
@@ -89,7 +92,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (AUTH_ROUTES.some(route => pathname === route || pathname === `/auth${route}`)) {
+    if (AUTH_ROUTES.some(route => normalizedPath === route || normalizedPath === `/auth${route}`)) {
       return NextResponse.redirect(new URL('/map', request.url));
     }
 
@@ -101,9 +104,9 @@ export async function middleware(request: NextRequest) {
     console.error('Auth middleware error:', error);
     
     // On error in protected route, redirect to login
-    if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
+    if (PROTECTED_ROUTES.some(route => normalizedPath.startsWith(route))) {
       const redirectUrl = new URL('/login', request.url);
-      redirectUrl.searchParams.set('redirect', pathname);
+      redirectUrl.searchParams.set('redirect', normalizedPath);
       return NextResponse.redirect(redirectUrl);
     }
     
@@ -113,6 +116,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/(protected)/:path*',
     '/app/:path*',
     '/map/:path*',
     '/messages/:path*',

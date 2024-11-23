@@ -1,13 +1,19 @@
+import { Database } from './supabase';
+import type { PostGISPoint } from './supabase';
+
+/** Geographic coordinates */
 export interface Coordinates {
   latitude: number;
   longitude: number;
 }
 
+/** Geographic bounds with northeast and southwest corners */
 export interface LocationBounds {
   northeast: Coordinates;
   southwest: Coordinates;
 }
 
+/** Represents a city with geographic information */
 export interface City {
   id: string;
   name: string;
@@ -16,6 +22,7 @@ export interface City {
   subAreas?: SubArea[];
 }
 
+/** Represents a sub-area within a city */
 export interface SubArea {
   id: string;
   name: string;
@@ -24,6 +31,7 @@ export interface SubArea {
   cityId: string;
 }
 
+/** Represents a location being visited */
 export interface VisitingLocation {
   coordinates: Coordinates;
   radius: number; // in miles
@@ -31,7 +39,7 @@ export interface VisitingLocation {
   subArea?: SubArea;
 }
 
-// User Types
+/** Base user type with essential fields */
 export interface User {
   id: string;
   username: string;
@@ -41,28 +49,27 @@ export interface User {
   avatarUrl?: string;
   profilePictureUrl?: string;
   interests?: string[];
-  location?: Coordinates;
-  latitude?: number;
-  longitude?: number;
-  status?: 'online' | 'offline';
+  location?: PostGISPoint;
+  status?: Database['public']['Enums']['user_status'];
   lastActive?: Date;
   settings?: UserSettings;
 }
 
+/** Extended user profile with additional fields */
 export interface UserProfile extends User {
   displayName: string | null;
   profile_picture_url: string | null;
-  status: 'online' | 'offline';
-  latitude: number | null;
-  longitude: number | null;
+  status: Database['public']['Enums']['user_status'];
+  location: PostGISPoint | null;
   last_updated: string | null;
   profile_views: number | null;
   followers_count: number | null;
   following_count: number | null;
-  verification_status: 'verified' | 'unverified' | 'pending' | null;
+  verification_status: Database['public']['Enums']['verification_status'] | null;
   verified_badges: string[] | null;
 }
 
+/** User settings configuration */
 export interface UserSettings {
   visibility: 'public' | 'friends' | 'private';
   notifications: {
@@ -76,16 +83,16 @@ export interface UserSettings {
   language: string;
 }
 
-// Story Types
+/** Story content type */
 export interface Story {
   id: string;
   content: {
-    type: 'image' | 'video';
+    type: Database['public']['Tables']['stories']['Row']['content_type'];
     url: string;
     thumbnail_url?: string;
     duration?: number;
   };
-  location: Coordinates;
+  location: PostGISPoint;
   created_at: string;
   expires_at: string;
   user: {
@@ -96,24 +103,22 @@ export interface Story {
   view_count: number;
 }
 
+/** Comment on a story */
 export interface StoryComment {
   id: string;
   userId: string;
+  storyId: string;
   content: string;
   createdAt: Date;
-  reactions?: {
-    type: string;
-    count: number;
-    userIds: string[];
-  }[];
+  updatedAt?: Date;
 }
 
-// Event Types
+/** Event type */
 export interface Event {
   id: string;
   title: string;
   description: string;
-  location: Coordinates;
+  location: PostGISPoint;
   address?: string;
   startTime: Date;
   endTime: Date;
@@ -132,9 +137,14 @@ export interface Event {
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
 }
 
-// Place Types
-export type PlaceTag = 'park' | 'private' | 'garage' | 'restaurant' | 'cafe' | 'shop' | 'venue' | 'other';
+/** Place tag type */
+export interface PlaceTag {
+  id: string;
+  name: string;
+  type: string;
+}
 
+/** Comment on a place */
 export interface PlaceComment {
   id: string;
   place_id: string;
@@ -145,11 +155,12 @@ export interface PlaceComment {
   updated_at: string;
 }
 
+/** Place type */
 export interface Place {
   id: string;
   name: string;
   description: string;
-  location: Coordinates;
+  location: PostGISPoint;
   tags: PlaceTag[];
   average_rating: number;
   total_ratings: number;
@@ -164,6 +175,7 @@ export interface Place {
   };
 }
 
+/** Review of a place */
 export interface PlaceReview {
   id: string;
   userId: string;
@@ -176,17 +188,18 @@ export interface PlaceReview {
   reported: boolean;
 }
 
+/** Proposal for a new place */
 export interface PlaceProposal {
   id: string;
   name: string;
   description: string;
-  location: Coordinates;
+  location: PostGISPoint;
   tags: PlaceTag[];
   created_by: string;
   created_at: string;
   updated_at: string;
   photo_url?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'merged';
+  status: Database['public']['Enums']['proposal_status'];
   approved_place_id?: string;
   approved_by?: string;
   approved_at?: string;
@@ -196,48 +209,7 @@ export interface PlaceProposal {
   similar_count?: number;
 }
 
-// Chat Types
-export interface ChatRoom {
-  id: string;
-  type: 'direct' | 'group' | 'event' | 'global';
-  participants: string[];
-  lastMessage?: Message;
-  unreadCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-  metadata?: {
-    eventId?: string;
-    cityId?: string;
-    subAreaId?: string;
-    groupName?: string;
-    groupAvatar?: string;
-  };
-}
-
-export interface Message {
-  id: string;
-  roomId: string;
-  senderId: string;
-  content: string;
-  type: 'text' | 'image' | 'video' | 'location' | 'event' | 'system';
-  metadata?: {
-    fileName?: string;
-    fileSize?: number;
-    mimeType?: string;
-    duration?: number;
-    location?: Coordinates;
-    eventId?: string;
-  };
-  createdAt: Date;
-  updatedAt?: Date;
-  status: 'sent' | 'delivered' | 'read';
-  replyTo?: string;
-  reactions?: {
-    [key: string]: string[]; // emoji: userIds[]
-  };
-}
-
-// Map Types
+/** Map filter options */
 export interface MapFilter {
   users: boolean;
   events: boolean;
@@ -254,9 +226,10 @@ export interface MapFilter {
   isVerifiedOnly?: boolean;
 }
 
+/** Map marker type */
 export interface MapMarker {
   id: string;
   type: 'user' | 'event' | 'place' | 'story';
-  location: Coordinates;
+  location: PostGISPoint;
   data: User | Event | Place | Story;
 }

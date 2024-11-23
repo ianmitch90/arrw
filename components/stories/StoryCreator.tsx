@@ -6,23 +6,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { Database } from '@/types/supabase';
 import { Coordinates } from '@/types/core';
 
-// Temporary type until database migration is complete
-type Story = {
-  content_type: 'image' | 'video';
-  content_url: string;
-  thumbnail_url: string;
-  location: string;
-  radius: number;
-  caption: string;
-  expires_at: string;
-};
+/** Story type matching the database schema */
+type Story = Database['public']['Tables']['stories']['Insert'];
 
 interface StoryCreatorProps {
+  /** Whether the story creator modal is open */
   isOpen: boolean;
+  /** Callback when the modal is closed */
   onClose: () => void;
+  /** Location where the story will be created */
   location: Coordinates;
 }
 
+/**
+ * StoryCreator component allows users to create and upload stories
+ * with images and location data
+ */
 export function StoryCreator({ isOpen, onClose, location }: StoryCreatorProps) {
   const supabase = useSupabaseClient<Database>();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,17 +83,26 @@ export function StoryCreator({ isOpen, onClose, location }: StoryCreatorProps) {
       const thumbnailUrl = publicUrl;
 
       // 4. Insert story record
-      const { error: insertError } = await (supabase as SupabaseClient)
+      const { error: insertError } = await supabase
         .from('stories')
         .insert({
           content_type: 'image',
           content_url: publicUrl,
           thumbnail_url: thumbnailUrl,
-          location: `POINT(${location.longitude} ${location.latitude})`,
+          location: {
+            type: 'Point',
+            coordinates: [location.longitude, location.latitude],
+            crs: {
+              type: 'name',
+              properties: {
+                name: 'EPSG:4326'
+              }
+            }
+          },
           radius,
           caption,
           expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        } as Story);
+        } satisfies Story);
 
       if (insertError) throw insertError;
 

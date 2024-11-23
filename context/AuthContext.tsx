@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
-        router.replace('/(protected)/map');
+        router.replace('/map');
       } else if (event === 'SIGNED_OUT') {
         sessionManager.clearSession();
         setSession(null);
@@ -110,12 +110,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const path = window.location.pathname;
       const { data: { session } } = await supabase.auth.getSession();
 
+      // Remove (protected) from path for comparison
+      const normalizedPath = path.replace('/(protected)', '');
+
       if (session) {
-        if (path === '/login' || path === '/signup' || path === '/') {
-          router.replace('/(protected)/map');
+        if (normalizedPath === '/login' || normalizedPath === '/signup' || normalizedPath === '/') {
+          router.replace('/map');
         }
       } else {
-        if (path.includes('/map') || path.includes('/profile')) {
+        if (normalizedPath.includes('/map') || normalizedPath.includes('/profile')) {
           router.replace('/login');
         }
       }

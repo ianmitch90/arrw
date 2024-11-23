@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation } from '@/contexts/LocationContext';
 import { supabase } from '@/utils/supabase/client';
 import { ImmersiveVideoPlayer } from './ImmersiveVideoPlayer';
+import { PostGISPoint } from '@/types/supabase';
+import { toCoordinates } from '@/types/location.types';
 
 interface VideoContent {
   id: string;
@@ -9,10 +11,7 @@ interface VideoContent {
   description: string;
   url: string;
   type: '360' | '180' | 'standard';
-  location: {
-    latitude: number;
-    longitude: number;
-  };
+  location: PostGISPoint;
   distance?: number;
 }
 
@@ -32,15 +31,22 @@ export function LocationBasedContent() {
     try {
       if (!locationState.currentLocation) return;
 
+      const coords = toCoordinates(locationState.currentLocation);
       const { data, error } = await supabase.rpc('find_nearby_content', {
-        lat: locationState.currentLocation.latitude,
-        lng: locationState.currentLocation.longitude,
+        user_location: locationState.currentLocation,
         radius_miles: 50
       });
 
       if (error) throw error;
 
-      setNearbyContent(data || []);
+      // Transform the response data to include PostGIS points
+      const contentWithDistance = data?.map((item: any) => ({
+        ...item,
+        location: item.location as PostGISPoint,
+        distance: item.distance // distance is calculated by the PostGIS function
+      })) || [];
+
+      setNearbyContent(contentWithDistance);
     } catch (err) {
       setError(
         err instanceof Error ? err : new Error('Failed to load content')
@@ -60,27 +66,33 @@ export function LocationBasedContent() {
         <p>No content found in your area</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {nearbyContent.map((content) => (
-            <div
-              key={content.id}
-              className="rounded-lg overflow-hidden shadow-lg"
-            >
-              <ImmersiveVideoPlayer
-                src={content.url}
-                type={content.type}
-                enableAR={content.type !== 'standard'}
-              />
-              <div className="p-4">
-                <h3 className="font-bold">{content.title}</h3>
-                <p className="text-sm text-gray-600">{content.description}</p>
-                {content.distance && (
-                  <p className="text-sm text-gray-500">
-                    {content.distance.toFixed(1)} miles away
-                  </p>
-                )}
+          {nearbyContent.map((content) => {
+            const coords = toCoordinates(content.location);
+            return (
+              <div
+                key={content.id}
+                className="rounded-lg overflow-hidden shadow-lg"
+              >
+                <ImmersiveVideoPlayer
+                  src={content.url}
+                  type={content.type}
+                  enableAR={content.type !== 'standard'}
+                />
+                <div className="p-4">
+                  <h3 className="font-bold">{content.title}</h3>
+                  <p className="text-sm text-gray-600">{content.description}</p>
+                  <div className="text-sm text-gray-500 space-y-1">
+                    {content.distance && (
+                      <p>{content.distance.toFixed(1)} miles away</p>
+                    )}
+                    <p className="font-mono">
+                      ({coords.latitude.toFixed(4)}, {coords.longitude.toFixed(4)})
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
