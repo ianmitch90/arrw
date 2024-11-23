@@ -8,7 +8,7 @@ import { UserProvider } from '@/components/contexts/UserContext';
 import { ChatProvider } from '@/components/contexts/ChatContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { ChatOverlay } from '@/components/chat/ChatOverlay';
 import { useChatOverlay } from '@/hooks/useChatOverlay';
 import TopNav from '@/components/ui/TopNav';
@@ -36,6 +36,7 @@ export default function ProtectedLayout({
   const { loading, user } = useAuth();
   const { isOpen, chatType, onClose } = useChatOverlay();
   const pathname = usePathname();
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -65,10 +66,18 @@ export default function ProtectedLayout({
               
               {/* Show chat in overlay if chat is open, otherwise show normal content */}
               {chatType ? (
-                <ChatOverlay isOpen={isOpen} onClose={onClose}>
+                <ChatOverlay 
+                  isOpen={isOpen} 
+                  onClose={onClose}
+                  chatId={selectedChatId}
+                  onBack={selectedChatId ? () => setSelectedChatId(null) : undefined}
+                >
                   {/* Render appropriate chat component based on type */}
                   {chatType === 'messages' ? (
-                    <Messages />
+                    <Messages 
+                      selectedChatId={selectedChatId}
+                      onSelectChat={setSelectedChatId}
+                    />
                   ) : chatType === 'global' ? (
                     <GlobalChat />
                   ) : null}

@@ -15,7 +15,6 @@ interface ChatMessageProps {
 export function ChatMessage({ message, isOwn, className }: ChatMessageProps) {
   const { rooms = [] } = useChat();
   
-  // Find the sender in the room's participants
   const sender = (rooms ?? [])
     .flatMap(room => room.participants ?? [])
     .find((p: ChatUser) => p.id === message.senderId) || {
@@ -26,37 +25,63 @@ export function ChatMessage({ message, isOwn, className }: ChatMessageProps) {
       lastSeen: new Date()
     };
 
-  return (
-    <div
-      className={cn(
-        'flex gap-3',
-        isOwn ? 'flex-row-reverse' : 'flex-row',
-        className
-      )}
-    >
+  const MessageAvatar = () => (
+    <div className="relative flex-none">
       <Avatar
         src={sender?.avatarUrl}
         name={sender?.name || 'User'}
         size="sm"
-        className="flex-shrink-0"
+        className="transition-transform"
       />
+    </div>
+  );
 
-      <div
-        className={cn(
-          'group relative max-w-[80%] rounded-lg px-3 py-2',
-          isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted'
-        )}
-      >
-        <p className="break-words">{message.content}</p>
-        <span
-          className={cn(
-            'absolute -bottom-5 text-xs text-gray-500',
-            isOwn ? 'right-0' : 'left-0'
+  const MessageContent = () => (
+    <div className={cn(
+      "flex max-w-[75%] flex-col gap-1",
+      isOwn ? "items-end" : "items-start"
+    )}>
+      <div className={cn(
+        "relative w-auto rounded-lg px-4 py-2",
+        isOwn ? "bg-primary text-primary-foreground" : "bg-default-100",
+        "shadow-small"
+      )}>
+        <div className="flex items-end gap-2">
+          {!isOwn && (
+            <span className="text-tiny font-semibold text-default-600">
+              {sender.name}
+            </span>
           )}
-        >
-          {format(new Date(message.timestamp), 'HH:mm')}
-        </span>
+          <span className="text-tiny text-default-400 min-w-[48px] text-right">
+            {format(new Date(message.timestamp), 'HH:mm')}
+          </span>
+        </div>
+        <div className={cn(
+          "mt-1 text-small break-words",
+          isOwn ? "text-primary-foreground" : "text-default-700"
+        )}>
+          {message.content}
+          {message.type === 'image' && message.metadata?.thumbnailUrl && (
+            <img
+              alt={`Image sent by ${sender.name}`}
+              className="mt-2 rounded-lg border border-default-200 shadow-small"
+              src={message.metadata.thumbnailUrl}
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
+          )}
+        </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className={cn(
+      "flex w-full gap-2 px-4 py-2",
+      isOwn ? "flex-row-reverse" : "flex-row",
+      className
+    )}>
+      {!isOwn && <MessageAvatar />}
+      <MessageContent />
     </div>
   );
 }

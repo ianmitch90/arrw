@@ -3,7 +3,6 @@
 import React from "react";
 import { ScrollShadow, Avatar, Badge } from "@nextui-org/react";
 import { formatRelativeTime } from "@/utils/chat";
-import { ChatRoom } from "@/types/chat";
 import { useChat } from "@/components/contexts/ChatContext";
 import { cn } from "@/utils/cn";
 
@@ -35,19 +34,19 @@ export default function ChatList({ onSelectChat, selectedChatId, className }: Ch
             {room.type === "group" ? (
               <Avatar
                 src={room.metadata?.groupAvatar}
-                name={room.metadata?.groupName}
+                name={room.metadata?.groupName || room.name}
                 size="lg"
                 isBordered={activeRoom === room.id}
               />
             ) : (
               <Avatar
-                src={room.participants?.[0]?.avatarUrl}
-                name={room.participants?.[0]?.name}
+                src={room.participants[0]?.avatarUrl}
+                name={room.participants[0]?.name}
                 size="lg"
                 isBordered={activeRoom === room.id}
               />
             )}
-            {room.participants?.[0]?.status === "online" && (
+            {room.participants[0]?.status === "online" && (
               <Badge
                 isOneChar
                 content=""
@@ -61,7 +60,7 @@ export default function ChatList({ onSelectChat, selectedChatId, className }: Ch
           <div className="flex flex-1 flex-col gap-1 overflow-hidden">
             <div className="flex items-center justify-between gap-2">
               <span className="text-small font-semibold">
-                {room.type === "group" ? room.metadata?.groupName : room.participants?.[0]?.name || "Unknown User"}
+                {room.type === "group" ? room.metadata?.groupName : room.participants[0]?.name}
               </span>
               {room.lastMessage && (
                 <span className="text-tiny text-default-400">

@@ -4,27 +4,46 @@ import { useState } from 'react';
 import { ChatProvider } from '@/components/contexts/ChatContext';
 import ChatList from '@/components/chat/ChatList';
 import ChatWindow from '@/components/chat/ChatWindow';
+import { AnimatePresence, motion } from 'framer-motion';
 
 function MessagesContent() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4">
-      {/* Chat List - hidden on mobile when chat is selected */}
-      <div className={`w-full md:w-80 flex-shrink-0 ${selectedChat ? 'hidden md:block' : ''}`}>
-        <ChatList onSelectChat={setSelectedChat} selectedChatId={selectedChat} />
-      </div>
-
-      {/* Chat Window - hidden on mobile when no chat is selected */}
-      <div className={`flex-grow ${!selectedChat ? 'hidden md:block' : ''}`}>
-        {selectedChat ? (
-          <ChatWindow chatId={selectedChat} onBack={() => setSelectedChat(null)} />
+    <div className="relative h-[calc(100vh-4rem)] overflow-hidden bg-background">
+      <AnimatePresence initial={false} mode="wait">
+        {!selectedChat ? (
+          <motion.div
+            key="chat-list"
+            initial={{ x: -320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -320, opacity: 0 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+            className="absolute inset-0 w-full bg-background"
+          >
+            <ChatList
+              onSelectChat={setSelectedChat}
+              selectedChatId={selectedChat}
+              className="h-full"
+            />
+          </motion.div>
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            Select a conversation to start messaging
-          </div>
+          <motion.div
+            key="chat-window"
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+            className="absolute inset-0 w-full bg-background"
+          >
+            <ChatWindow
+              chatId={selectedChat}
+              onBack={() => setSelectedChat(null)}
+              className="h-full"
+            />
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

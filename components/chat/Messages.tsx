@@ -4,28 +4,48 @@ import { useUser } from "@/components/contexts/UserContext";
 import { useChat } from "@/components/contexts/ChatContext";
 import ChatList from "./ChatList";
 import ChatWindow from "./ChatWindow";
-import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
-export default function Messages() {
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);
+interface MessagesProps {
+  selectedChatId: string | null;
+  onSelectChat: (chatId: string | null) => void;
+}
 
+export default function Messages({ selectedChatId, onSelectChat }: MessagesProps) {
   return (
-    <div className="flex h-full gap-4">
-      {/* Chat List - hidden on mobile when chat is selected */}
-      <div className={`w-full md:w-80 flex-shrink-0 ${selectedChat ? 'hidden md:block' : ''}`}>
-        <ChatList onSelectChat={setSelectedChat} selectedChatId={selectedChat} />
-      </div>
-
-      {/* Chat Window - hidden on mobile when no chat is selected */}
-      <div className={`flex-grow ${!selectedChat ? 'hidden md:block' : ''}`}>
-        {selectedChat ? (
-          <ChatWindow chatId={selectedChat} onBack={() => setSelectedChat(null)} />
+    <div className="relative h-full overflow-hidden bg-background">
+      <AnimatePresence initial={false} mode="wait">
+        {!selectedChatId ? (
+          <motion.div
+            key="chat-list"
+            initial={{ x: -320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -320, opacity: 0 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className="absolute inset-0 w-full bg-background"
+          >
+            <ChatList
+              onSelectChat={onSelectChat}
+              selectedChatId={selectedChatId}
+              className="h-full"
+            />
+          </motion.div>
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            Select a conversation to start messaging
-          </div>
+          <motion.div
+            key="chat-window"
+            initial={{ x: "100%", opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "100%", opacity: 0 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className="absolute inset-0 w-full bg-background"
+          >
+            <ChatWindow
+              chatId={selectedChatId}
+              className="h-full"
+            />
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

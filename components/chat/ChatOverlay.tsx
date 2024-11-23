@@ -2,16 +2,22 @@
 
 import { cn } from '@/utils/cn';
 import { Button } from '@nextui-org/react';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useChat } from '@/components/contexts/ChatContext';
 
 interface ChatOverlayProps {
   children: React.ReactNode;
   isOpen: boolean;
   onClose: () => void;
+  chatId?: string;
+  onBack?: () => void;
 }
 
-export function ChatOverlay({ children, isOpen, onClose }: ChatOverlayProps) {
+export function ChatOverlay({ children, isOpen, onClose, chatId, onBack }: ChatOverlayProps) {
+  const { rooms = [] } = useChat();
+  const room = chatId ? rooms.find(r => r.id === chatId) : null;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -21,18 +27,39 @@ export function ChatOverlay({ children, isOpen, onClose }: ChatOverlayProps) {
           exit={{ opacity: 0, y: 20 }}
           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
           className={cn(
-            'fixed inset-0 z-50 flex flex-col overflow-hidden bg-background p-4 md:inset-auto md:right-4 md:top-4 md:h-[calc(100vh-2rem)] md:w-[400px] md:rounded-lg md:border md:shadow-lg'
+            'fixed inset-x-0 top-[16vh] bottom-[16vh] z-50 flex flex-col overflow-hidden bg-background md:inset-auto md:right-4 md:top-[16vh] md:h-[66vh] md:w-[400px] md:rounded-lg md:border md:shadow-lg'
           )}
         >
-          <Button
-            isIconOnly
-            variant="light"
-            className="absolute right-2 top-2"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <div className="mt-8 flex-1 overflow-hidden">{children}</div>
+          <div className="flex h-12 items-center gap-2 border-b border-divider px-4">
+            <div className="flex flex-1 items-center gap-2">
+              {onBack && (
+                <Button
+                  isIconOnly
+                  variant="light"
+                  size="sm"
+                  onClick={onBack}
+                >
+                  <ArrowLeft size={20} />
+                </Button>
+              )}
+              {room && (
+                <div className="flex flex-col">
+                  <h2 className="text-large font-semibold">{room.name}</h2>
+                  <p className="text-small text-default-500">
+                    {room.participants?.length || 0} participants
+                  </p>
+                </div>
+              )}
+            </div>
+            <Button
+              isIconOnly
+              variant="light"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden p-4">{children}</div>
         </motion.div>
       )}
     </AnimatePresence>
