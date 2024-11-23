@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { ScrollShadow } from "@nextui-org/react";
+import { ScrollShadow, Button } from "@nextui-org/react";
 import { cn } from "@/utils/cn";
 import { useChat } from "@/components/contexts/ChatContext";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
+import { Mic } from "lucide-react";
 
 interface ChatWindowProps {
   chatId: string;
@@ -33,12 +34,13 @@ export default function ChatWindow({ chatId, onBack, className }: ChatWindowProp
   }
 
   return (
-    <div className={cn("flex h-full flex-col bg-content1", className)}>
+    <div className={cn("flex h-full flex-col", className)}>
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-2">
-        <ScrollShadow 
-          className="flex flex-col gap-1 py-4"
-        >
+      <ScrollShadow 
+        className="flex-1 overflow-y-auto"
+        hideScrollBar
+      >
+        <div className="flex flex-col gap-3 py-6">
           {chatMessages.map((message, i) => (
             <ChatMessage
               key={message.id}
@@ -47,12 +49,18 @@ export default function ChatWindow({ chatId, onBack, className }: ChatWindowProp
             />
           ))}
           <div ref={messagesEndRef} />
-        </ScrollShadow>
-      </div>
+        </div>
+      </ScrollShadow>
 
-      {/* Input */}
-      <div className="border-t border-divider p-2">
-        <ChatInput chatId={chatId} onSend={scrollToBottom} />
+      {/* Input Area */}
+      <div className="flex items-end gap-2 border-t border-divider bg-background p-4">
+
+        <ChatInput
+          onSend={(content) => {
+            // Handle send
+          }}
+          className="flex-1"
+        />
       </div>
     </div>
   );

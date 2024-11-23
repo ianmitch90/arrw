@@ -1,20 +1,22 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Button, Input, Tooltip } from '@nextui-org/react';
-import { Mic, Send, Image as ImageIcon, X } from 'lucide-react';
+import { Button, Input,Textarea, Popover, PopoverTrigger, PopoverContent, Card } from '@nextui-org/react';
+import { ArrowUp, Plus, Image as ImageIcon, Smile, Mic } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useChat } from '../contexts/ChatContext';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 interface ChatInputProps {
-  chatId: string;
-  onSend?: () => void;
+  onSend: (content: string) => void;
   className?: string;
 }
 
-export function ChatInput({ chatId, onSend, className }: ChatInputProps) {
+export function ChatInput({ onSend, className }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showActions, setShowActions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { sendMessage } = useChat();
 
@@ -26,102 +28,122 @@ export function ChatInput({ chatId, onSend, className }: ChatInputProps) {
       console.log('Uploading file:', selectedFile);
     }
 
-    sendMessage({
-      roomId: chatId,
-      content: message,
-      type: selectedFile ? 'image' : 'text',
-      metadata: selectedFile ? {
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        fileType: selectedFile.type,
-        // Add thumbnail URL after upload
-      } : undefined
-    });
-
+    onSend(message);
     setMessage('');
     setSelectedFile(null);
-    onSend?.();
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
+      setShowActions(false);
     }
   };
 
+  const onEmojiSelect = (emoji: any) => {
+    setMessage(prev => prev + emoji.native);
+  };
+
   return (
-    <div className={cn("flex w-full items-end gap-2", className)}>
+    <div className={cn("relative flex w-full items-center gap-2", className)}>
       <input
+        id="fileInput"
+        aria-label="upload file"
         type="file"
-        ref={fileInputRef}
         accept="image/*"
         className="hidden"
+        ref={fileInputRef}
         onChange={handleFileSelect}
       />
 
-      <Tooltip content="Upload image">
-        <Button
-          isIconOnly
-          variant="light"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <ImageIcon size={20} />
-        </Button>
-      </Tooltip>
+      <Popover placement="top" isOpen={showActions} onOpenChange={setShowActions}>
+        <PopoverTrigger>
+          <Button
+            isIconOnly
+            variant="light"
+            className="flex-none text-default-500"
+            size="sm"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent>
+          <Card className="border-none p-3">
+            <div className="flex gap-2">
+              <Button
+                isIconOnly
+                variant="flat"
+                className="flex-none"
+                size="sm"
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+              >
+                <ImageIcon className="h-5 w-5" />
+              </Button>
+              <Button
+                isIconOnly
+                variant="flat"
+                className="flex-none"
+                size="sm"
+              >
+                <Mic className="h-5 w-5" />
+              </Button>
+            </div>
+          </Card>
+        </PopoverContent>
+      </Popover>
 
-      <div className="relative flex-grow">
-        {selectedFile && (
-          <div className="absolute bottom-full mb-2 flex items-center gap-2 rounded-medium bg-default-100 p-2">
-            <span className="text-tiny">{selectedFile.name}</span>
-            <Button
-              isIconOnly
-              size="sm"
-              variant="light"
-              onClick={() => setSelectedFile(null)}
-            >
-              <X size={16} />
-            </Button>
-          </div>
-        )}
-
-        <Input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Type a message..."
-          size="sm"
-          radius="lg"
-          classNames={{
-            input: "text-small",
-          }}
-          endContent={
-            <Tooltip content="Voice message">
+      <Textarea
+        minRows={1}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
+        placeholder="Type a message..."
+        variant="flat"
+        classNames={{
+          input: "min-h-unit-10 h-unit-10",
+          inputWrapper: "h-unit-10 pr-0",
+        }}
+        endContent={
+          <Popover placement="top">
+            <PopoverTrigger>
               <Button
                 isIconOnly
                 variant="light"
+                className="flex-none text-default-500"
                 size="sm"
-                className="text-default-500"
               >
-                <Mic size={20} />
+                <Smile className="h-5 w-5" />
               </Button>
-            </Tooltip>
-          }
-        />
-      </div>
+            </PopoverTrigger>
+            <PopoverContent className="p-0">
+              <Picker
+                data={data}
+                onEmojiSelect={onEmojiSelect}
+                theme="light"
+                set="native"
+              />
+            </PopoverContent>
+          </Popover>
+        }
+      />
 
-      <Tooltip content="Send message">
-        <Button
-          isIconOnly
-          color="primary"
-          size="sm"
-          onClick={handleSend}
-          isDisabled={!message.trim() && !selectedFile}
-        >
-          <Send size={20} />
-        </Button>
-      </Tooltip>
+      <Button
+        isIconOnly
+        color="primary"
+        className="h-unit-10 w-unit-10 min-w-unit-10 rounded-full"
+        onPress={handleSend}
+        isDisabled={!message.trim() && !selectedFile}
+      >
+        <ArrowUp className="h-5 w-5" />
+      </Button>
     </div>
   );
 }
