@@ -13,7 +13,7 @@ interface ChatOverlayProps {
   children: React.ReactNode;
   isOpen: boolean;
   onClose: () => void;
-  chatId?: string;
+  chatId?: string | null;
   onBack?: () => void;
 }
 

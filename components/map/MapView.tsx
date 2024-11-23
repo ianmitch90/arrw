@@ -1,19 +1,21 @@
- import { useEffect, useRef, useState } from 'react';
+ import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
-import { Coordinates, Place, Story } from '@/types/core';
+import { Coordinates, Place, Story, UserProfile } from '@/types/core';
 import { Button } from '@nextui-org/react';
 import { Filter, Plus } from 'lucide-react';
 import { FilterPanel } from './FilterPanel';
 import { PlaceCard } from './PlaceCard';
 import { StoryMarker } from './StoryMarker';
+import { UserMarker } from './UserMarker';
 import { createRoot } from 'react-dom/client';
 import { PlaceMarker } from './PlaceMarker';
 import { StoryViewer } from '../stories/StoryViewer';
 import { PlaceCreator } from './PlaceCreator';
-import '@/types/rpc'; // Import RPC type extensions
+import { useMap } from '@/components/contexts/MapContext';
+import '@/types/rpc';
 
 // Initialize Mapbox
 const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
@@ -28,9 +30,10 @@ interface MapViewProps {
 export default function MapView({ initialLocation, onLocationChange }: MapViewProps = {}) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const watchIdRef = useRef<number | null>(null);
   const supabase = useSupabaseClient<Database>();
-
-  const [location, setLocation] = useState<Coordinates | undefined>(initialLocation);
+  const user = useUser();
+  const { currentLocation, setCurrentLocation, viewport, setViewport } = useMap();
   const [places, setPlaces] = useState<Place[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place>();
@@ -38,6 +41,8 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCreatingPlace, setIsCreatingPlace] = useState(false);
   const [newPlaceLocation, setNewPlaceLocation] = useState<Coordinates>();
+  const [nearbyUsers, setNearbyUsers] = useState<UserProfile[]>([]);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [filters, setFilters] = useState({
     placeTypes: ['poi', 'event_venue'],
     radius: 10,
@@ -45,7 +50,143 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     showPlaces: true
   });
 
-  // Initialize map
+  // Get user's location and update in Supabase
+  const updateUserLocation = useCallback(async (coords: Coordinates) => {
+    if (!user) return;
+
+    try {
+      // Update current location state
+      setCurrentLocation(coords);
+      
+      // Update user's location in Supabase
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Error updating location:', updateError);
+        return;
+      }
+
+      // Call the onLocationChange callback if provided
+      onLocationChange?.(coords);
+
+      // Fetch nearby users after updating location
+      const { data: nearbyData, error: nearbyError } = await supabase
+        .rpc('find_users_within_radius', {
+          user_lat: coords.latitude,
+          user_lng: coords.longitude,
+          radius_miles: filters.radius
+        });
+
+      if (nearbyError) {
+        console.error('Error fetching nearby users:', nearbyError);
+        return;
+      }
+
+      if (nearbyData) {
+        // Filter out current user from nearby users
+        setNearbyUsers(nearbyData.filter((u:any) => u.id !== user.id));
+      }
+    } catch (err) {
+      console.error('Error in updateUserLocation:', err);
+    }
+  }, [user, supabase, filters.radius, setCurrentLocation, onLocationChange]);
+
+  const handlePositionUpdate = useCallback((position: GeolocationPosition) => {
+    const coords = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude
+    };
+    updateUserLocation(coords);
+  }, [updateUserLocation]);
+
+  // Initialize user location tracking
+  useEffect(() => {
+    // Check if geolocation is available
+    if (!user || !navigator?.geolocation) {
+      console.warn('Geolocation is not available');
+      return;
+    }
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 0
+    };
+
+    const errorHandler = (error: GeolocationPositionError) => {
+      console.error('Geolocation error:', error);
+    };
+
+    // Get initial position
+    const positionPromise = navigator.geolocation.getCurrentPosition(
+      handlePositionUpdate,
+      errorHandler,
+      options
+    );
+
+    let watchId: number | null = null;
+    
+    try {
+      // Set up location watching
+      watchId = navigator.geolocation.watchPosition(
+        handlePositionUpdate,
+        errorHandler,
+        options
+      );
+      
+      // Store the watch ID
+      watchIdRef.current = watchId;
+    } catch (error) {
+      console.error('Error setting up location watch:', error);
+    }
+
+    // Cleanup function
+    return () => {
+      try {
+        if (watchId !== null && navigator?.geolocation) {
+          navigator.geolocation.clearWatch(watchId);
+          watchIdRef.current = null;
+        }
+      } catch (error) {
+        console.error('Error cleaning up location watch:', error);
+      }
+    };
+  }, [user, handlePositionUpdate]);
+
+  // Fetch current user profile
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching current user:', error);
+          return;
+        }
+
+        setCurrentUser(data);
+      } catch (err) {
+        console.error('Error in fetchCurrentUser:', err);
+      }
+    }
+
+    fetchCurrentUser();
+  }, [user, supabase]);
+
+  // Initialize map with user's location
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -55,7 +196,9 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [location?.longitude || -122.4194, location?.latitude || 37.7749],
+        center: currentLocation 
+          ? [currentLocation.longitude, currentLocation.latitude]
+          : [-122.4194, 37.7749], // Default to SF if no location
         zoom: 13,
         preserveDrawingBuffer: true
       });
@@ -110,25 +253,25 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     } catch (error) {
       console.error('Error initializing map:', error);
     }
-  }, [location]);
+  }, [currentLocation]);
 
   // Update map when location changes
   useEffect(() => {
-    if (!map.current || !location) return;
+    if (!map.current || !currentLocation) return;
 
     map.current.flyTo({
-      center: [location.longitude, location.latitude],
+      center: [currentLocation.longitude, currentLocation.latitude],
       zoom: 13
     });
-  }, [location]);
+  }, [currentLocation]);
 
   // Fetch places and stories when location or filters change
   useEffect(() => {
-    if (!location) return;
+    if (!currentLocation) return;
 
     const fetchData = async () => {
-      await fetchNearbyPlaces(location);
-      await fetchNearbyStories(location);
+      await fetchNearbyPlaces(currentLocation);
+      await fetchNearbyStories(currentLocation);
     };
 
     fetchData();
@@ -144,10 +287,10 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
           schema: 'public',
           table: 'stories',
           filter: `location @ ST_MakeEnvelope(
-            ${location.longitude - radius},
-            ${location.latitude - radius},
-            ${location.longitude + radius},
-            ${location.latitude + radius}
+            ${currentLocation.longitude - radius},
+            ${currentLocation.latitude - radius},
+            ${currentLocation.longitude + radius},
+            ${currentLocation.latitude + radius}
           )`
         },
         (payload) => {
@@ -159,7 +302,7 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [location, filters, supabase]);
+  }, [currentLocation, filters, supabase]);
 
   // Handle map click for place creation
   const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -268,14 +411,35 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
   }, [places, stories, selectedPlace]);
 
   return (
-    <div className="relative h-full w-full">
-      <div 
-        ref={mapContainer} 
-        className="absolute inset-0 bg-gray-200" 
-        onClick={handleMapClick}
-        style={{ height: '100%', width: '100%' }}
-      />
+    <div className="relative w-full h-full">
+      <div ref={mapContainer} className="w-full h-full" onClick={handleMapClick} />
       
+      {/* User Markers */}
+      {currentUser && currentLocation && (
+        <UserMarker
+          user={{
+            ...currentUser,
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            status: 'online' // Current user is always online
+          }}
+          isCurrentUser
+        />
+      )}
+      
+      {nearbyUsers
+        .filter(nearbyUser => nearbyUser.id !== currentUser?.id) // Don't show current user twice
+        .map(user => (
+          <UserMarker
+            key={user.id}
+            user={user}
+            onClick={() => {
+              // Handle click on nearby user
+              console.log('Clicked on user:', user);
+            }}
+          />
+        ))}
+
       {/* Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-2">
         <Button
@@ -315,8 +479,8 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
           onSuccess={() => {
             setIsCreatingPlace(false);
             setNewPlaceLocation(undefined);
-            if (location) {
-              fetchNearbyPlaces(location);
+            if (currentLocation) {
+              fetchNearbyPlaces(currentLocation);
             }
           }}
         />

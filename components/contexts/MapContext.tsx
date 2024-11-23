@@ -7,24 +7,33 @@ import React, {
   PropsWithChildren
 } from 'react';
 
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
 interface MapContextType {
   viewport: any;
   setViewport: React.Dispatch<React.SetStateAction<any>>;
+  currentLocation: Coordinates | undefined;
+  setCurrentLocation: (location: Coordinates | undefined) => void;
 }
 
 const MapContext = createContext<MapContextType | null>(null);
 
 export const MapProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   const [viewport, setViewport] = useState({
-    latitude: 51.3233379650232,
-    longitude: -0.481747846041145,
+    latitude: 37.7749,
+    longitude: -122.4194,
     zoom: 10,
     width: '100vw',
     height: '100vh'
   });
 
+  const [currentLocation, setCurrentLocation] = useState<Coordinates | undefined>(undefined);
+
   return (
-    <MapContext.Provider value={{ viewport, setViewport }}>
+    <MapContext.Provider value={{ viewport, setViewport, currentLocation, setCurrentLocation }}>
       {children}
     </MapContext.Provider>
   );

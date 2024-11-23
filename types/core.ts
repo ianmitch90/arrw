@@ -35,14 +35,32 @@ export interface VisitingLocation {
 export interface User {
   id: string;
   username: string;
-  displayName: string;
+  displayName?: string;
+  fullName?: string;
   bio?: string;
   avatarUrl?: string;
-  interests: string[];
+  profilePictureUrl?: string;
+  interests?: string[];
   location?: Coordinates;
-  isOnline: boolean;
-  lastActive: Date;
-  settings: UserSettings;
+  latitude?: number;
+  longitude?: number;
+  status?: 'online' | 'offline';
+  lastActive?: Date;
+  settings?: UserSettings;
+}
+
+export interface UserProfile extends User {
+  displayName: string | null;
+  profile_picture_url: string | null;
+  status: 'online' | 'offline';
+  latitude: number | null;
+  longitude: number | null;
+  last_updated: string | null;
+  profile_views: number | null;
+  followers_count: number | null;
+  following_count: number | null;
+  verification_status: 'verified' | 'unverified' | 'pending' | null;
+  verified_badges: string[] | null;
 }
 
 export interface UserSettings {
