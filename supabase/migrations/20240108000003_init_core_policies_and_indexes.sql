@@ -1,3 +1,6 @@
+-- Set schema search path
+SET search_path TO public, app_types;
+
 -- Enable RLS on all core tables
 DO $$
 BEGIN
@@ -39,17 +42,30 @@ BEGIN
     CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
         FOR SELECT USING (deleted_at IS NULL);
 
-    -- Users can only insert/update their own profile
+    -- Users (including anonymous) can insert their own profile
     CREATE POLICY "Users can insert own profile" ON public.profiles
-        FOR INSERT WITH CHECK (auth.uid() = id);
+        FOR INSERT 
+        WITH CHECK (
+            auth.uid() = id 
+            OR (auth.jwt()->>'aud' = 'anon' AND id = auth.uid())
+        );
 
+    -- Users (including anonymous) can update their own profile
     CREATE POLICY "Users can update own profile" ON public.profiles
-        FOR UPDATE USING (auth.uid() = id AND deleted_at IS NULL)
-        WITH CHECK (auth.uid() = id);
+        FOR UPDATE 
+        USING (
+            (auth.uid() = id AND deleted_at IS NULL)
+            OR (auth.jwt()->>'aud' = 'anon' AND id = auth.uid())
+        )
+        WITH CHECK (
+            (auth.uid() = id)
+            OR (auth.jwt()->>'aud' = 'anon' AND id = auth.uid())
+        );
 
-    -- Soft deletion policy
+    -- Soft deletion policy (authenticated users only)
     CREATE POLICY "Users can soft delete own profile" ON public.profiles
-        FOR UPDATE USING (auth.uid() = id)
+        FOR UPDATE 
+        USING (auth.uid() = id AND auth.jwt()->>'aud' = 'authenticated')
         WITH CHECK (deleted_at IS NOT NULL);
 END $$;
 

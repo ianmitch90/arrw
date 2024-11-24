@@ -1,6 +1,6 @@
 -- Add chat system tables
 CREATE TABLE IF NOT EXISTS public.chat_rooms (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     type text NOT NULL CHECK (type IN ('direct', 'group', 'global')),
     name text,
     description text,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.chat_rooms (
 );
 
 CREATE TABLE IF NOT EXISTS public.chat_participants (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id uuid REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
     role text DEFAULT 'member',
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.chat_participants (
 );
 
 CREATE TABLE IF NOT EXISTS public.chat_messages (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id uuid REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
     sender_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
     content text,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
 );
 
 CREATE TABLE IF NOT EXISTS public.chat_message_reactions (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     message_id uuid REFERENCES public.chat_messages(id) ON DELETE CASCADE,
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
     reaction text NOT NULL,

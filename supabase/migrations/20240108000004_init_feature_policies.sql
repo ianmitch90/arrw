@@ -51,37 +51,86 @@ BEGIN
 END $$;
 
 -- Feature usage policies
-CREATE POLICY "Users can view their own feature usage"
+CREATE POLICY "Users can track their own feature usage"
     ON public.feature_usage
-    FOR SELECT
-    USING (user_id = auth.uid());
+    FOR ALL
+    USING (
+        user_id = auth.uid()
+        AND (
+            -- Allow both authenticated and anonymous users
+            auth.jwt()->>'aud' IN ('authenticated', 'anon')
+        )
+    )
+    WITH CHECK (
+        user_id = auth.uid()
+        AND (
+            -- Allow both authenticated and anonymous users
+            auth.jwt()->>'aud' IN ('authenticated', 'anon')
+        )
+    );
 
-CREATE POLICY "Users can record their own feature usage"
-    ON public.feature_usage
-    FOR INSERT
-    WITH CHECK (user_id = auth.uid());
+-- Allow anonymous users to view available features
+CREATE POLICY "Anonymous users can view features"
+    ON public.features
+    FOR SELECT
+    USING (true);
+
+-- Allow anonymous users to view subscription tiers
+CREATE POLICY "Anonymous users can view subscription features"
+    ON public.subscription_features
+    FOR SELECT
+    USING (true);
 
 -- Presence logs policies
 CREATE POLICY "Users can view their own presence logs"
     ON public.presence_logs
     FOR SELECT
-    USING (user_id = auth.uid());
+    USING (
+        user_id = auth.uid() 
+        AND EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid()
+            AND (privacy_settings->>'sharePresence')::boolean = true
+        )
+    );
 
 CREATE POLICY "Users can create their own presence logs"
     ON public.presence_logs
     FOR INSERT
-    WITH CHECK (user_id = auth.uid());
+    WITH CHECK (
+        user_id = auth.uid()
+        AND EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid()
+            AND (privacy_settings->>'sharePresence')::boolean = true
+            AND auth.jwt()->>'aud' = 'authenticated'
+        )
+    );
 
 -- Zone presence policies
 CREATE POLICY "Users can view their own zone presence"
     ON public.zone_presence
     FOR SELECT
-    USING (user_id = auth.uid());
+    USING (
+        user_id = auth.uid()
+        AND EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid()
+            AND auth.jwt()->>'aud' = 'authenticated'
+        )
+    );
 
 CREATE POLICY "Users can record their own zone presence"
     ON public.zone_presence
     FOR INSERT
-    WITH CHECK (user_id = auth.uid());
+    WITH CHECK (
+        user_id = auth.uid()
+        AND EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid()
+            AND auth.jwt()->>'aud' = 'authenticated'
+        )
+    );
 
 -- Additional location-based policies
 CREATE POLICY "Users can view nearby active users"

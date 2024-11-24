@@ -1,3 +1,6 @@
+-- Set schema search path
+SET search_path TO public, app_types;
+
 -- Set up utility functions
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
@@ -7,40 +10,177 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Create a logging table for debugging
+CREATE TABLE IF NOT EXISTS public.debug_logs (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    timestamp timestamptz DEFAULT now(),
+    function_name text,
+    step text,
+    user_id uuid,
+    data jsonb,
+    error text
+);
+
+-- Helper function to log debug information
+CREATE OR REPLACE FUNCTION public.log_debug(
+    function_name text,
+    step text,
+    user_id uuid,
+    data jsonb DEFAULT NULL,
+    error text DEFAULT NULL
+) RETURNS void AS $$
+BEGIN
+    INSERT INTO public.debug_logs (function_name, step, user_id, data, error)
+    VALUES (function_name, step, user_id, data, error);
+EXCEPTION WHEN OTHERS THEN
+    -- If logging fails, write to PostgreSQL's internal log
+    RAISE WARNING 'Failed to write to debug_logs: % | Function: % | Step: % | User: % | Data: % | Error: %',
+        SQLERRM, function_name, step, user_id, data::text, error;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Core user management functions
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
+RETURNS TRIGGER AS $$
+DECLARE
+    is_anonymous boolean;
+    v_user_metadata jsonb;
 BEGIN
-    -- Create profile
-    INSERT INTO public.profiles (
-        id,
-        full_name,
-        avatar_url,
-        email,
-        phone,
-        role,
-        status
-    ) VALUES (
+    -- Initial logging of incoming data
+    PERFORM public.log_debug(
+        'handle_new_user',
+        'start',
         NEW.id,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-        NEW.raw_user_meta_data->>'avatar_url',
-        NEW.email,
-        NEW.phone,
-        CASE 
-            WHEN NEW.email = ANY(string_to_array(current_setting('app.admin_emails', true), ','))
-            THEN 'admin'::user_role
-            ELSE 'free'::user_role
-        END,
-        'pending_verification'::user_status
+        jsonb_build_object(
+            'raw_user_meta_data', NEW.raw_user_meta_data,
+            'email', NEW.email,
+            'phone', NEW.phone,
+            'aud', NEW.aud,
+            'role', NEW.role
+        )
     );
 
-    -- Create customer record
-    INSERT INTO public.customers (
-        user_id,
-        email
-    ) VALUES (
+    BEGIN
+        -- Parse and validate input data
+        v_user_metadata := COALESCE(NEW.raw_user_meta_data, '{}'::jsonb);
+        is_anonymous := v_user_metadata->>'is_anonymous' = 'true' OR NEW.aud = 'anon';
+
+        PERFORM public.log_debug(
+            'handle_new_user',
+            'validation',
+            NEW.id,
+            jsonb_build_object(
+                'is_anonymous', is_anonymous,
+                'user_metadata', v_user_metadata
+            )
+        );
+
+        -- Create a user record
+        INSERT INTO public.users (
+            id,
+            email,
+            phone,
+            full_name,
+            role,
+            status
+        ) VALUES (
+            NEW.id,
+            CASE WHEN is_anonymous THEN NULL ELSE NEW.email END,
+            NULL, -- Phone is always NULL initially
+            COALESCE(
+                v_user_metadata->>'full_name',
+                v_user_metadata->>'name',
+                CASE 
+                    WHEN is_anonymous THEN 'Anonymous User'
+                    ELSE split_part(NEW.email, '@', 1)
+                END
+            ),
+            CASE 
+                WHEN is_anonymous THEN 'anonymous'::app_types.user_role
+                ELSE 'free'::app_types.user_role
+            END,
+            CASE 
+                WHEN is_anonymous THEN 'active'::app_types.user_status
+                ELSE 'pending_verification'::app_types.user_status
+            END
+        );
+
+        PERFORM public.log_debug(
+            'handle_new_user',
+            'users_insert_success',
+            NEW.id,
+            jsonb_build_object(
+                'table', 'users',
+                'is_anonymous', is_anonymous
+            )
+        );
+
+        -- Create a profile record with default privacy settings
+        INSERT INTO public.profiles (
+            id,
+            full_name,
+            privacy_settings
+        ) VALUES (
+            NEW.id,
+            COALESCE(
+                v_user_metadata->>'full_name',
+                v_user_metadata->>'name',
+                CASE 
+                    WHEN is_anonymous THEN 'Anonymous User'
+                    ELSE split_part(NEW.email, '@', 1)
+                END
+            ),
+            jsonb_build_object(
+                'location_sharing', 'private'::app_types.privacy_level,
+                'profile_visibility', 'private'::app_types.privacy_level,
+                'online_status', 'private'::app_types.privacy_level,
+                'allow_friend_requests', false,
+                'allow_messages', false
+            )
+        );
+
+        PERFORM public.log_debug(
+            'handle_new_user',
+            'profiles_insert_success',
+            NEW.id,
+            jsonb_build_object(
+                'table', 'profiles',
+                'is_anonymous', is_anonymous
+            )
+        );
+
+    EXCEPTION WHEN OTHERS THEN
+        -- Log any errors that occur
+        PERFORM public.log_debug(
+            'handle_new_user',
+            'error',
+            NEW.id,
+            jsonb_build_object(
+                'error_code', SQLSTATE,
+                'error_message', SQLERRM,
+                'error_hint', SQLERRM,
+                'error_context', SQLSTATE,
+                'is_anonymous', is_anonymous,
+                'current_step', case 
+                    when not exists (select 1 from public.users where id = NEW.id) then 'users_insert'
+                    when not exists (select 1 from public.profiles where id = NEW.id) then 'profiles_insert'
+                    else 'unknown'
+                end
+            ),
+            SQLERRM
+        );
+        RAISE EXCEPTION 'Error in handle_new_user: % (Code: %)', SQLERRM, SQLSTATE;
+    END;
+
+    -- Log successful completion
+    PERFORM public.log_debug(
+        'handle_new_user',
+        'complete',
         NEW.id,
-        NEW.email
+        jsonb_build_object(
+            'success', true,
+            'is_anonymous', is_anonymous
+        )
     );
 
     RETURN NEW;

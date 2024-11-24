@@ -1,37 +1,44 @@
+-- Set schema search path
+SET search_path TO public, app_types;
+
 -- Create core tables for the application
 
 -- Users and Profiles
 CREATE TABLE IF NOT EXISTS public.users (
     id uuid references auth.users primary key,
-    email text unique,
-    phone text unique check (phone ~ '^\+[1-9]\d{1,14}$' AND length(phone) <= 20),
-    full_name text check (length(full_name) <= 100),
-    role user_role DEFAULT 'free',
-    status user_status DEFAULT 'pending_verification',
+    email text,
+    phone text check (phone IS NULL OR (phone ~ '^\+[1-9]\d{1,14}$' AND length(phone) <= 20)),
+    full_name text check (full_name IS NULL OR length(full_name) <= 100),
+    role app_types.user_role DEFAULT 'free',
+    status app_types.user_status DEFAULT 'pending_verification',
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now()
 );
+
+-- Create partial unique indexes for email and phone
+CREATE UNIQUE INDEX users_email_key ON public.users (email) WHERE email IS NOT NULL;
+CREATE UNIQUE INDEX users_phone_key ON public.users (phone) WHERE phone IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     full_name text,
     avatar_url text,
     birth_date date,
-    gender_identity gender_identity,
-    sexual_orientation sexual_orientation,
-    relationship_status relationship_status,
+    gender_identity app_types.gender_identity,
+    sexual_orientation app_types.sexual_orientation,
+    relationship_status app_types.relationship_status,
     bio text,
     current_location geography(Point, 4326),
     location_accuracy float,
     last_location_update timestamptz,
-    presence_status presence_status DEFAULT 'offline',
+    presence_status app_types.presence_status DEFAULT 'offline',
     last_seen_at timestamptz,
     online_at timestamptz,
-    status user_status DEFAULT 'active',
-    subscription_tier subscription_tier DEFAULT 'free',
+    status app_types.user_status DEFAULT 'active',
+    subscription_tier app_types.subscription_tier DEFAULT 'free',
     privacy_settings jsonb DEFAULT '{"allowLocationHistory": true, "sharePresence": true}'::jsonb,
-    location_sharing privacy_level DEFAULT 'friends',
-    presence_sharing privacy_level DEFAULT 'public',
+    location_sharing app_types.privacy_level DEFAULT 'friends',
+    presence_sharing app_types.privacy_level DEFAULT 'public',
     deleted_at timestamptz,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now()
@@ -48,7 +55,7 @@ CREATE TABLE IF NOT EXISTS public.features (
 CREATE TABLE IF NOT EXISTS public.subscription_features (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     feature_id uuid REFERENCES public.features(id) ON DELETE CASCADE,
-    subscription_tier subscription_tier NOT NULL,
+    subscription_tier app_types.subscription_tier NOT NULL,
     created_at timestamptz DEFAULT now(),
     UNIQUE(feature_id, subscription_tier)
 );
@@ -68,7 +75,7 @@ CREATE TABLE IF NOT EXISTS public.feature_usage (
 -- Location History
 CREATE TABLE IF NOT EXISTS public.location_history (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid REFERENCES public.users(id) ON DELETE CASCADE,
+    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
     location geography(Point, 4326) NOT NULL,
     accuracy float,
     created_at timestamptz DEFAULT now()
@@ -134,7 +141,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
     stripe_customer_id text UNIQUE,
     payment_method jsonb,
     subscription_status text,
-    subscription_tier subscription_tier DEFAULT 'free',
+    subscription_tier app_types.subscription_tier DEFAULT 'free',
     subscription_period_start timestamptz,
     subscription_period_end timestamptz,
     created_at timestamptz DEFAULT now(),

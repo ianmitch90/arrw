@@ -1,6 +1,9 @@
+-- Set schema search path
+SET search_path TO public, app_types;
+
 -- Add trust and verification related tables
 CREATE TABLE IF NOT EXISTS public.trusted_contacts (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES auth.users NOT NULL,
     trusted_user_id uuid REFERENCES auth.users NOT NULL,
     trust_score float DEFAULT 0,
@@ -11,16 +14,15 @@ CREATE TABLE IF NOT EXISTS public.trusted_contacts (
 );
 
 CREATE TABLE IF NOT EXISTS public.age_verifications (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
     method age_verification_method NOT NULL,
     status verification_status DEFAULT 'pending',
     verification_data jsonb,
     verified_at timestamptz,
-    expires_at timestamptz,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
-    CONSTRAINT unique_active_verification UNIQUE (user_id, method)
+    CONSTRAINT age_verifications_unique UNIQUE (user_id)
 );
 
 -- Add indexes
@@ -36,12 +38,23 @@ ALTER TABLE public.age_verifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their own trusted contacts"
     ON public.trusted_contacts
     FOR SELECT
-    USING (user_id = auth.uid() OR trusted_user_id = auth.uid());
+    USING (auth.uid() = user_id OR auth.uid() = trusted_user_id);
 
-CREATE POLICY "Users can manage their own trusted contacts"
+CREATE POLICY "Users can create their own trusted contacts"
     ON public.trusted_contacts
-    FOR ALL
-    USING (user_id = auth.uid());
+    FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own trusted contacts"
+    ON public.trusted_contacts
+    FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own trusted contacts"
+    ON public.trusted_contacts
+    FOR DELETE
+    USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can view their own verifications"
     ON public.age_verifications
