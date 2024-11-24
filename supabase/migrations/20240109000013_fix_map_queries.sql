@@ -1,7 +1,7 @@
 -- Drop existing function first
-DROP FUNCTION IF EXISTS find_places_within_radius(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, TEXT[]);
+DROP FUNCTION IF EXISTS find_places_within_radius;
 
--- Update places query to include creator information
+-- Recreate function with updated return type
 CREATE OR REPLACE FUNCTION find_places_within_radius(
     user_lat DOUBLE PRECISION,
     user_lng DOUBLE PRECISION,
@@ -28,7 +28,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         p.*,
         u.id as creator_id,
         u.full_name as creator_full_name,
