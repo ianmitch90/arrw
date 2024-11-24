@@ -13,7 +13,7 @@ import { useChatOverlay } from '@/hooks/useChatOverlay';
 import TopNav from '@/components/ui/TopNav';
 import MapView from '@/components/map/MapView';
 import Messages from '@/components/chat/Messages';
-import { Spinner } from '@nextui-org/react';
+import LoadingScreen from '@/components/LoadingScreen';
 import BottomBar from '@/components/Navigation/BottomBar';
 
 
@@ -42,17 +42,13 @@ export default function ProtectedLayout({
   }, [loading, user, router, mounted]);
 
   if (!mounted || loading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
-        <Spinner size="lg" />
+        <LoadingScreen />
       </div>
     );
   }
@@ -115,7 +111,7 @@ export default function ProtectedLayout({
                   <Suspense
                     fallback={
                       <div className="flex h-[80vh] items-center justify-center">
-                        <Spinner size="lg" color="primary" />
+                        <LoadingScreen />
                       </div>
                     }
                   >

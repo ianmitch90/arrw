@@ -71,29 +71,42 @@ export class SessionManager {
     return null;
   }
 
+  public async saveSession(session: Session): Promise<void> {
+    this.storeSession(session);
+    this.scheduleTokenRefresh(session);
+    this.updateLastActivity();
+  }
+
   private async restoreSession(): Promise<void> {
     try {
       const accessToken = localStorage.getItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
       const refreshToken = localStorage.getItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
-      const userStr = localStorage.getItem(LOCAL_STORAGE_KEYS.USER);
 
       if (accessToken && refreshToken) {
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
+        try {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          this.handleNewSession(session);
-          return;
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          
+          if (session) {
+            this.handleNewSession(session);
+            return;
+          }
+        } catch (error) {
+          console.warn('Failed to restore existing session:', error);
+          // Clear invalid session data
+          this.clearSession();
         }
       }
 
-      // If no valid session, try to refresh
+      // If no valid session or failed to restore, try to refresh
       await this.refreshSession();
     } catch (error) {
-      console.warn('Failed to restore session:', error);
+      console.warn('Failed to restore or refresh session:', error);
       this.clearSession();
     }
   }
@@ -101,24 +114,41 @@ export class SessionManager {
   public async refreshSession(): Promise<Session | null> {
     if (this.isRefreshing) return null;
     this.isRefreshing = true;
+    this.retryCount = 0;
+
+    const attemptRefresh = async (): Promise<Session | null> => {
+      try {
+        const { data: { session }, error } = await supabase.auth.refreshSession();
+        
+        if (error) {
+          if (this.retryCount < MAX_RETRY_ATTEMPTS) {
+            this.retryCount++;
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            return attemptRefresh();
+          }
+          this.clearSession();
+          return null;
+        }
+
+        if (session) {
+          this.handleNewSession(session);
+          return session;
+        }
+
+        return null;
+      } catch (error) {
+        if (this.retryCount < MAX_RETRY_ATTEMPTS) {
+          this.retryCount++;
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return attemptRefresh();
+        }
+        this.clearSession();
+        throw error;
+      }
+    };
 
     try {
-      const { data: { session }, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        this.clearSession();
-        return null;
-      }
-
-      if (session) {
-        this.handleNewSession(session);
-        return session;
-      }
-
-      return null;
-    } catch (error) {
-      this.clearSession();
-      throw error;
+      return await attemptRefresh();
     } finally {
       this.isRefreshing = false;
     }

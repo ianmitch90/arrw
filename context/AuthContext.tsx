@@ -55,48 +55,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setSession(session);
-        setUser(session.user);
-        // Check if profile exists
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          // If profile doesn't exist, try to create it
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert([{ 
-              id: session.user.id,
-              created_at: new Date().toISOString(),
-              status: 'online'
-            }]);
+      try {
+        if (event === 'SIGNED_IN' && session) {
+          setSession(session);
+          setUser(session.user);
           
-          if (insertError) {
-            console.error('Error creating profile:', insertError);
+          // Check if profile exists
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError && profileError.code !== 'PGRST116') {
+            // If it's not a "does not exist" error, handle it
+            console.error('Error fetching profile:', profileError);
             toast({
               title: 'Error',
-              description: 'Failed to create user profile',
+              description: 'Failed to fetch user profile',
               variant: 'destructive',
             });
             return;
           }
+
+          if (!profile) {
+            // If profile doesn't exist, create it
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert([{ 
+                id: session.user.id,
+                created_at: new Date().toISOString(),
+                status: 'online'
+              }]);
+            
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+              toast({
+                title: 'Error',
+                description: 'Failed to create user profile',
+                variant: 'destructive',
+              });
+              return;
+            }
+          }
+          
+          router.replace('/map');
+        } else if (event === 'SIGNED_OUT') {
+          await sessionManager.clearSession();
+          setSession(null);
+          setUser(null);
+          router.replace('/login');
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          setSession(session);
+          setUser(session.user);
+          // Ensure the session is updated in storage
+          await sessionManager.saveSession(session);
         }
-        
-        router.replace('/map');
-      } else if (event === 'SIGNED_OUT') {
-        sessionManager.clearSession();
-        setSession(null);
-        setUser(null);
-        router.replace('/login');
-      } else if (event === 'TOKEN_REFRESHED' && session) {
-        setSession(session);
-        setUser(session.user);
+      } catch (error) {
+        console.error('Auth state change error:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
