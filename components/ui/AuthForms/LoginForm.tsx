@@ -16,6 +16,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useToast } from '@/components/ui/use-toast';
 import { loginValidationSchema } from '@/utils/validation/auth';
 import { useSessionManager } from '@/context/SessionManagerContext';
+import { useAgeVerification } from '@/contexts/AgeVerificationContext';
 
 export default function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export default function LoginForm() {
   const { isOpen: isAgeModalOpen, onOpen: onAgeModalOpen, onClose: onAgeModalClose } = useDisclosure();
   const supabase = useSupabaseClient();
   const sessionManager = useSessionManager();
+  const { setIsSignupFlow } = useAgeVerification();
 
   const handleMagicLinkLogin = async () => {
     if (!magicLinkEmail) {
@@ -61,73 +63,9 @@ export default function LoginForm() {
     }
   };
 
-  const handleAgeVerification = async () => {
-    setIsAnonymousLoading(true);
-    try {
-      const { data: { user, session }, error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      if (!session) throw new Error('No session returned');
-      if (!user) throw new Error('No user returned');
-
-      // Create age verification record
-      const { error: verificationError } = await supabase
-        .from('age_verifications')
-        .upsert({
-          user_id: user.id,
-          acknowledged: true,
-          acknowledged_at: new Date().toISOString(),
-          verified: false,
-          method: 'modal'
-        }, {
-          onConflict: 'user_id',
-          ignoreDuplicates: false
-        });
-
-      if (verificationError) throw verificationError;
-
-      // Update user status
-      const { error: userError } = await supabase
-        .from('users')
-        .update({
-          status: 'pending_verification',
-          age: null
-        })
-        .eq('id', user.id);
-
-      if (userError) throw userError;
-
-      // Initialize session management
-      sessionManager.handleNewSession(session);
-      
-      onAgeModalClose();
-      toast({
-        title: 'Success',
-        description: 'Signed in anonymously',
-      });
-      
-      router.push('/map');
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive'
-      });
-    } finally {
-      setIsAnonymousLoading(false);
-    }
-  };
-
   const handleAnonymousLogin = () => {
+    setIsSignupFlow(false); // This is not a signup flow
     onAgeModalOpen();
-  };
-
-  const handleAgeCancel = () => {
-    onAgeModalClose();
-    toast({
-      title: 'Age Restriction',
-      description: 'You must be 18 or above to use this service',
-      variant: 'destructive'
-    });
   };
 
   const [magicLinkEmail, setMagicLinkEmail] = useState('');
@@ -299,8 +237,6 @@ export default function LoginForm() {
       <AgeVerificationModal
         isOpen={isAgeModalOpen}
         onClose={onAgeModalClose}
-        onConfirm={handleAgeVerification}
-        onCancel={handleAgeCancel}
       />
 
       {/* Magic Link Modal */}

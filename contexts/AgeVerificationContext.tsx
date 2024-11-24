@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { AgeVerificationState, AgeVerificationContextType } from '@/types/auth.types';
-import { supabase } from '@/lib/supabase';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const AgeVerificationContext = createContext<AgeVerificationContextType | undefined>(undefined);
@@ -10,10 +9,12 @@ export function AgeVerificationProvider({ children }: { children: React.ReactNod
     isVerified: false,
     verifiedAt: null,
     method: null,
-    isAnonymous: false
+    isAnonymous: false,
+    hasAcknowledged: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [isSignupFlow, setIsSignupFlow] = useState(false);
 
   const supabaseClient = createClientComponentClient();
 
@@ -34,7 +35,8 @@ export function AgeVerificationProvider({ children }: { children: React.ReactNod
               isVerified: true,
               verifiedAt: new Date(data.age_verified_at),
               method: data.age_verification_method,
-              isAnonymous: data.is_anonymous
+              isAnonymous: data.is_anonymous,
+              hasAcknowledged: true
             });
           }
         }
@@ -50,11 +52,13 @@ export function AgeVerificationProvider({ children }: { children: React.ReactNod
   const verifyAge = async ({ 
     birthDate,
     method,
-    isAnonymous 
+    isAnonymous,
+    hasAcknowledged 
   }: { 
     birthDate: Date;
     method: 'modal' | 'document';
     isAnonymous: boolean;
+    hasAcknowledged: boolean;
   }) => {
     setIsLoading(true);
     setError(null);
@@ -64,6 +68,10 @@ export function AgeVerificationProvider({ children }: { children: React.ReactNod
       
       if (!session && !isAnonymous) {
         throw new Error('User must be logged in to verify age');
+      }
+
+      if (!hasAcknowledged) {
+        throw new Error('You must acknowledge that you are of legal age');
       }
 
       const verificationData = {
@@ -86,7 +94,8 @@ export function AgeVerificationProvider({ children }: { children: React.ReactNod
         isVerified: true,
         verifiedAt: new Date(),
         method,
-        isAnonymous
+        isAnonymous,
+        hasAcknowledged
       });
     } catch (err) {
       console.error('Error verifying age:', err);
@@ -102,7 +111,8 @@ export function AgeVerificationProvider({ children }: { children: React.ReactNod
       isVerified: false,
       verifiedAt: null,
       method: null,
-      isAnonymous: false
+      isAnonymous: false,
+      hasAcknowledged: false
     });
     setError(null);
   };
@@ -114,7 +124,9 @@ export function AgeVerificationProvider({ children }: { children: React.ReactNod
         verifyAge,
         reset,
         isLoading,
-        error
+        error,
+        isSignupFlow,
+        setIsSignupFlow
       }}
     >
       {children}

@@ -3,6 +3,7 @@ export interface AgeVerificationState {
   verifiedAt: Date | null;
   method: 'modal' | 'document' | null;
   isAnonymous: boolean;
+  hasAcknowledged?: boolean;
 }
 
 export interface AgeVerificationContextType {
@@ -11,8 +12,11 @@ export interface AgeVerificationContextType {
     birthDate: Date;
     method: 'modal' | 'document';
     isAnonymous: boolean;
+    hasAcknowledged: boolean;
   }) => Promise<void>;
   reset: () => void;
   isLoading: boolean;
   error: Error | null;
+  isSignupFlow: boolean;
+  setIsSignupFlow: (value: boolean) => void;
 }
