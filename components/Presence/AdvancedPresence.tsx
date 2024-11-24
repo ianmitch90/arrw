@@ -61,7 +61,17 @@ export function AdvancedPresence({
         const state = channel.presenceState();
         const userState = state[userId];
         if (userState?.[0]) {
-          setPresence(userState[0] as PresenceState);
+          // First convert to unknown, then to PresenceState
+          const presenceData = userState[0] as unknown;
+          
+          // Create a default presence state with required fields
+          const defaultPresence: PresenceState = {
+            status: 'offline',
+            lastSeen: new Date(),
+            ...presenceData as Partial<PresenceState>
+          };
+          
+          setPresence(defaultPresence);
         }
       })
       .subscribe();

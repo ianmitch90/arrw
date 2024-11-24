@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types_db';
 import {
   Button,
   Popover,
@@ -15,21 +15,27 @@ import {
 } from '@nextui-org/react';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
-type PrivacyLevel = 'precise' | 'approximate' | 'area';
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type LocationSharing = Profile['location_sharing'];
+
+const LOCATION_SHARING_OPTIONS = [
+  { value: 'public', label: 'Public' },
+  { value: 'friends', label: 'Friends Only' },
+  { value: 'friends_of_friends', label: 'Friends of Friends' },
+  { value: 'private', label: 'Private' },
+] as const;
 
 interface LocationPrivacySettings {
-  privacyLevel: PrivacyLevel;
-  obscuringRadius: number;
-  sharingEnabled: boolean;
+  locationSharing: LocationSharing;
+  locationAccuracy: number | null;
 }
 
 export function LocationPrivacyControl() {
   const supabase = useSupabaseClient<Database>();
   const user = useUser();
   const [settings, setSettings] = useState<LocationPrivacySettings>({
-    privacyLevel: 'precise',
-    obscuringRadius: 100,
-    sharingEnabled: true,
+    locationSharing: 'private',
+    locationAccuracy: 100,
   });
   const [isOpen, setIsOpen] = useState(false);
 
@@ -42,48 +48,49 @@ export function LocationPrivacyControl() {
   const fetchPrivacySettings = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('location_privacy_level, location_obscuring_radius, location_sharing_enabled')
+      .select('location_sharing, location_accuracy')
       .eq('id', user!.id)
       .single();
 
     if (data && !error) {
       setSettings({
-        privacyLevel: data.location_privacy_level as PrivacyLevel,
-        obscuringRadius: data.location_obscuring_radius || 100,
-        sharingEnabled: data.location_sharing_enabled,
+        locationSharing: data.location_sharing,
+        locationAccuracy: data.location_accuracy,
       });
     }
   };
 
-  const updatePrivacyLevel = async (level: PrivacyLevel) => {
-    const { error } = await supabase.rpc('update_location_privacy', {
-      p_privacy_level: level,
-      p_obscuring_radius: settings.obscuringRadius,
-    });
+  const updateLocationSharing = async (sharing: LocationSharing) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ location_sharing: sharing })
+      .eq('id', user!.id);
 
     if (!error) {
-      setSettings(prev => ({ ...prev, privacyLevel: level }));
+      setSettings(prev => ({ ...prev, locationSharing: sharing }));
     }
   };
 
-  const updateRadius = async (radius: number) => {
-    const { error } = await supabase.rpc('update_location_privacy', {
-      p_privacy_level: settings.privacyLevel,
-      p_obscuring_radius: radius,
-    });
+  const updateLocationAccuracy = async (accuracy: number | null) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ location_accuracy: accuracy })
+      .eq('id', user!.id);
 
     if (!error) {
-      setSettings(prev => ({ ...prev, obscuringRadius: radius }));
+      setSettings(prev => ({ ...prev, locationAccuracy: accuracy }));
     }
   };
 
-  const toggleSharing = async () => {
-    const { error } = await supabase.rpc('toggle_location_sharing', {
-      p_enabled: !settings.sharingEnabled,
-    });
+  const toggleLocationSharing = () => {
+    const newSharing = settings.locationSharing === 'public' ? 'private' : 'public';
+    updateLocationSharing(newSharing);
+  };
 
-    if (!error) {
-      setSettings(prev => ({ ...prev, sharingEnabled: !prev.sharingEnabled }));
+  const handleSharingChange = (value: string) => {
+    const newSharing = value as LocationSharing;
+    if (LOCATION_SHARING_OPTIONS.some(opt => opt.value === newSharing)) {
+      updateLocationSharing(newSharing);
     }
   };
 
@@ -106,10 +113,10 @@ export function LocationPrivacyControl() {
               isIconOnly
               size="sm"
               variant="light"
-              onClick={toggleSharing}
-              className={settings.sharingEnabled ? 'text-success' : 'text-danger'}
+              onClick={toggleLocationSharing}
+              className={settings.locationSharing === 'public' ? 'text-success' : 'text-danger'}
             >
-              {settings.sharingEnabled ? (
+              {settings.locationSharing === 'public' ? (
                 <Eye className="w-4 h-4" />
               ) : (
                 <EyeOff className="w-4 h-4" />
@@ -117,56 +124,31 @@ export function LocationPrivacyControl() {
             </Button>
           </CardHeader>
           <CardBody className="gap-4">
-            <RadioGroup
-              value={settings.privacyLevel}
-              onValueChange={val => updatePrivacyLevel(val as PrivacyLevel)}
-            >
-              <Radio value="precise">
-                Precise Location
-                <span className="text-tiny text-default-400 ml-1">
-                  (Exact location)
-                </span>
-              </Radio>
-              <Radio value="approximate">
-                Approximate Location
-                <span className="text-tiny text-default-400 ml-1">
-                  (Within {settings.obscuringRadius}m)
-                </span>
-              </Radio>
-              <Radio value="area">
-                General Area
-                <span className="text-tiny text-default-400 ml-1">
-                  (Within {settings.obscuringRadius * 2}m)
-                </span>
-              </Radio>
-            </RadioGroup>
-
-            {settings.privacyLevel !== 'precise' && (
-              <div className="space-y-2">
-                <label className="text-small">
-                  Privacy Radius: {settings.obscuringRadius}m
-                </label>
-                <Slider
-                  size="sm"
-                  step={50}
-                  minValue={50}
-                  maxValue={500}
-                  value={settings.obscuringRadius}
-                  onChange={val => updateRadius(val as number)}
-                  className="max-w-md"
-                />
-              </div>
-            )}
-
-            <p className="text-tiny text-default-400">
-              {settings.privacyLevel === 'precise'
-                ? 'Others will see your exact location'
-                : settings.privacyLevel === 'approximate'
-                ? `Your location will be randomized within ${settings.obscuringRadius}m of your actual position`
-                : `Your location will be randomized within ${
-                    settings.obscuringRadius * 2
-                  }m of your actual position`}
-            </p>
+            <div>
+              <label className="text-sm mb-2 block">Location Sharing</label>
+              <RadioGroup
+                value={settings.locationSharing || 'private'}
+                onValueChange={handleSharingChange}
+              >
+                {LOCATION_SHARING_OPTIONS.map(option => (
+                  <Radio key={option.value} value={option.value}>
+                    {option.label}
+                  </Radio>
+                ))}
+              </RadioGroup>
+            </div>
+            <div>
+              <label className="text-sm mb-2 block">Location Accuracy</label>
+              <Slider
+                size="sm"
+                step={10}
+                maxValue={100}
+                minValue={0}
+                value={settings.locationAccuracy || 0}
+                onChange={(value) => updateLocationAccuracy(value as number)}
+                className="max-w-md"
+              />
+            </div>
           </CardBody>
         </Card>
       </PopoverContent>

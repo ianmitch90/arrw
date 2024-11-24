@@ -10,7 +10,7 @@ import { createRoot } from 'react-dom/client';
 import { ProposalCluster } from './ProposalCluster';
 
 // Initialize Mapbox
-const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+const token = process.env.NEXT_PUBLIC_MAPBOX_API_KEY!;
 console.log('Mapbox token available:', !!token);
 mapboxgl.accessToken = token;
 

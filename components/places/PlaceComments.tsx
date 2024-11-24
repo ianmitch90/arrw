@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { PlaceComment } from '@/types/core';
-import { Avatar, Button, Card, Input, Rating } from '@nextui-org/react';
+import { Avatar, Button, Card, Textarea } from '@nextui-org/react';
+import { Rating } from '@smastrom/react-rating';
+import '@smastrom/react-rating/style.css';
 import { formatDistanceToNow } from 'date-fns';
 import { MessageSquare, Star } from 'lucide-react';
 
@@ -88,11 +90,11 @@ export function PlaceComments({ placeId }: PlaceCommentsProps) {
             <Rating
               value={newRating}
               onChange={setNewRating}
-              size="sm"
+              style={{ maxWidth: 150 }}
             />
           </div>
 
-          <Input
+          <Textarea
             placeholder="Share your experience..."
             value={newComment}
             onValueChange={setNewComment}
@@ -122,14 +124,19 @@ export function PlaceComments({ placeId }: PlaceCommentsProps) {
           <Card key={comment.id} className="p-3">
             <div className="flex gap-3">
               <Avatar
-                src={comment.user.avatar_url}
-                name={comment.user.full_name}
+                src={comment.user?.avatar_url}
+                name={comment.user?.full_name || 'Anonymous User'}
                 size="sm"
+                fallback={
+                  <div className="w-8 h-8 bg-default-200 rounded-full flex items-center justify-center">
+                    <span className="text-sm">?</span>
+                  </div>
+                }
               />
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">
-                    {comment.user.full_name}
+                    {comment.user?.full_name || 'Anonymous User'}
                   </span>
                   <span className="text-sm text-default-500">
                     {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
@@ -139,7 +146,7 @@ export function PlaceComments({ placeId }: PlaceCommentsProps) {
                   <Rating
                     value={comment.rating}
                     readOnly
-                    size="sm"
+                    style={{ maxWidth: 100 }}
                     className="mt-1"
                   />
                 )}

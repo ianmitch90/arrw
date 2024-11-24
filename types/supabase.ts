@@ -550,6 +550,56 @@ export type Database = {
         Relationships: []
       }
     }
+    Functions: {
+      find_users_within_radius: {
+        Args: {
+          user_location: PostGISPoint;
+          radius_meters: number;
+        };
+        Returns: Array<{
+          id: string;
+          location: PostGISPoint;
+          distance: number;
+        }>;
+      };
+      find_places_within_radius: {
+        Args: {
+          center_point: PostGISPoint;
+          radius_meters: number;
+        };
+        Returns: Array<{
+          id: string;
+          name: string;
+          description: string | null;
+          location: PostGISPoint;
+          distance: number;
+          metadata: Json | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          status: string | null;
+        }>;
+      };
+      find_stories_within_radius: {
+        Args: {
+          center_point: PostGISPoint;
+          radius_meters: number;
+        };
+        Returns: Array<{
+          id: string;
+          title: string;
+          content: string | null;
+          location: PostGISPoint;
+          distance: number;
+          media_url: string | null;
+          metadata: Json | null;
+          created_by: string | null;
+          created_at: string;
+          expires_at: string | null;
+          status: string | null;
+        }>;
+      };
+    };
     Enums: {
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
@@ -569,37 +619,6 @@ export type Database = {
       user_role: UserRole
       user_status: UserStatus
       verification_status: "unverified" | "pending" | "verified" | "rejected"
-    }
-    Functions: {
-      get_nearby_places: {
-        Args: {
-          lat: number
-          lng: number
-          radius: number
-        }
-        Returns: {
-          id: string
-          name: string
-          description: string
-          category: string
-          location: PostGISPoint
-          distance: number
-        }[]
-      }
-      get_nearby_stories: {
-        Args: {
-          lat: number
-          lng: number
-          radius: number
-        }
-        Returns: {
-          id: string
-          title: string
-          content: string
-          location: PostGISPoint
-          distance: number
-        }[]
-      }
     }
   }
 }

@@ -1,14 +1,16 @@
 import { useCallback, useState } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import type { Database } from '@/types/supabase';
+import { Database } from '@/types_db';
 import { Button, Card, Input, Textarea, Select, SelectItem } from '@nextui-org/react';
-import { Coordinates, PlaceTag } from '@/types/core';
 import { Upload } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { PlaceCreatorProps, Coordinates } from '@/types/map';
 
-interface PlaceCreatorProps {
-  location: Coordinates;
-  onClose: () => void;
+type Tables = Database['public']['Tables'];
+type Places = Tables['places']['Row'];
+type PlaceTag = Places['tags'][number];
+
+interface ExtendedPlaceCreatorProps extends PlaceCreatorProps {
   onSuccess: () => void;
   proposalId?: string; 
   initialData?: {
@@ -32,11 +34,12 @@ const PLACE_TAGS: { value: PlaceTag; label: string }[] = [
 
 export function PlaceCreator({ 
   location, 
-  onClose, 
+  onClose,
+  onLocationSelect,
   onSuccess, 
   proposalId,
   initialData 
-}: PlaceCreatorProps) {
+}: ExtendedPlaceCreatorProps) {
   const supabase = useSupabaseClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState(initialData?.name ?? '');

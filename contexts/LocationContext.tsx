@@ -1,12 +1,48 @@
 import { createContext, useContext, useState } from 'react';
-import {
-  LocationState,
-  LocationContextType,
-  Coordinates,
-  CityBoundary,
-  toPostGISPoint
-} from '@/types/location.types';
 import { supabase } from '@/utils/supabase/client';
+import { Database } from '@/types_db';
+
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
+
+type CityBoundary = {
+  name: string;
+  bounds: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  };
+};
+
+type LocationState = {
+  currentLocation: Database['public']['Tables']['location_history']['Row']['location'] | null;
+  selectedCity: CityBoundary | null;
+  travelMode: boolean;
+  locationPermission: 'granted' | 'denied' | 'prompt';
+  error: Error | null;
+  isLoading: boolean;
+  privacySettings: {
+    shareLocation: boolean;
+    showDistance: boolean;
+    allowLocationHistory: boolean;
+  };
+};
+
+type LocationContextType = {
+  state: LocationState;
+  updateLocation: (coords: Coordinates) => Promise<void>;
+  enableTravelMode: (enabled: boolean) => void;
+  selectCity: (city: CityBoundary) => void;
+  requestLocationPermission: () => Promise<void>;
+};
+
+// Helper function to convert coordinates to PostGIS point
+const toPostGISPoint = (coords: Coordinates) => {
+  return `POINT(${coords.longitude} ${coords.latitude})`;
+};
 
 /** React context for location management */
 const LocationContext = createContext<LocationContextType | undefined>(

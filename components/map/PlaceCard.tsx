@@ -1,15 +1,12 @@
-import { Place } from '@/types/core';
+import { PlaceCardProps } from '@/types/map';
 import { Button, Avatar } from '@nextui-org/react';
 import { MapPin, X, Calendar, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface PlaceCardProps {
-  place: Place;
-  onClose: () => void;
-}
-
-export function PlaceCard({ place, onClose }: PlaceCardProps) {
-  const timeAgo = formatDistanceToNow(new Date(place.created_at), { addSuffix: true });
+export function PlaceCard({ place, onClose, className }: PlaceCardProps) {
+  const timeAgo = place.created_at 
+    ? formatDistanceToNow(new Date(place.created_at), { addSuffix: true })
+    : 'recently';
 
   const renderPlaceTypeIcon = () => {
     switch (place.place_type) {
@@ -20,12 +17,12 @@ export function PlaceCard({ place, onClose }: PlaceCardProps) {
       case 'user_created':
         return <User className="w-5 h-5" />;
       default:
-        return null;
+        return <MapPin className="w-5 h-5" />;
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${className}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-full">
@@ -59,15 +56,15 @@ export function PlaceCard({ place, onClose }: PlaceCardProps) {
         />
       )}
 
-      {place.created_by && (
+      {place.created_by && place.creator && (
         <div className="flex items-center gap-2 pt-2 border-t">
           <Avatar
             size="sm"
-            src={place.creator?.avatar_url}
-            name={place.creator?.full_name}
+            src={place.creator.avatar_url}
+            name={place.creator.full_name}
           />
           <span className="text-sm">
-            Added by {place.creator?.full_name}
+            Added by {place.creator.full_name}
           </span>
         </div>
       )}

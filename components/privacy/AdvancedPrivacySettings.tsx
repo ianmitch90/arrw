@@ -273,10 +273,10 @@ export function AdvancedPrivacySettings() {
                   startContent={<Plus className="w-4 h-4" />}
                   onPress={() => {
                     const newSchedule = [...schedule, {
-                      day: 0,
+                      day: 0 as DayOfWeek,
                       start_time: 0,
                       end_time: 1440,
-                      privacy_level: 'area',
+                      privacy_level: 'area' as PrivacyLevel
                     }];
                     updateSchedule(newSchedule);
                   }}

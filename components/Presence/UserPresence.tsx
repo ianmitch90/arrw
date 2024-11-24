@@ -38,7 +38,17 @@ export function UserPresence({ userId, showTyping = true, showZone = true }: Use
         const state = channel.presenceState();
         const userState = state[userId];
         if (userState?.[0]) {
-          setPresence(userState[0] as PresenceState);
+          // First convert to unknown, then create a properly typed presence state
+          const presenceData = userState[0] as unknown;
+          
+          // Create a default presence state with required fields
+          const defaultPresence: PresenceState = {
+            status: 'offline',
+            lastSeen: new Date(),
+            ...presenceData as Partial<PresenceState>
+          };
+          
+          setPresence(defaultPresence);
         }
       })
       .subscribe();

@@ -1,32 +1,17 @@
+import { FilterPanelProps, PlaceType } from '@/types/map';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Slider, Switch, Chip } from '@nextui-org/react';
 import { MapPin, Building2, CalendarDays } from 'lucide-react';
 
-interface FilterPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  filters: {
-    placeTypes: string[];
-    radius: number;
-    showStories: boolean;
-    showPlaces: boolean;
-  };
-  onChange: (filters: {
-    placeTypes: string[];
-    radius: number;
-    showStories: boolean;
-    showPlaces: boolean;
-  }) => void;
-}
 
 export function FilterPanel({ isOpen, onClose, filters, onChange }: FilterPanelProps) {
-  const placeTypes = [
+  const placeTypes: { key: PlaceType; label: string; icon: any }[] = [
     { key: 'poi', label: 'Points of Interest', icon: MapPin },
     { key: 'event_venue', label: 'Event Venues', icon: Building2 },
     { key: 'user_created', label: 'User Places', icon: CalendarDays }
   ];
 
-  const handlePlaceTypeToggle = (type: string) => {
-    const newTypes = filters.placeTypes.includes(type)
+  const handlePlaceTypeToggle = (type: PlaceType) => {
+    const newTypes: PlaceType[] = filters.placeTypes.includes(type)
       ? filters.placeTypes.filter(t => t !== type)
       : [...filters.placeTypes, type];
     

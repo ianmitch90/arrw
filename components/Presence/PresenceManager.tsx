@@ -35,8 +35,11 @@ export function PresenceManager() {
           const state = channel.presenceState();
           updatePresenceStates(state);
         })
-        .on('presence', { event: 'join' }, ({ key, newPresence }) => {
-          handlePresenceJoin(key, newPresence);
+        .on('presence', { event: 'join' }, ({ key, joins }) => {
+          // joins contains an array of presence states that joined
+          if (joins && joins.length > 0) {
+            handlePresenceJoin(key, joins[0]);
+          }
         })
         .on('presence', { event: 'leave' }, ({ key }) => {
           handlePresenceLeave(key);

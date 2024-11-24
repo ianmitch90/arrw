@@ -1,6 +1,11 @@
+import { Database } from '@/types_db';
+import { PostGISPoint } from './place';
+
 export type UserRole = 'admin' | 'moderator' | 'subscriber' | 'free' | 'anon';
 
-export interface User {
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+
+export interface User extends Omit<Profile, 'current_location'> {
   id: string;
   email: string;
   phone?: string;
@@ -19,4 +24,9 @@ export interface User {
   username?: string;
   billing_address?: Record<string, any>;
   payment_method?: Record<string, any>;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  current_location: PostGISPoint | null;
 }

@@ -47,6 +47,9 @@ importers:
       '@react-three/fiber':
         specifier: ^8.17.10
         version: 8.17.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.169.0)
+      '@smastrom/react-rating':
+        specifier: ^1.5.0
+        version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@stripe/stripe-js':
         specifier: 4.9.0
         version: 4.9.0
@@ -95,6 +98,9 @@ importers:
       framer-motion:
         specifier: ^11.11.9
         version: 11.11.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      geolib:
+        specifier: ^3.3.4
+        version: 3.3.4
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
@@ -2609,6 +2615,12 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
+  '@smastrom/react-rating@1.5.0':
+    resolution: {integrity: sha512-7vg3NRgO0tpvEunq8BEWA8qckNSd7x3dVGqaNEfLs3Ow4ibU2EEXJtnd7Yl44xOujWIzXM5Bk2VZm2DVm065Qw==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+
   '@stripe/stripe-js@4.9.0':
     resolution: {integrity: sha512-tMPZQZZXGWyNX7hbgenq+1xEj2oigJ54XddbtSX36VedoKsPBq7dxwRXu4Xd5FdpT3JDyyDtnmvYkaSnH1yHTQ==}
     engines: {node: '>=12.16'}
@@ -4256,6 +4268,9 @@ packages:
 
   geojson-vt@4.0.2:
     resolution: {integrity: sha512-AV9ROqlNqoZEIJGfm1ncNjEXfkz2hdFlZf0qkVfmkwdKa8vj7H16YUOT81rJw1rdFhyEDlN2Tds91p/glzbl5A==}
+
+  geolib@3.3.4:
+    resolution: {integrity: sha512-EicrlLLL3S42gE9/wde+11uiaYAaeSVDwCUIv2uMIoRBfNJCn8EsSI+6nS3r4TCKDO6+RQNM9ayLq2at+oZQWQ==}
 
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
@@ -10131,6 +10146,11 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@smastrom/react-rating@1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   '@stripe/stripe-js@4.9.0': {}
 
   '@supabase/auth-helpers-nextjs@0.10.0(@supabase/supabase-js@2.45.6)':
@@ -12034,6 +12054,8 @@ snapshots:
   gensync@1.0.0-beta.2: {}
 
   geojson-vt@4.0.2: {}
+
+  geolib@3.3.4: {}
 
   get-caller-file@2.0.5: {}
 

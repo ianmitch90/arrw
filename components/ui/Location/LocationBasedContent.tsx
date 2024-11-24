@@ -2,18 +2,29 @@ import { useEffect, useState } from 'react';
 import { useLocation } from '@/contexts/LocationContext';
 import { supabase } from '@/utils/supabase/client';
 import { ImmersiveVideoPlayer } from './ImmersiveVideoPlayer';
-import { PostGISPoint } from '@/types/supabase';
-import { toCoordinates } from '@/types/location.types';
+import { Database } from '@/types_db';
 
-interface VideoContent {
+type VideoContent = {
   id: string;
   title: string;
   description: string;
   url: string;
   type: '360' | '180' | 'standard';
-  location: PostGISPoint;
+  location: Database['public']['Tables']['location_history']['Row']['location'];
   distance?: number;
-}
+};
+
+// Helper function to convert PostGIS point to coordinates
+const toCoordinates = (location: any) => {
+  if (!location) return { latitude: 0, longitude: 0 };
+  // PostGIS returns point in format: POINT(longitude latitude)
+  const match = location.toString().match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
+  if (!match) return { latitude: 0, longitude: 0 };
+  return {
+    latitude: parseFloat(match[2]),
+    longitude: parseFloat(match[1])
+  };
+};
 
 export function LocationBasedContent() {
   const { state: locationState } = useLocation();
@@ -42,7 +53,7 @@ export function LocationBasedContent() {
       // Transform the response data to include PostGIS points
       const contentWithDistance = data?.map((item: any) => ({
         ...item,
-        location: item.location as PostGISPoint,
+        location: item.location,
         distance: item.distance // distance is calculated by the PostGIS function
       })) || [];
 

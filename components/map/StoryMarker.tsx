@@ -1,6 +1,9 @@
-import { Story } from '@/types/core';
+import { Database } from '@/types_db';
 import { Avatar } from '@nextui-org/react';
 import { formatDistanceToNow } from 'date-fns';
+import { Stories } from '@/types/map';
+
+type Story = Stories;
 
 interface StoryMarkerProps {
   story: Story;
@@ -8,7 +11,9 @@ interface StoryMarkerProps {
 }
 
 export function StoryMarker({ story, onClick }: StoryMarkerProps) {
-  const timeAgo = formatDistanceToNow(new Date(story.created_at), { addSuffix: true });
+  const timeAgo = story.created_at 
+    ? formatDistanceToNow(new Date(story.created_at), { addSuffix: true })
+    : '';
 
   return (
     <div

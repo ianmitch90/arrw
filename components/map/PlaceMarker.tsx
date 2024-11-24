@@ -1,6 +1,8 @@
-import { Place } from '@/types/core';
+import { Database } from '@/types_db';
 import { MapPin, Calendar, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+type Place = Database['public']['Tables']['places']['Row'];
 
 interface PlaceMarkerProps {
   place: Place;

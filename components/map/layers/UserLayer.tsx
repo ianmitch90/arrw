@@ -6,21 +6,31 @@ import { Avatar, User } from '@nextui-org/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { calculateDistance } from '@/lib/utils';
 import { UserMarker } from '../markers/UserMarker';
+import type { Map as MapboxMap } from 'mapbox-gl';
 
 interface UserLayerProps {
   currentLocation: { latitude: number; longitude: number };
   onUserClick: (user: any) => void;
 }
 
+interface UserState {
+  id: string;
+  location: { latitude: number; longitude: number };
+  status: string;
+  lastSeen: Date;
+  activity: string;
+}
+
 export function UserLayer({ currentLocation, onUserClick }: UserLayerProps) {
   const supabase = useSupabaseClient<Database>();
-  const { current: map } = useMap();
-  const [users, setUsers] = useState<any[]>([]);
+  const { current: mapRef } = useMap();
+  const [users, setUsers] = useState<UserState[]>([]);
   const [clusteredPoints, setClusteredPoints] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!map || !currentLocation) return;
+    if (!mapRef || !currentLocation) return;
 
+    const map = mapRef.getMap();
     const channel = supabase.channel('user_presence');
 
     // Subscribe to presence updates
@@ -40,7 +50,18 @@ export function UserLayer({ currentLocation, onUserClick }: UserLayerProps) {
       })
       .subscribe();
 
-    // Add clustering source and layer
+    // Clean up existing source and layer if they exist
+    if (map.getSource('users')) {
+      if (map.getLayer('user-clusters')) {
+        map.removeLayer('user-clusters');
+      }
+      if (map.getLayer('cluster-count')) {
+        map.removeLayer('cluster-count');
+      }
+      map.removeSource('users');
+    }
+
+    // Add clustering source
     map.addSource('users', {
       type: 'geojson',
       data: {
@@ -52,89 +73,80 @@ export function UserLayer({ currentLocation, onUserClick }: UserLayerProps) {
       clusterRadius: 50
     });
 
+    // Add cluster layer
     map.addLayer({
       id: 'user-clusters',
       type: 'circle',
       source: 'users',
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          '#6366f1', // primary-500
-          10,
-          '#4f46e5', // primary-600
-          30,
-          '#4338ca' // primary-700
-        ],
+        'circle-color': '#4A90E2',
         'circle-radius': [
           'step',
           ['get', 'point_count'],
           20,
-          10,
+          100,
           30,
-          30,
+          750,
           40
         ]
       }
     });
 
+    // Add cluster count layer
+    map.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'users',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        'text-size': 12
+      },
+      paint: {
+        'text-color': '#ffffff'
+      }
+    });
+
     return () => {
       channel.unsubscribe();
-      if (map.getLayer('user-clusters')) map.removeLayer('user-clusters');
-      if (map.getSource('users')) map.removeSource('users');
-    };
-  }, [map, currentLocation]);
-
-  // Update clustered points when users change or map moves
-  useEffect(() => {
-    if (!map || !users.length) return;
-
-    const features = users.map(user => ({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [user.location.longitude, user.location.latitude]
-      },
-      properties: {
-        id: user.id,
-        status: user.status,
-        lastSeen: user.lastSeen,
-        activity: user.activity
+      if (map.getSource('users')) {
+        if (map.getLayer('user-clusters')) {
+          map.removeLayer('user-clusters');
+        }
+        if (map.getLayer('cluster-count')) {
+          map.removeLayer('cluster-count');
+        }
+        map.removeSource('users');
       }
-    }));
+    };
+  }, [mapRef, currentLocation]);
 
+  // Update source data when users change
+  useEffect(() => {
+    if (!mapRef || !users.length) return;
+
+    const map = mapRef.getMap();
     const source = map.getSource('users');
     if (source && 'setData' in source) {
       source.setData({
         type: 'FeatureCollection',
-        features
+        features: users.map(user => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [user.location.longitude, user.location.latitude]
+          },
+          properties: {
+            id: user.id,
+            status: user.status,
+            activity: user.activity
+          }
+        }))
       });
     }
-  }, [users, map]);
+  }, [users, mapRef]);
 
-  return (
-    <>
-      <AnimatePresence>
-        {users.map(user => (
-          <motion.div
-            key={user.id}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <UserMarker
-              user={user}
-              onClick={() => onUserClick(user)}
-              distance={calculateDistance(
-                currentLocation,
-                user.location
-              )}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </>
-  );
+  return null;
 }

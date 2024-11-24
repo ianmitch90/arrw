@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Story } from '@/types/core';
+import { StoryViewerProps } from '@/types/map';
 import { Modal, ModalContent, Button } from '@nextui-org/react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-
-interface StoryViewerProps {
-  story: Story;
-  onClose: () => void;
-}
 
 export function StoryViewer({ story, onClose }: StoryViewerProps) {
   const [progress, setProgress] = useState(0);
@@ -31,6 +26,25 @@ export function StoryViewer({ story, onClose }: StoryViewerProps) {
     return () => clearInterval(timer);
   }, [onClose]);
 
+  const renderContent = () => {
+    const { type, url, thumbnail_url } = story.story_content;
+    if (type === 'image') {
+      return (
+        <img
+          src={url}
+          alt="Story content"
+          className="w-full h-full object-contain"
+          loading="eager"
+        />
+      );
+    }
+    return (
+      <div className="p-4 text-white">
+        <p>{url}</p>
+      </div>
+    );
+  };
+
   return (
     <Modal
       isOpen
@@ -53,72 +67,34 @@ export function StoryViewer({ story, onClose }: StoryViewerProps) {
             />
           </div>
 
-          {/* Header */}
-          <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-white">
-              <img
-                src={story.user.avatar_url}
-                alt={story.user.full_name}
-                className="w-8 h-8 rounded-full"
-              />
-              <div>
-                <p className="text-sm font-medium">
-                  {story.user.full_name}
-                </p>
-                <p className="text-xs opacity-75">
-                  {formatDistanceToNow(new Date(story.created_at), { addSuffix: true })}
-                </p>
-              </div>
-            </div>
-            <Button
-              isIconOnly
-              variant="light"
-              onPress={onClose}
-              className="text-white"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
+          {/* Close Button */}
+          <Button
+            isIconOnly
+            variant="light"
+            className="absolute top-4 right-4 z-10"
+            onPress={onClose}
+          >
+            <X className="w-4 h-4" />
+          </Button>
 
           {/* Story Content */}
           <div className="h-full flex items-center justify-center">
-            {story.content.type === 'image' ? (
-              <img
-                src={story.content.url}
-                alt="Story"
-                className="max-h-full w-auto object-contain"
-              />
-            ) : story.content.type === 'video' && (
-              <video
-                src={story.content.url}
-                autoPlay
-                playsInline
-                muted
-                loop
-                className="max-h-full w-auto object-contain"
-                poster={story.content.thumbnail_url}
-              />
-            )}
+            {renderContent()}
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between pointer-events-none">
-            <Button
-              isIconOnly
-              variant="light"
-              className="text-white pointer-events-auto"
-              onPress={() => {/* TODO: Previous story */}}
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              isIconOnly
-              variant="light"
-              className="text-white pointer-events-auto"
-              onPress={() => {/* TODO: Next story */}}
-            >
-              <ChevronRight />
-            </Button>
+          {/* User Info */}
+          <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+            <img
+              src={story.user.avatar_url}
+              alt={story.user.full_name}
+              className="w-10 h-10 rounded-full"
+            />
+            <div>
+              <p className="text-white font-medium">{story.user.full_name}</p>
+              <p className="text-white/70 text-sm">
+                {formatDistanceToNow(new Date(story.created_at || ''), { addSuffix: true })}
+              </p>
+            </div>
           </div>
         </div>
       </ModalContent>
