@@ -30,68 +30,49 @@ const STATIC_PAGES = [
 ];
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // Normalize the path by removing (protected) prefix
-  const normalizedPath = pathname.replace('/(protected)', '');
-
-  // Allow access to static informational pages
-  if (STATIC_PAGES.some(route => normalizedPath.startsWith(route))) {
-    return NextResponse.next();
-  }
-
-  // Create response early to modify headers if needed
-  const response = NextResponse.next();
-  
-  // Get auth data from request headers
-  const authHeader = request.headers.get('authorization');
-  const hasAuthHeader = !!authHeader && authHeader.startsWith('Bearer ');
-  
-  // Initialize Supabase client
-  const supabase = createMiddlewareClient({ req: request, res: response });
-  
   try {
-    // Check session state
-    const { data: { user } } = await supabase.auth.getUser();
+    const { pathname } = request.nextUrl;
+    
+    // Normalize the path by removing (protected) prefix
+    const normalizedPath = pathname.replace('/(protected)', '');
 
-    if (!user) {
+    // Allow access to static informational pages without auth checks
+    if (STATIC_PAGES.some(route => normalizedPath.startsWith(route))) {
+      return NextResponse.next();
+    }
+
+    // Create response early to modify headers if needed
+    const response = NextResponse.next();
+    
+    // Initialize Supabase client
+    const supabase = createMiddlewareClient({ req: request, res: response });
+
+    // Get current session state
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const user = session?.user;
+    const hasValidSession = !!session && !!user;
+
+    // Handle unauthenticated users
+    if (!hasValidSession) {
+      // Allow access to auth routes
       if (AUTH_ROUTES.some(route => normalizedPath === route || normalizedPath === `/auth${route}`)) {
         return NextResponse.next();
       }
-      const redirectUrl = new URL('/login', request.url);
-      redirectUrl.searchParams.set('redirect', normalizedPath);
-      return NextResponse.redirect(redirectUrl);
-    }
 
-    // Check age verification for protected routes
-    if (PROTECTED_ROUTES.some(route => normalizedPath.startsWith(route))) {
-      // Check both verification sources in parallel
-      const [{ data: verification }, { data: userData }] = await Promise.all([
-        supabase
-          .from('age_verifications')
-          .select('verified, acknowledged')
-          .eq('user_id', user.id)
-          .single(),
-        supabase
-          .from('users')
-          .select('status')
-          .eq('id', user.id)
-          .single()
-      ]);
-
-      // If they haven't even acknowledged the age check, send them to login
-      if (!verification?.acknowledged) {
+      // Redirect to login for protected routes
+      if (PROTECTED_ROUTES.some(route => normalizedPath.startsWith(route))) {
         const redirectUrl = new URL('/login', request.url);
         redirectUrl.searchParams.set('redirect', normalizedPath);
         return NextResponse.redirect(redirectUrl);
       }
 
-      // If they've acknowledged but not verified, send them to verify-age
-      if (!verification?.verified) {
-        return NextResponse.redirect(new URL('/verify-age', request.url));
-      }
+      return NextResponse.next();
     }
 
+    // Handle authenticated users
     if (AUTH_ROUTES.some(route => normalizedPath === route || normalizedPath === `/auth${route}`)) {
       return NextResponse.redirect(new URL('/map', request.url));
     }
@@ -99,18 +80,14 @@ export async function middleware(request: NextRequest) {
     // Add user context to headers for downstream use
     response.headers.set('x-user-id', user.id);
     response.headers.set('x-user-role', user.role || 'user');
+    response.headers.set('x-session-id', session.access_token);
+
     return response;
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('Middleware error:', error);
     
-    // On error in protected route, redirect to login
-    if (PROTECTED_ROUTES.some(route => normalizedPath.startsWith(route))) {
-      const redirectUrl = new URL('/login', request.url);
-      redirectUrl.searchParams.set('redirect', normalizedPath);
-      return NextResponse.redirect(redirectUrl);
-    }
-    
-    return response;
+    // On error, return next response to avoid infinite redirects
+    return NextResponse.next();
   }
 }
 
@@ -126,6 +103,6 @@ export const config = {
     '/chat/:path*',
     '/login',
     '/signup',
-    '/auth/:path*',
-  ],
+    '/info/:path*'
+  ]
 };

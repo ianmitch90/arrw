@@ -84,29 +84,29 @@ export class SessionManager {
 
       if (accessToken && refreshToken) {
         try {
+          // First try to set the session
           await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
 
+          // Then verify it's valid
           const { data: { session }, error } = await supabase.auth.getSession();
           if (error) throw error;
           
           if (session) {
-            this.handleNewSession(session);
-            return;
+            await this.handleNewSession(session);
+          } else {
+            // If no session, clear everything
+            this.clearSession();
           }
         } catch (error) {
           console.warn('Failed to restore existing session:', error);
-          // Clear invalid session data
           this.clearSession();
         }
       }
-
-      // If no valid session or failed to restore, try to refresh
-      await this.refreshSession();
     } catch (error) {
-      console.warn('Failed to restore or refresh session:', error);
+      console.error('Session restoration error:', error);
       this.clearSession();
     }
   }
@@ -131,7 +131,7 @@ export class SessionManager {
         }
 
         if (session) {
-          this.handleNewSession(session);
+          await this.handleNewSession(session);
           return session;
         }
 
@@ -162,18 +162,27 @@ export class SessionManager {
     }
   }
 
-  public handleNewSession(session: Session): void {
-    this.storeSession(session);
-    this.scheduleTokenRefresh(session);
-    this.updateLastActivity();
+  public async handleNewSession(session: Session): Promise<void> {
+    try {
+      await this.saveSession(session);
+      
+      // Set the session in Supabase client
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      });
+    } catch (error) {
+      console.error('Error handling new session:', error);
+      this.clearSession();
+      throw error;
+    }
   }
 
   public clearSession(): void {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.USER);
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.LAST_ACTIVITY);
+      Object.values(LOCAL_STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+      });
     }
     if (this.refreshTimeout) {
       clearTimeout(this.refreshTimeout);

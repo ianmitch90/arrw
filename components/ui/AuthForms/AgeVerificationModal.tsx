@@ -71,7 +71,13 @@ export default function AgeVerificationModal({
         if (!user) throw new Error('No user returned');
 
         // Initialize session management
-        sessionManager.handleNewSession(session);
+        await sessionManager.handleNewSession(session);
+
+        // Set the session in Supabase client
+        await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token
+        });
       }
 
       // Verify age through context
@@ -90,7 +96,9 @@ export default function AgeVerificationModal({
           title: 'Success',
           description: 'Signed in anonymously',
         });
-        router.push('/map');
+
+        // Use router.replace instead of push to avoid back button issues
+        router.replace('/map');
       }
     } catch (err) {
       setValidationError(err instanceof Error ? err.message : 'Failed to verify age');
