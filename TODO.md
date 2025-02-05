@@ -125,23 +125,27 @@
 ### Dating Features
 
 - [ ] Implement matching algorithm
+
   - [ ] Add preference-based matching
   - [ ] Implement location-based matching weights
   - [ ] Add compatibility scoring
 
 - [ ] User Profile Enhancements
+
   - [ ] Add profile verification system
   - [ ] Implement detailed preference settings
   - [ ] Add profile completion scoring
   - [ ] Support multiple photos with quality checks
 
 - [ ] Safety Features
+
   - [ ] Add user blocking functionality
   - [ ] Implement report user system
   - [ ] Add chat message filtering
   - [ ] Implement safety check-in system
 
 - [ ] Communication Features
+
   - [ ] Add ice breaker suggestions
   - [ ] Implement read receipts
   - [ ] Add typing indicators
@@ -149,12 +153,14 @@
   - [ ] Add voice/video call support
 
 - [ ] Social Features
+
   - [ ] Add shared interests discovery
   - [ ] Implement group activities/events
   - [ ] Add friend recommendations
   - [ ] Support social media integration
 
 - [ ] Privacy Enhancements
+
   - [ ] Add incognito mode
   - [ ] Implement profile visibility controls
   - [ ] Add location privacy options
