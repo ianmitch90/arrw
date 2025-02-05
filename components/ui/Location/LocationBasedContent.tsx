@@ -1,89 +1,97 @@
 import { useEffect, useState } from 'react';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useLocation } from '@/contexts/LocationContext';
-import { supabase } from '@/utils/supabase/client';
-import { ImmersiveVideoPlayer } from './ImmersiveVideoPlayer';
 import { Database } from '@/types_db';
+import { ImmersiveVideoPlayer } from './ImmersiveVideoPlayer';
 
-type VideoContent = {
+interface LocationBasedContentProps {
+  radius?: number; // in meters
+  children: React.ReactNode;
+}
+
+interface NearbyContent {
   id: string;
   title: string;
   description: string;
-  url: string;
-  type: '360' | '180' | 'standard';
-  location: Database['public']['Tables']['location_history']['Row']['location'];
-  distance?: number;
-};
-
-// Helper function to convert PostGIS point to coordinates
-const toCoordinates = (location: any) => {
-  if (!location) return { latitude: 0, longitude: 0 };
-  // PostGIS returns point in format: POINT(longitude latitude)
-  const match = location.toString().match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
-  if (!match) return { latitude: 0, longitude: 0 };
-  return {
-    latitude: parseFloat(match[2]),
-    longitude: parseFloat(match[1])
+  location: {
+    latitude: number;
+    longitude: number;
   };
-};
+  distance?: number;
+}
 
-export function LocationBasedContent() {
-  const { state: locationState } = useLocation();
-  const [nearbyContent, setNearbyContent] = useState<VideoContent[]>([]);
+export function LocationBasedContent({ radius = 1000, children }: LocationBasedContentProps) {
+  const supabase = useSupabaseClient<Database>();
+  const { location } = useLocation();
+  const [nearbyContent, setNearbyContent] = useState<NearbyContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (locationState.currentLocation) {
-      loadNearbyContent();
-    }
-  }, [locationState.currentLocation]);
+    if (!location) return;
 
-  const loadNearbyContent = async () => {
-    try {
-      if (!locationState.currentLocation) return;
+    const fetchNearbyContent = async () => {
+      try {
+        const { data, error } = await supabase.rpc('find_nearby_content', {
+          user_location: {
+            latitude: location.latitude,
+            longitude: location.longitude
+          },
+          radius_meters: radius
+        });
 
-      const coords = toCoordinates(locationState.currentLocation);
-      const { data, error } = await supabase.rpc('find_nearby_content', {
-        user_location: locationState.currentLocation,
-        radius_miles: 50
-      });
+        if (error) throw error;
 
-      if (error) throw error;
+        // Transform the response data to include PostGIS points
+        const contentWithDistance = data?.map((item: any) => ({
+          ...item,
+          location: {
+            latitude: item.location.latitude,
+            longitude: item.location.longitude
+          },
+          distance: item.distance // distance is calculated by the PostGIS function
+        })) || [];
 
-      // Transform the response data to include PostGIS points
-      const contentWithDistance = data?.map((item: any) => ({
-        ...item,
-        location: item.location,
-        distance: item.distance // distance is calculated by the PostGIS function
-      })) || [];
+        setNearbyContent(contentWithDistance);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err : new Error('Failed to load content')
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setNearbyContent(contentWithDistance);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error('Failed to load content')
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchNearbyContent();
+  }, [location, radius, supabase]);
 
   if (loading) return <div>Loading nearby content...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
+  if (!location) {
+    return (
+      <div className="p-4 text-center">
+        <p>Waiting for location...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Nearby Content</h2>
-      {nearbyContent.length === 0 ? (
-        <p>No content found in your area</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {nearbyContent.map((content) => {
-            const coords = toCoordinates(content.location);
-            return (
-              <div
-                key={content.id}
-                className="rounded-lg overflow-hidden shadow-lg"
-              >
+      <div className="p-4 bg-blue-50 rounded-lg">
+        <h3 className="text-lg font-semibold">Your Location</h3>
+        <p className="text-sm text-gray-600">
+          {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {nearbyContent.length === 0 ? (
+          <p>No content found in your area</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {nearbyContent.map((content) => (
+              <div key={content.id} className="rounded-lg overflow-hidden shadow-lg">
                 <ImmersiveVideoPlayer
                   src={content.url}
                   type={content.type}
@@ -94,18 +102,20 @@ export function LocationBasedContent() {
                   <p className="text-sm text-gray-600">{content.description}</p>
                   <div className="text-sm text-gray-500 space-y-1">
                     {content.distance && (
-                      <p>{content.distance.toFixed(1)} miles away</p>
+                      <p>{content.distance.toFixed(1)} meters away</p>
                     )}
                     <p className="font-mono">
-                      ({coords.latitude.toFixed(4)}, {coords.longitude.toFixed(4)})
+                      ({content.location.latitude.toFixed(6)}, {content.location.longitude.toFixed(6)})
                     </p>
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
+
+      {children}
     </div>
   );
 }

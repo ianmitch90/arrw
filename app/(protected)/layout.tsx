@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { MapProvider } from '@/components/contexts/MapContext';
 import { UserProvider } from '@/components/contexts/UserContext';
 import { ChatProvider } from '@/components/contexts/ChatContext';

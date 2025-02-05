@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+'use client';
+
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
+import { useEffect } from 'react';
 import { Spinner } from '@nextui-org/react';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {

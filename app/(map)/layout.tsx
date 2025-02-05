@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { PersistentMapLayout } from '@/components/layout/PersistentMapLayout';
 
 import type { Metadata } from 'next';
 
@@ -29,44 +30,27 @@ export default function MapLayout({
     const checkAuth = async () => {
       try {
         // Check if user is authenticated
-        if (!user) {
-          router.replace('/auth/login');
-          return;
-        }
-
-        // Check age verification
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('age_verified')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-
-        if (!profile?.age_verified) {
-          toast({
-            title: 'Age Verification Required',
-            description: 'Please verify your age to access this section.',
-            variant: 'destructive',
-          });
-          router.replace('/auth/verify-age');
-          return;
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!session || error) {
+          router.push('/auth/signin');
         }
       } catch (error) {
-        console.error('Error checking auth:', error);
-        router.replace('/auth/login');
+        console.error('Auth check failed:', error);
+        toast({
+          title: 'Authentication Error',
+          description: 'Please sign in to continue.',
+          variant: 'destructive',
+        });
+        router.push('/auth/signin');
       }
     };
 
     checkAuth();
-  }, [user, router, supabase, toast]);
+  }, [user, router, supabase.auth, toast]);
 
-  // Show nothing while checking auth
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
-  return (
-    <div className="flex h-screen w-screen flex-col">
-      {children}
-    </div>
-  );
+  return <PersistentMapLayout>{children}</PersistentMapLayout>;
 }

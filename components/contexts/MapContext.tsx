@@ -4,9 +4,9 @@ import React, {
   createContext,
   useContext,
   useState,
-  PropsWithChildren
+  ReactNode
 } from 'react';
-import mapboxgl from 'mapbox-gl';
+import type { Map } from 'mapbox-gl';
 
 interface Coordinates {
   latitude: number;
@@ -14,48 +14,55 @@ interface Coordinates {
 }
 
 interface MapContextType {
-  viewport: any;
-  setViewport: React.Dispatch<React.SetStateAction<any>>;
-  currentLocation: Coordinates | undefined;
-  setCurrentLocation: (location: Coordinates | undefined) => void;
-  map: mapboxgl.Map | null;
-  setMap: (map: mapboxgl.Map | null) => void;
+  map: Map | null;
+  setMap: (map: Map | null) => void;
+  currentLocation: Coordinates | null;
+  setCurrentLocation: (location: Coordinates | null) => void;
+  viewport: {
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  };
+  setViewport: (viewport: { latitude: number; longitude: number; zoom: number; }) => void;
 }
 
-const MapContext = createContext<MapContextType | null>(null);
+const DEFAULT_ZOOM = 11;
 
-export const MapProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
-  const [viewport, setViewport] = useState({
-    latitude: 37.7749,
-    longitude: -122.4194,
-    zoom: 10,
-    width: '100vw',
-    height: '100vh'
-  });
+const DEFAULT_VIEWPORT = {
+  latitude: 39.8283,  // Center of US
+  longitude: -98.5795,
+  zoom: DEFAULT_ZOOM
+};
 
-  const [currentLocation, setCurrentLocation] = useState<Coordinates | undefined>(undefined);
-  const [map, setMap] = useState<mapboxgl.Map | null>(null);
+const MapContext = createContext<MapContextType | undefined>(undefined);
+
+export function MapProvider({ children }: { children: ReactNode }) {
+  const [map, setMap] = useState<Map | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
+  const [viewport, setViewport] = useState(DEFAULT_VIEWPORT);
 
   return (
-    <MapContext.Provider 
-      value={{ 
-        viewport, 
-        setViewport, 
-        currentLocation, 
-        setCurrentLocation,
+    <MapContext.Provider
+      value={{
         map,
-        setMap
+        setMap,
+        currentLocation,
+        setCurrentLocation,
+        viewport,
+        setViewport,
       }}
     >
       {children}
     </MapContext.Provider>
   );
-};
+}
 
-export const useMap = () => {
+export function useMap() {
   const context = useContext(MapContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useMap must be used within a MapProvider');
   }
   return context;
-};
+}
+
+export { DEFAULT_ZOOM, DEFAULT_VIEWPORT };

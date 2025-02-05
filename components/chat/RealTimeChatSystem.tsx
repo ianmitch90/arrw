@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useLocation } from '@/contexts/LocationContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { RealtimeMessaging } from '@/utils/realtime/messaging';
-import { LocationTrackingSystem } from '@/utils/realtime/location-tracking';
-import { supabase } from '@/utils/supabase/client';
+import { Database } from '@/types_db';
 
 interface ChatMessage {
   id: string;
@@ -11,83 +9,121 @@ interface ChatMessage {
   sender: {
     id: string;
     name: string;
-    location?: {
-      latitude: number;
-      longitude: number;
-    };
   };
-  attachments?: {
-    type: 'location' | 'image' | 'video';
-    data: any;
-  }[];
+  location: {
+    latitude: number;
+    longitude: number;
+  };
   timestamp: Date;
 }
 
+interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  sent_at: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
 export function RealTimeChatSystem() {
+  const supabase = useSupabaseClient<Database>();
+  const { location } = useLocation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
-  const { state: locationState } = useLocation();
-  const { state: subscriptionState } = useSubscription();
-  const messaging = new RealtimeMessaging();
-  const locationTracking = new LocationTrackingSystem();
+  const [channel, setChannel] = useState<any>(null);
 
   useEffect(() => {
-    const setupRealTime = async () => {
-      // Initialize location tracking
-      await locationTracking.initialize();
+    if (!location) return;
 
-      // Join location-based chat room
-      if (locationState.currentLocation) {
-        const roomId = `location-${Math.floor(locationState.currentLocation.latitude)}-${Math.floor(locationState.currentLocation.longitude)}`;
-        await messaging.joinRoom(roomId, (message) => {
-          if (
-            'sender' in message &&
-            'timestamp' in message &&
-            message.sender !== null &&
-            typeof message.sender === 'object' &&
-            'id' in message.sender &&
-            'name' in message.sender &&
-            'location' in message.sender &&
-            message.sender.location !== null &&
-            typeof message.sender.location === 'object' &&
-            'latitude' in message.sender.location &&
-            'longitude' in message.sender.location
-          ) {
-            setMessages((prev) => [...prev, message as ChatMessage]);
-          }
-        });
-
-        // Start tracking nearby users
-        await trackNearbyUsers();
+    // Subscribe to nearby chat messages
+    const chatChannel = supabase.channel('nearby_chat', {
+      config: {
+        broadcast: {
+          self: true
+        }
       }
-    };
+    });
 
-    setupRealTime();
+    chatChannel
+      .on('broadcast', { event: 'message' }, ({ payload }) => {
+        const message = payload as Message;
+        if (isMessageNearby(message, location)) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: message.id,
+              content: message.content,
+              sender: {
+                id: message.sender_id,
+                name: '', // Assuming name is not provided in the new structure
+              },
+              location: message.location,
+              timestamp: new Date(message.sent_at),
+            } as ChatMessage,
+          ]);
+        }
+      })
+      .subscribe();
+
+    setChannel(chatChannel);
 
     return () => {
-      locationTracking.stop();
-      messaging.dispose();
+      chatChannel.unsubscribe();
     };
-  }, [locationState.currentLocation]);
+  }, [location, supabase]);
 
   const trackNearbyUsers = async () => {
-    if (!locationState.currentLocation) return;
+    if (!location) return;
 
     const { data: users } = await supabase.rpc('get_nearby_users', {
-      latitude: locationState.currentLocation.latitude,
-      longitude: locationState.currentLocation.longitude,
-      radius_miles: subscriptionState.tier === 'premium' ? 50 : 25
+      latitude: location.latitude,
+      longitude: location.longitude,
+      radius_miles: 25, // Assuming radius is not provided in the new structure
     });
 
     setNearbyUsers(users || []);
   };
 
-  const sendMessage = async (content: string, attachments?: any[]) => {
-    if (!locationState.currentLocation) return;
+  const sendMessage = async (content: string) => {
+    if (!location || !channel) return;
 
-    const roomId = `location-${Math.floor(locationState.currentLocation.latitude)}-${Math.floor(locationState.currentLocation.longitude)}`;
+    const message: Message = {
+      id: crypto.randomUUID(),
+      content,
+      sender_id: (await supabase.auth.getUser()).data.user!.id,
+      sent_at: new Date().toISOString(),
+      location: {
+        latitude: location.latitude,
+        longitude: location.longitude,
+      },
+    };
 
-    await messaging.sendMessage(roomId, content, attachments);
+    await channel.send({
+      type: 'broadcast',
+      event: 'message',
+      payload: message,
+    });
+  };
+
+  const isMessageNearby = (message: Message, userLocation: { latitude: number; longitude: number }) => {
+    const MAX_DISTANCE = 5; // 5km radius
+    const R = 6371; // Earth's radius in km
+
+    const lat1 = userLocation.latitude * Math.PI / 180;
+    const lat2 = message.location.latitude * Math.PI / 180;
+    const deltaLat = (message.location.latitude - userLocation.latitude) * Math.PI / 180;
+    const deltaLon = (message.location.longitude - userLocation.longitude) * Math.PI / 180;
+
+    const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+             Math.cos(lat1) * Math.cos(lat2) *
+             Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+
+    return distance <= MAX_DISTANCE;
   };
 
   return (
@@ -118,9 +154,6 @@ function ChatMessage({ message }: { message: ChatMessage }) {
           </span>
         </div>
         <p className="mt-1">{message.content}</p>
-        {message.attachments?.map((attachment, index) => (
-          <AttachmentPreview key={index} attachment={attachment} />
-        ))}
       </div>
     </div>
   );
@@ -129,31 +162,17 @@ function ChatMessage({ message }: { message: ChatMessage }) {
 function ChatInput({
   onSend
 }: {
-  onSend: (content: string, attachments?: any[]) => Promise<void>;
+  onSend: (content: string) => Promise<void>;
 }) {
   const [content, setContent] = useState('');
-  const [attachments, setAttachments] = useState<any[]>([]);
-  const { state: locationState } = useLocation();
+  const { location } = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || !location) return;
 
-    await onSend(content, attachments);
+    await onSend(content);
     setContent('');
-    setAttachments([]);
-  };
-
-  const attachLocation = () => {
-    if (locationState.currentLocation) {
-      setAttachments((prev) => [
-        ...prev,
-        {
-          type: 'location',
-          data: locationState.currentLocation
-        }
-      ]);
-    }
   };
 
   return (
@@ -165,13 +184,6 @@ function ChatInput({
         className="flex-1 rounded-lg border p-2"
         placeholder="Type a message..."
       />
-      <button
-        type="button"
-        onClick={attachLocation}
-        className="p-2 text-blue-500 hover:text-blue-600"
-      >
-        📍
-      </button>
       <button
         type="submit"
         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
@@ -197,16 +209,4 @@ function NearbyUsers({ users }: { users: any[] }) {
       ))}
     </div>
   );
-}
-
-function AttachmentPreview({ attachment }: { attachment: any }) {
-  if (attachment.type === 'location') {
-    return (
-      <div className="mt-2 p-2 bg-gray-50 rounded-lg">
-        📍 Location: {attachment.data.latitude.toFixed(6)},{' '}
-        {attachment.data.longitude.toFixed(6)}
-      </div>
-    );
-  }
-  return null;
 }

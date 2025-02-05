@@ -11,8 +11,16 @@ interface LocationARViewProps {
 export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { state: arState, startARSession, endARSession } = useAR();
-  const { state: locationState } = useLocation();
+  const { location, error } = useLocation();
   const performanceMonitor = ARPerformanceMonitor.getInstance();
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!location) {
+    return <div>Loading location...</div>;
+  }
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -28,14 +36,10 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
     // Set up WebXR session with location tracking
     const setupLocationAR = async () => {
       try {
-        if (!locationState.currentLocation) {
-          throw new Error('Location not available');
-        }
-
         await startARSession();
 
         // Initialize AR scene with location data
-        initializeARScene(gl, locationState.currentLocation);
+        initializeARScene(gl, location);
 
         onARStart?.();
       } catch (error) {
@@ -46,7 +50,7 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
     if (
       arState.isSupported &&
       !arState.currentSession &&
-      locationState.currentLocation
+      location
     ) {
       setupLocationAR();
     }
@@ -59,7 +63,7 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
   }, [
     arState.isSupported,
     arState.currentSession,
-    locationState.currentLocation
+    location
   ]);
 
   const initializeARScene = (
@@ -80,11 +84,6 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
       {!arState.isSupported && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
           <p className="text-white">WebXR not supported on this device</p>
-        </div>
-      )}
-      {!locationState.currentLocation && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-          <p className="text-white">Location access required</p>
         </div>
       )}
     </div>

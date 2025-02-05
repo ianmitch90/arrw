@@ -1,10 +1,10 @@
  import { useEffect, useRef, useState, useCallback } from 'react';
-import { Map, NavigationControl, GeolocateControl, MapRef } from 'react-map-gl';
+import { Map, NavigationControl, GeolocateControl, MapRef, AttributionControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
 import { Button } from '@nextui-org/react';
-import { Filter, Plus } from 'lucide-react';
+import { Filter, MapPin } from 'lucide-react';
 import { FilterPanel } from './FilterPanel';
 import { PlaceCard } from './PlaceCard';
 import { StoryMarker } from './StoryMarker';
@@ -13,6 +13,8 @@ import { PlaceMarker } from './PlaceMarker';
 import { StoryViewer } from '../stories/StoryViewer';
 import { PlaceCreator } from './PlaceCreator';
 import { useMap } from '@/components/contexts/MapContext';
+import { SecurityGate } from '@/security/SecurityGate';
+import { useSecurityContext } from '@/contexts/SecurityContext';
 import { 
   Coordinates,
   Places,
@@ -27,12 +29,32 @@ interface MapViewProps {
   onLocationChange?: (coords: Coordinates, isVisiting?: boolean) => void;
 }
 
-export default function MapView({ initialLocation, onLocationChange }: MapViewProps) {
+const DEFAULT_LOCATION: Coordinates = {
+  latitude: 37.7749,
+  longitude: -122.4194
+};
+
+export default function MapViewContainer({ initialLocation, onLocationChange }: MapViewProps) {
+  return (
+    <SecurityGate 
+      requiredFeatureFlag="canAccessMap"
+      fallbackMessage="Map access is restricted. Please ensure you have location services enabled and are not using a VPN or proxy service."
+    >
+      <MapView initialLocation={initialLocation} onLocationChange={onLocationChange} />
+    </SecurityGate>
+  );
+}
+
+function MapView({ initialLocation, onLocationChange }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
-  const watchIdRef = useRef<number | null>(null);
+  const geolocateControlRef = useRef<mapboxgl.GeolocateControl>();
   const supabase = useSupabaseClient<Database>();
   const user = useUser();
-  const { currentLocation, setCurrentLocation, viewport, setViewport, setMap } = useMap();
+  
+  // Rename to avoid conflict
+  const { currentLocation: securityLocation, locationAccuracy } = useSecurityContext();
+  const { setCurrentLocation: setMapLocation, viewport, setViewport, setMap } = useMap();
+  
   const [places, setPlaces] = useState<Places[]>([]);
   const [stories, setStories] = useState<Stories[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Places | null>(null);
@@ -43,6 +65,8 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
   const [nearbyUsers, setNearbyUsers] = useState<Profiles[]>([]);
   const [currentUser, setCurrentUser] = useState<Profiles | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [filters, setFilters] = useState<MapFilters>({
     placeTypes: ['poi', 'event_venue'],
     radius: 10,
@@ -50,17 +74,174 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     showPlaces: true
   });
 
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
+
+  // Check for geolocation permission
   useEffect(() => {
-    if (initialLocation) {
-      setViewport((prev: any) => ({
-        ...prev,
-        latitude: initialLocation.latitude,
-        longitude: initialLocation.longitude,
-        zoom: 15
-      }));
-      setCurrentLocation(initialLocation);
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' as PermissionName })
+        .then(permissionStatus => {
+          setHasLocationPermission(permissionStatus.state === 'granted');
+          
+          permissionStatus.onchange = () => {
+            setHasLocationPermission(permissionStatus.state === 'granted');
+          };
+        });
     }
-  }, [initialLocation, setViewport, setCurrentLocation]);
+  }, []);
+
+  // Handle geolocation errors
+  const handleGeolocationError = useCallback((error: GeolocationPositionError) => {
+    console.error('Geolocation error:', error);
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        setMapError('Location access denied. Please enable location services.');
+        break;
+      case error.POSITION_UNAVAILABLE:
+        setMapError('Location information is unavailable.');
+        break;
+      case error.TIMEOUT:
+        setMapError('Location request timed out.');
+        break;
+      default:
+        setMapError('An unknown error occurred.');
+    }
+  }, []);
+
+  // Get location with fallbacks
+  const getUserLocation = useCallback(async (): Promise<Coordinates> => {
+    setIsLoadingLocation(true);
+    console.log('Getting user location...');
+
+    // Try precise location first
+    if ('geolocation' in navigator) {
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            { 
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            }
+          );
+        });
+        
+        console.log('Got precise location:', position.coords);
+        setIsLoadingLocation(false);
+        return {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+      } catch (error) {
+        console.log('Precise location failed, trying IP-based location:', error);
+      }
+    }
+
+    // Fallback to IP-based location
+    try {
+      const response = await fetch('https://ipapi.co/json/');
+      const data = await response.json();
+      
+      if (data.latitude && data.longitude) {
+        console.log('Got IP-based location:', data);
+        setIsLoadingLocation(false);
+        return {
+          latitude: data.latitude,
+          longitude: data.longitude
+        };
+      }
+    } catch (error) {
+      console.error('IP location failed:', error);
+    }
+
+    // Final fallback to default location
+    console.log('Using default location');
+    setIsLoadingLocation(false);
+    return DEFAULT_LOCATION;
+  }, []);
+
+  // Center map on user location
+  const centerOnUser = useCallback(() => {
+    if (!securityLocation) {
+      setMapError('Location not available');
+      return;
+    }
+
+    if (mapRef.current) {
+      const map = mapRef.current.getMap();
+      map.flyTo({
+        center: [securityLocation.longitude, securityLocation.latitude],
+        zoom: locationAccuracy === 'high' ? 15 : 12,
+        essential: true
+      });
+    }
+  }, [securityLocation, locationAccuracy]);
+
+  // Handle map load
+  const onMapLoad = useCallback(async () => {
+    console.log('Map load started...');
+    if (mapRef.current) {
+      const map = mapRef.current.getMap();
+      setMap(map);
+      setIsMapLoaded(true);
+
+      // Basic map configuration
+      map.setMaxZoom(18);
+      map.setMinZoom(8);
+
+      // Use security context location if available
+      if (securityLocation) {
+        console.log('Using security context location:', securityLocation);
+        map.flyTo({
+          center: [securityLocation.longitude, securityLocation.latitude],
+          zoom: locationAccuracy === 'high' ? 15 : 12,
+          essential: true
+        });
+        setMapLocation({
+          latitude: securityLocation.latitude,
+          longitude: securityLocation.longitude
+        });
+      }
+    }
+  }, [setMap, securityLocation, locationAccuracy, setMapLocation]);
+
+  // Handle map errors
+  const onMapError = useCallback((e: any) => {
+    console.error('Map error:', e);
+    setMapError(e.message || 'Error loading map');
+  }, []);
+
+  // Handle viewport changes
+  const onMoveEnd = useCallback(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current.getMap();
+    const center = map.getCenter();
+    setViewport({
+      latitude: center.lat,
+      longitude: center.lng,
+      zoom: map.getZoom()
+    });
+  }, [setViewport]);
+
+  // Handle location updates
+  const handleGeolocate = useCallback((pos: GeolocationPosition) => {
+    try {
+      const newLocation = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude
+      };
+      console.log('New location:', newLocation);
+      setMapLocation(newLocation);
+      if (onLocationChange) {
+        onLocationChange(newLocation);
+      }
+    } catch (error) {
+      console.error('Error handling geolocation:', error);
+      setMapError('Failed to update location');
+    }
+  }, [setMapLocation, onLocationChange]);
 
   // Fetch current user's profile
   useEffect(() => {
@@ -98,7 +279,7 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     if (!user) return;
 
     try {
-      setCurrentLocation(coords);
+      setMapLocation(coords);
       
       const point: PostGISPoint = {
         type: 'Point',
@@ -157,50 +338,19 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     } catch (err) {
       console.error('Error in updateUserLocation:', err);
     }
-  }, [user, supabase, filters.radius, setCurrentLocation, onLocationChange]);
-
-  // Handle position updates
-  const handlePositionUpdate = useCallback((position: GeolocationPosition) => {
-    const coords = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude
-    };
-    updateUserLocation(coords);
-  }, [updateUserLocation]);
-
-  // Start watching position
-  useEffect(() => {
-    if (navigator.geolocation && !watchIdRef.current) {
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        handlePositionUpdate,
-        (error) => console.error('Error watching position:', error),
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        }
-      );
-    }
-
-    return () => {
-      if (navigator.geolocation && typeof navigator.geolocation.clearWatch === 'function' && watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-    };
-  }, [handlePositionUpdate]);
+  }, [user, supabase, filters.radius, setMapLocation, onLocationChange]);
 
   // Fetch places and stories
   useEffect(() => {
-    if (!currentLocation) return;
+    if (!securityLocation) return;
 
     const fetchData = async () => {
       try {
         // Fetch nearby places
         const { data: placesData, error: placesError } = await supabase
           .rpc('find_places_within_radius', {
-            user_lat: currentLocation.latitude,
-            user_lng: currentLocation.longitude,
+            user_lat: securityLocation.latitude,
+            user_lng: securityLocation.longitude,
             radius_miles: filters.radius,
             place_types: filters.placeTypes
           });
@@ -215,8 +365,8 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
         if (filters.showStories) {
           const { data: storiesData, error: storiesError } = await supabase
             .rpc('find_stories_within_radius', {
-              user_lat: currentLocation.latitude,
-              user_lng: currentLocation.longitude,
+              user_lat: securityLocation.latitude,
+              user_lng: securityLocation.longitude,
               radius_miles: filters.radius
             });
 
@@ -265,64 +415,49 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
     };
 
     fetchData();
-  }, [currentLocation, filters, supabase]);
-
-  // Initialize map reference
-  useEffect(() => {
-    if (mapRef.current && isMapLoaded) {
-      const map = mapRef.current.getMap();
-      setMap(map);
-    }
-  }, [setMap, isMapLoaded]);
+  }, [securityLocation, filters, supabase]);
 
   return (
     <div className="relative w-full h-full">
       <Map
         ref={mapRef}
-        {...viewport}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_API_KEY}
-        mapStyle="mapbox://styles/mapbox/streets-v11"
-        onMove={(evt) => setViewport(evt.viewState)}
-        onLoad={() => setIsMapLoaded(true)}
-        onClick={(evt) => {
-          if (!isMapLoaded) return;
-          if (isCreatingPlace) {
-            setNewPlaceLocation({
-              latitude: evt.lngLat.lat,
-              longitude: evt.lngLat.lng
-            });
-          }
+        initialViewState={{
+          latitude: initialLocation?.latitude || viewport.latitude,
+          longitude: initialLocation?.longitude || viewport.longitude,
+          zoom: viewport.zoom
         }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        onLoad={onMapLoad}
+        onError={onMapError}
+        onMoveEnd={onMoveEnd}
+        reuseMaps
       >
+        <AttributionControl position="bottom-right" />
+        <NavigationControl position="top-right" />
+        <GeolocateControl
+          position="top-right"
+          trackUserLocation
+          showUserHeading
+          showAccuracyCircle
+          onError={handleGeolocationError}
+          onGeolocate={handleGeolocate}
+        />
+        
+        {/* Only render markers after map is loaded */}
         {isMapLoaded && (
           <>
-            <NavigationControl position="top-right" />
-            <GeolocateControl
-              position="top-right"
-              trackUserLocation
-              onGeolocate={(evt) => {
-                const coords = {
-                  latitude: evt.coords.latitude,
-                  longitude: evt.coords.longitude
-                };
-                updateUserLocation(coords);
-              }}
-            />
-
-            {/* Live users layer */}
             <LiveUsersLayer users={nearbyUsers} currentUser={currentUser} />
-
-            {/* Place markers */}
-            {filters.showPlaces && places.map((place) => (
+            
+            {filters.showPlaces && places.map(place => (
               <PlaceMarker
                 key={place.id}
                 place={place}
                 onClick={() => setSelectedPlace(place)}
               />
             ))}
-
-            {/* Story markers */}
-            {filters.showStories && stories.map((story) => (
+            
+            {filters.showStories && stories.map(story => (
               <StoryMarker
                 key={story.id}
                 story={story}
@@ -332,6 +467,26 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
           </>
         )}
       </Map>
+
+      {/* Loading indicator */}
+      {!isMapLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Loading map...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error display */}
+      {mapError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/90">
+          <div className="text-center p-4 bg-background rounded-lg shadow-lg">
+            <p className="text-destructive mb-2">Error loading map</p>
+            <p className="text-sm text-muted-foreground">{mapError}</p>
+          </div>
+        </div>
+      )}
 
       {/* UI Controls */}
       <div className="absolute top-4 left-4 z-10 space-y-2">
@@ -347,9 +502,25 @@ export default function MapView({ initialLocation, onLocationChange }: MapViewPr
           isIconOnly
           color="primary"
           variant="solid"
-          onPress={() => setIsCreatingPlace(true)}
+          onPress={centerOnUser}
+          isDisabled={!securityLocation}
+          className="relative"
         >
-          <Plus size={20} />
+          {isLoadingLocation ? (
+            <div className="animate-spin">⌛</div>
+          ) : (
+            <>
+              <MapPin size={20} />
+              {locationAccuracy === 'low' && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full" 
+                     title="Using approximate location" />
+              )}
+              {locationAccuracy === 'high' && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full" 
+                     title="Using precise location" />
+              )}
+            </>
+          )}
         </Button>
       </div>
 

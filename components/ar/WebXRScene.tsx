@@ -1,110 +1,86 @@
 import { useEffect, useRef } from 'react';
-import { MetaSDKIntegration } from '@/utils/meta-sdk/integration';
-import { ARPerformanceMetrics } from '@/types/ar.types';
 import { useLocation } from '@/contexts/LocationContext';
+import { useAR } from '@/hooks/useAR';
+import { ARPerformanceMonitor } from '@/utils/ar/performance';
 
 interface WebXRSceneProps {
-  onPerformanceUpdate?: (metrics: ARPerformanceMetrics) => void;
-  onError?: (error: Error) => void;
+  onARStart?: () => void;
+  onAREnd?: () => void;
 }
 
-export function WebXRScene({ onPerformanceUpdate, onError }: WebXRSceneProps) {
+export function WebXRScene({ onARStart, onAREnd }: WebXRSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { state: locationState } = useLocation();
-  const metaSDK = MetaSDKIntegration.getInstance({
-    appId: process.env.NEXT_PUBLIC_META_APP_ID!,
-    apiVersion: '1.0',
-    features: ['ar', 'location', 'hand-tracking']
-  });
+  const { location, error } = useLocation();
+  const { state: arState, startARSession, endARSession } = useAR();
+  const performanceMonitor = ARPerformanceMonitor.getInstance();
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !location) return;
 
-    let xrSession: XRSession | null = null;
-    let frameHandle: number;
+    const gl = canvasRef.current.getContext('webgl');
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
 
-    const initXR = async () => {
+    // Set up WebXR session with location tracking
+    const setupLocationAR = async () => {
       try {
-        await metaSDK.initialize();
+        await startARSession();
 
-        if (!navigator.xr) {
-          throw new Error('WebXR not supported');
-        }
+        // Initialize AR scene with location data
+        initializeARScene(gl, location);
 
-        // Request XR session
-        xrSession = await navigator.xr.requestSession('immersive-ar', {
-          requiredFeatures: ['local-floor', 'hit-test'],
-          optionalFeatures: ['hand-tracking', 'dom-overlay']
-        });
-
-        // Set up WebGL context
-        const gl = canvasRef.current!.getContext('webgl2', {
-          xrCompatible: true
-        });
-        if (!gl) throw new Error('WebGL not supported');
-
-        // Initialize render loop
-        const onXRFrame = (time: number, frame: XRFrame) => {
-          frameHandle = frame.session.requestAnimationFrame(onXRFrame);
-
-          // Get pose information
-          const pose = frame.getViewerPose(xrReferenceSpace);
-          if (pose) {
-            // Render frame
-            renderFrame(gl!, pose, frame);
-
-            // Update performance metrics
-            const metrics = metaSDK.getPerformanceMetrics();
-            onPerformanceUpdate?.(metrics);
-          }
-        };
-
-        // Start render loop
-        frameHandle = xrSession.requestAnimationFrame(onXRFrame);
+        onARStart?.();
       } catch (error) {
-        console.error('XR initialization failed:', error);
-        onError?.(
-          error instanceof Error ? error : new Error('XR initialization failed')
-        );
+        console.error('Error setting up AR:', error);
       }
     };
 
-    initXR();
+    if (arState.isSupported && !arState.currentSession && location) {
+      setupLocationAR();
+    }
 
     return () => {
-      if (frameHandle) {
-        cancelAnimationFrame(frameHandle);
-      }
-      if (xrSession) {
-        xrSession.end().catch(console.error);
-      }
+      endARSession();
+      onAREnd?.();
     };
-  }, []);
+  }, [arState.isSupported, arState.currentSession, location]);
 
-  const renderFrame = (
-    gl: WebGL2RenderingContext,
-    pose: XRViewerPose,
-    frame: XRFrame
+  const initializeARScene = (
+    gl: WebGLRenderingContext,
+    location: { latitude: number; longitude: number }
   ) => {
-    // Implement WebGL rendering logic here
-    // This would include:
-    // - Setting up view and projection matrices
-    // - Rendering 3D objects
-    // - Handling hit testing
-    // - Processing hand tracking data
+    // Initialize AR scene with WebGL context and location data
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Additional AR scene initialization...
   };
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-100 text-red-700">
+        Error: {error}
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full">
       <canvas
         ref={canvasRef}
         className="w-full h-full"
-        style={{ touchAction: 'none' }}
       />
-      {locationState.currentLocation && (
-        <div className="absolute top-4 left-4 bg-black/50 text-white p-2 rounded">
-          Location: {locationState.currentLocation.latitude.toFixed(6)},{' '}
-          {locationState.currentLocation.longitude.toFixed(6)}
+      {!arState.isSupported && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+          <p className="text-white">WebXR not supported on this device</p>
+        </div>
+      )}
+      {location && (
+        <div className="absolute bottom-4 left-4 bg-white/80 p-2 rounded-lg text-sm">
+          Location: {location.latitude.toFixed(6)},{' '}
+          {location.longitude.toFixed(6)}
         </div>
       )}
     </div>

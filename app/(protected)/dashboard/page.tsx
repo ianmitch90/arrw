@@ -1,7 +1,10 @@
 'use client';
 
-import { Card, CardBody } from '@nextui-org/react';
-import { useAuth } from '@/context/AuthContext';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { Card, CardBody, CardHeader } from '@nextui-org/react';
+import { useUser } from '@/components/contexts/UserContext';
 
 export default function DashboardPage() {
   const { user } = useAuth();

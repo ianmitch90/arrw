@@ -6,7 +6,7 @@ import { LoginFormValues } from '@/types/auth';
 import { FormError } from '../FormError';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import WordDivider from '@/components/ui/WordDivider';
@@ -71,6 +71,43 @@ export default function LoginForm() {
   const [magicLinkEmail, setMagicLinkEmail] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
+  // Add a function to create a test user
+  const createTestUser = async () => {
+    try {
+      const testEmail = `test${Date.now()}@example.com`;
+      const testPassword = 'password123';
+      
+      console.log('Creating test user:', testEmail);
+      const { data, error } = await supabase.auth.signUp({
+        email: testEmail,
+        password: testPassword
+      });
+
+      if (error) {
+        console.error('Error creating test user:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to create test user: ' + error.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('Test user created:', data);
+      toast({
+        title: 'Test User Created',
+        description: `Email: ${testEmail}\nPassword: ${testPassword}`,
+      });
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="flex w-full max-w-sm flex-col gap-4 rounded-large bg-content1 px-8 pb-10 pt-6 shadow-small">
@@ -88,7 +125,13 @@ export default function LoginForm() {
               await signIn(values.email, values.password);
               router.push('/map');
             } catch (error: any) {
+              console.error('Login error:', error);
               setError(error.message);
+              toast({
+                title: 'Login Failed',
+                description: error.message || 'An error occurred during login',
+                variant: 'destructive'
+              });
             } finally {
               setSubmitting(false);
             }
@@ -174,6 +217,16 @@ export default function LoginForm() {
                 >
                   Sign In
                 </Button>
+
+                {process.env.NODE_ENV === 'development' && (
+                  <Button
+                    color="secondary"
+                    onClick={createTestUser}
+                    className="w-full"
+                  >
+                    Create Test User
+                  </Button>
+                )}
 
                 <WordDivider
                   word="OR"

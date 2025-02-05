@@ -8,6 +8,8 @@ import { AuthProvider } from '@/providers/AuthProvider'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { AgeVerificationProvider } from '@/contexts/AgeVerificationContext'
+import { LocationProvider } from '@/contexts/LocationContext'
+import { SecurityProvider } from '@/contexts/SecurityContext'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
@@ -19,8 +21,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <NextUIProvider>
           <AuthProvider>
             <AgeVerificationProvider>
-              {children}
-              <Toaster />
+              <SecurityProvider>
+                <LocationProvider>
+                  {children}
+                  <Toaster />
+                </LocationProvider>
+              </SecurityProvider>
             </AgeVerificationProvider>
           </AuthProvider>
         </NextUIProvider>

@@ -1,67 +1,64 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/utils/supabase/client';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useLocation } from '@/contexts/LocationContext';
+import { Database } from '@/types_db';
 
-interface UserPresence {
+interface PresenceIndicatorProps {
   userId: string;
-  status: 'online' | 'offline' | 'away';
-  lastSeen: Date;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
+  onPresenceChange?: (isNearby: boolean) => void;
 }
 
-export function PresenceIndicator({ userId }: { userId: string }) {
-  const [presence, setPresence] = useState<UserPresence | null>(null);
-  const { state: locationState } = useLocation();
+export function PresenceIndicator({ userId, onPresenceChange }: PresenceIndicatorProps) {
+  const supabase = useSupabaseClient<Database>();
+  const { location } = useLocation();
+  const [isNearby, setIsNearby] = useState(false);
 
   useEffect(() => {
-    const channel = supabase.channel('presence');
+    if (!location || !userId) return;
 
-    // Subscribe to presence updates
+    const channel = supabase.channel(`presence:${userId}`);
+
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        const userState = state[userId];
-        if (userState) {
-          setPresence(userState[0] as UserPresence);
+        const userPresence = state[userId]?.[0];
+        
+        if (userPresence && userPresence.location) {
+          const distance = calculateDistance(
+            location,
+            userPresence.location
+          );
+          const nearby = distance <= 5000; // 5km radius
+          setIsNearby(nearby);
+          onPresenceChange?.(nearby);
         }
       })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({
-            userId,
-            status: 'online',
-            lastSeen: new Date(),
-            location: locationState.currentLocation
-          });
-        }
-      });
+      .subscribe();
 
     return () => {
       channel.unsubscribe();
     };
-  }, [userId, locationState.currentLocation]);
-
-  if (!presence) return null;
+  }, [userId, location, onPresenceChange, supabase]);
 
   return (
-    <div className="flex items-center space-x-2">
-      <div
-        className={`w-2 h-2 rounded-full ${
-          presence.status === 'online'
-            ? 'bg-green-500'
-            : presence.status === 'away'
-              ? 'bg-yellow-500'
-              : 'bg-gray-500'
-        }`}
-      />
-      <span className="text-sm text-gray-600">
-        {presence.status === 'online'
-          ? 'Online'
-          : `Last seen ${new Date(presence.lastSeen).toLocaleString()}`}
-      </span>
-    </div>
+    <div className={`h-3 w-3 rounded-full ${isNearby ? 'bg-green-500' : 'bg-gray-400'}`} />
   );
+}
+
+function calculateDistance(
+  point1: { latitude: number; longitude: number },
+  point2: { latitude: number; longitude: number }
+): number {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = (point1.latitude * Math.PI) / 180;
+  const φ2 = (point2.latitude * Math.PI) / 180;
+  const Δφ = ((point2.latitude - point1.latitude) * Math.PI) / 180;
+  const Δλ = ((point2.longitude - point1.longitude) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
 }

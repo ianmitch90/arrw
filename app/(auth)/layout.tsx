@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { Spinner } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';

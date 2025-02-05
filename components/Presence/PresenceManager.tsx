@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/utils/supabase/client';
+import { useEffect, useRef, useState } from 'react';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useLocation } from '@/contexts/LocationContext';
+import { Database } from '@/types_db';
 
 interface PresenceState {
   userId: string;
@@ -16,63 +17,57 @@ interface PresenceState {
   };
 }
 
-export function PresenceManager() {
-  const [presenceStates, setPresenceStates] = useState<
-    Map<string, PresenceState>
-  >(new Map());
-  const { state: locationState } = useLocation();
-  const channel = supabase.channel('presence_updates');
+interface PresenceManagerProps {
+  userId: string;
+}
+
+export function PresenceManager({ userId }: PresenceManagerProps) {
+  const supabase = useSupabaseClient<Database>();
+  const { location } = useLocation();
+  const presenceChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const [presenceStates, setPresenceStates] = useState<Map<string, PresenceState>>(new Map());
 
   useEffect(() => {
-    const setupPresence = async () => {
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!location || !userId) return;
 
-      channel
-        .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
-          updatePresenceStates(state);
-        })
-        .on('presence', { event: 'join' }, ({ key, joins }) => {
-          // joins contains an array of presence states that joined
-          if (joins && joins.length > 0) {
-            handlePresenceJoin(key, joins[0]);
-          }
-        })
-        .on('presence', { event: 'leave' }, ({ key }) => {
-          handlePresenceLeave(key);
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await channel.track({
-              user_id: user.id,
-              status: 'online',
-              last_seen: new Date().toISOString(),
-              location: locationState.currentLocation,
-              online_at: new Date().toISOString()
-            });
-          }
-        });
+    // Create or update presence channel
+    presenceChannel.current = supabase.channel(`presence:${userId}`, {
+      config: {
+        presence: {
+          key: userId,
+        },
+      },
+    });
 
-      // Set up automatic away status
-      setupAutoAway();
-
-      // Update presence when location changes
-      if (locationState.currentLocation) {
-        await channel.track({
-          location: locationState.currentLocation
-        });
-      }
-    };
-
-    setupPresence();
+    // Track user's presence with location
+    presenceChannel.current
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.current?.presenceState();
+        updatePresenceStates(state);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        handlePresenceJoin(key, newPresences[0]);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        handlePresenceLeave(key);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.current?.track({
+            user_id: userId,
+            location: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+            },
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
 
     return () => {
-      channel.unsubscribe();
+      presenceChannel.current?.unsubscribe();
     };
-  }, [locationState.currentLocation]);
+  }, [userId, location, supabase]);
 
   const updatePresenceStates = (state: any) => {
     const newStates = new Map<string, PresenceState>();
@@ -111,31 +106,6 @@ export function PresenceManager() {
       }
       return next;
     });
-  };
-
-  const setupAutoAway = () => {
-    let inactivityTimeout: NodeJS.Timeout;
-
-    const resetTimeout = () => {
-      clearTimeout(inactivityTimeout);
-      inactivityTimeout = setTimeout(
-        async () => {
-          await channel.track({ status: 'away' });
-        },
-        5 * 60 * 1000
-      ); // 5 minutes
-    };
-
-    window.addEventListener('mousemove', resetTimeout);
-    window.addEventListener('keypress', resetTimeout);
-
-    resetTimeout();
-
-    return () => {
-      clearTimeout(inactivityTimeout);
-      window.removeEventListener('mousemove', resetTimeout);
-      window.removeEventListener('keypress', resetTimeout);
-    };
   };
 
   return null; // This is a manager component, no UI needed

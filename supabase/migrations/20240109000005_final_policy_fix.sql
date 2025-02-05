@@ -42,12 +42,30 @@ CREATE POLICY "Profiles are viewable based on privacy settings"
         )
     );
 
--- Create a simple policy for INSERT/UPDATE/DELETE
-CREATE POLICY "Users can manage their own profile"
+-- Allow users to create their own profile
+CREATE POLICY "Users can create their own profile"
     ON public.profiles
-    FOR ALL
+    FOR INSERT
+    WITH CHECK (
+        id = auth.uid()
+        AND NOT EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid()
+        )
+    );
+
+-- Allow users to update their own profile
+CREATE POLICY "Users can update their own profile"
+    ON public.profiles
+    FOR UPDATE
     USING (id = auth.uid())
     WITH CHECK (id = auth.uid());
+
+-- Allow users to soft delete their own profile
+CREATE POLICY "Users can delete their own profile"
+    ON public.profiles
+    FOR DELETE
+    USING (id = auth.uid());
 
 -- Update presence log policies to avoid recursion
 DROP POLICY IF EXISTS "Users can view their own presence logs" ON public.presence_logs;
