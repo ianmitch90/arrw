@@ -1,5 +1,5 @@
 import { PlaceProposal } from '@/types/core';
-import { Button, Card, Chip, ScrollShadow } from '@nextui-org/react';
+import { Button, Card, Chip, Image, ScrollShadow } from '@nextui-org/react';
 import { Check, X, MapPin, Calendar, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -74,10 +74,12 @@ export function ProposalCluster({ proposals, onApprove, onReject }: ProposalClus
               <div className="flex gap-4">
                 {/* Photo */}
                 {proposal.photo_url && (
-                  <img
+                  <Image
                     src={proposal.photo_url}
                     alt={proposal.name}
-                    className="w-24 h-24 object-cover rounded-lg"
+                    width={96}
+                    height={96}
+                    className="rounded-lg"
                   />
                 )}
 

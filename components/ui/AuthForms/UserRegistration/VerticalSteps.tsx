@@ -164,7 +164,7 @@ const VerticalSteps = React.forwardRef<HTMLButtonElement, VerticalStepsProps>(
       <nav aria-label="Progress" className="max-w-fit">
         <ol className={cn('flex flex-col gap-y-3', colors, className)}>
           {steps?.map((step, stepIdx) => {
-            let status =
+            const status =
               currentStep === stepIdx
                 ? 'active'
                 : currentStep < stepIdx
@@ -261,7 +261,7 @@ const VerticalSteps = React.forwardRef<HTMLButtonElement, VerticalStepsProps>(
                       'pointer-events-none absolute left-3 top-[calc(64px_*_var(--idx)_+_1)] flex h-1/2 -translate-y-1/3 items-center px-4'
                     )}
                     style={{
-                      // @ts-ignore
+                      // @ts-expect-error - CSS custom property --idx is not recognized by TypeScript
                       '--idx': stepIdx
                     }}
                   >

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, Chip, Button, Avatar, Progress } from '@nextui-org/react';
+import { useEffect, useState, useCallback } from 'react';
+import { Card, Chip, Progress, Avatar } from '@nextui-org/react';
+import { motion } from 'framer-motion';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -92,25 +92,25 @@ export function AdvancedPresence({
       channel.unsubscribe();
       clearInterval(interval);
     };
-  }, [userId, supabase, showPredictions, showMoodHistory]);
+  }, [userId, supabase, showPredictions, showMoodHistory, fetchPredictions, fetchMoodHistory]);
 
-  const fetchPredictions = async () => {
+  const fetchPredictions = useCallback(async () => {
     const { data } = await supabase.rpc('predict_next_activity', {
       user_id: userId
     });
     if (data) {
       setPredictions(data as unknown as ActivityPrediction[]);
     }
-  };
+  }, [supabase, userId]);
 
-  const fetchMoodHistory = async () => {
+  const fetchMoodHistory = useCallback(async () => {
     const { data } = await supabase.rpc('get_user_mood_history', {
       target_user_id: userId
     });
     if (data) {
       setMoodHistory(data as unknown as MoodHistory[]);
     }
-  };
+  }, [supabase, userId]);
 
   if (!presence) return null;
 

@@ -15,7 +15,7 @@ const supabaseClient = createClient<Database>(
       detectSessionInUrl: true,
       storage: {
         getItem: (key: string) => {
-          const value = localStorage.getItem(key);
+          const value = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
           if (key.includes('supabase.auth.token')) {
             try {
               const session = JSON.parse(value || '{}');
@@ -24,7 +24,7 @@ const supabaseClient = createClient<Database>(
               }
               // For anon users, only clear if token is expired
               if (session.expires_at && new Date(session.expires_at * 1000) < new Date()) {
-                localStorage.removeItem(key);
+                if (typeof window !== 'undefined') localStorage.removeItem(key);
                 return null;
               }
             } catch (e) {

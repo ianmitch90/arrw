@@ -9,12 +9,21 @@ import { getRedirectMethod } from '@/utils/auth-helpers/settings';
 import s from './Navbar.module.css';
 import { Button } from '@nextui-org/react';
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType;
+}
+
 interface NavlinksProps {
+  items: NavItem[];
   user?: any;
 }
 
-export default function Navlinks({ user }: NavlinksProps) {
-  const router = getRedirectMethod() === 'client' ? useRouter() : null;
+export default function Navlinks({ items, user }: NavlinksProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const shouldUseRouter = getRedirectMethod() === 'client';
 
   return (
     <div className="relative flex flex-row justify-between py-4 align-center md:py-6">
@@ -23,9 +32,11 @@ export default function Navlinks({ user }: NavlinksProps) {
           <Logo />
         </Link>
         <nav className="ml-6 space-x-2 lg:block">
-          <Link href="/" className={s.link}>
-            Pricing
-          </Link>
+          {items.map((item) => (
+            <Link key={item.href} href={item.href} className={s.link}>
+              {item.name}
+            </Link>
+          ))}
           {user && (
             <Link href="/account" className={s.link}>
               Account
@@ -36,7 +47,7 @@ export default function Navlinks({ user }: NavlinksProps) {
       <div className="flex justify-end space-x-8">
         {user ? (
           <form onSubmit={(e) => handleRequest(e, SignOut, router)}>
-            <input type="hidden" name="pathName" value={usePathname()} />
+            <input type="hidden" name="pathName" value={pathname} />
             <Button type="submit" className={s.link}>
               Sign out
             </Button>

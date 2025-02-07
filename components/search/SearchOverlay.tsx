@@ -5,6 +5,13 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface SearchResult {
+  id: string;
+  title: string;
+  type: 'user' | 'place';
+  coordinates: GeoLocation;
+}
+
 type SearchResult = {
   id: string;
   name?: string;

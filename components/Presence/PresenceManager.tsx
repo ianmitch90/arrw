@@ -1,36 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useLocation } from '@/contexts/LocationContext';
 import { Database } from '@/types_db';
-
-interface PresenceState {
-  userId: string;
-  status: 'online' | 'offline' | 'away';
-  lastSeen: Date;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  activity?: {
-    type: string;
-    metadata?: any;
-  };
-}
+import { PresenceState } from '@/types';
 
 interface PresenceManagerProps {
+  children: React.ReactNode;
+  onPresenceUpdate: (presence: PresenceState) => void;
   userId: string;
 }
 
-export function PresenceManager({ userId }: PresenceManagerProps) {
+export const PresenceManager: React.FC<PresenceManagerProps> = ({ children, onPresenceUpdate, userId }) => {
   const supabase = useSupabaseClient<Database>();
   const { location } = useLocation();
   const presenceChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const [presenceStates, setPresenceStates] = useState<Map<string, PresenceState>>(new Map());
+  const [presenceStates, setPresenceStates] = useState<PresenceState[]>([]);
 
   useEffect(() => {
     if (!location || !userId) return;
 
-    // Create or update presence channel
     presenceChannel.current = supabase.channel(`presence:${userId}`, {
       config: {
         presence: {
@@ -39,7 +27,6 @@ export function PresenceManager({ userId }: PresenceManagerProps) {
       },
     });
 
-    // Track user's presence with location
     presenceChannel.current
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.current?.presenceState();
@@ -70,43 +57,35 @@ export function PresenceManager({ userId }: PresenceManagerProps) {
   }, [userId, location, supabase]);
 
   const updatePresenceStates = (state: any) => {
-    const newStates = new Map<string, PresenceState>();
-    Object.entries(state).forEach(([key, value]: [string, any]) => {
-      newStates.set(key, {
-        userId: value.user_id,
-        status: value.status,
-        lastSeen: new Date(value.last_seen),
-        location: value.location,
-        activity: value.activity
-      });
-    });
+    const newStates: PresenceState[] = Object.entries(state).map(([key, value]: [string, any]) => ({
+      userId: value.user_id,
+      location: value.location,
+      status: value.status,
+      lastActive: new Date(value.last_seen),
+      activity: value.activity,
+      timestamp: new Date(value.last_seen).getTime()
+    }));
     setPresenceStates(newStates);
   };
 
   const handlePresenceJoin = (key: string, presence: any) => {
-    setPresenceStates((prev) => {
-      const next = new Map(prev);
-      next.set(key, {
-        userId: presence.user_id,
-        status: presence.status,
-        lastSeen: new Date(presence.last_seen),
-        location: presence.location,
-        activity: presence.activity
-      });
-      return next;
-    });
+    setPresenceStates((prev) => [...prev, {
+      userId: presence.user_id,
+      location: presence.location,
+      status: presence.status,
+      lastActive: new Date(presence.last_seen),
+      activity: presence.activity,
+      timestamp: new Date(presence.last_seen).getTime()
+    }]);
   };
 
   const handlePresenceLeave = (key: string) => {
-    setPresenceStates((prev) => {
-      const next = new Map(prev);
-      const state = next.get(key);
-      if (state) {
-        next.set(key, { ...state, status: 'offline' });
-      }
-      return next;
-    });
+    setPresenceStates((prev) => prev.map((state) => state.userId === key ? { ...state, status: 'offline' } : state));
   };
 
-  return null; // This is a manager component, no UI needed
+  const handleUpdatePresence = useCallback((presence: PresenceState) => {
+    onPresenceUpdate(presence);
+  }, [onPresenceUpdate]);
+
+  return null; 
 }

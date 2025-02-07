@@ -34,12 +34,16 @@ export class SessionManager {
   private isRefreshing: boolean;
 
   private constructor() {
-    this.lastActivity = this.getStoredLastActivity() || Date.now();
+    this.lastActivity = Date.now();
     this.refreshTimeout = null;
     this.retryCount = 0;
     this.isRefreshing = false;
-    this.setupActivityTracking();
-    this.restoreSession();
+
+    if (typeof window !== 'undefined') {
+      this.lastActivity = this.getStoredLastActivity() || Date.now();
+      this.setupActivityTracking();
+      this.restoreSession();
+    }
   }
 
   public static getInstance(): SessionManager {
@@ -78,6 +82,8 @@ export class SessionManager {
   }
 
   private async restoreSession(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    
     try {
       const accessToken = localStorage.getItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
       const refreshToken = localStorage.getItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN);

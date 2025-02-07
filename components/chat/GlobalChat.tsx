@@ -7,12 +7,32 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { format } from 'date-fns';
 
+interface ChatMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  timestamp: number;
+  username?: string;
+  avatarUrl?: string;
+}
+
+interface MessageEvent {
+  user: string;
+  content: string;
+  timestamp: number;
+}
+
+interface GroupedMessages {
+  date: string;
+  messages: ChatMessage[];
+}
+
 export default function GlobalChat() {
   const { user } = useUser();
   const { globalMessages: messages, sendGlobalMessage: sendMessage } = useChat();
 
-  const groupMessagesByDate = (messages: any[]) => {
-    const groupedMessages: any[] = [];
+  const groupMessagesByDate = (messages: ChatMessage[]) => {
+    const groupedMessages: GroupedMessages[] = [];
     let currentDate = null;
 
     messages.forEach((message) => {
@@ -49,7 +69,7 @@ export default function GlobalChat() {
                 </span>
               </div>
             </div>
-            {group.messages.map((message: any) => (
+            {group.messages.map((message: ChatMessage) => (
               <ChatMessage
                 key={message.id}
                 message={message}

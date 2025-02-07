@@ -1,7 +1,6 @@
 import React from "react";
 import { ScrollShadow } from "@nextui-org/react";
 import { formatDistanceToNow } from 'date-fns';
-import { getMessagePreview } from "@/types/chat";
 import { useChat } from "@/components/contexts/ChatContext";
 import { cn } from "@/utils/cn";
 import {ChatAvatar} from "@/components/chat/ChatAvatar";

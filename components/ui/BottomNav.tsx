@@ -47,7 +47,7 @@ const NAV_ITEMS: NavItem[] = [
           </div>
           <div>
             <p className="font-medium">Welcome Back!</p>
-            <p className="text-sm text-default-500">Discover what's new today</p>
+            <p className="text-sm text-default-500">Discover what&apos;s new today</p>
           </div>
         </div>
         <Progress

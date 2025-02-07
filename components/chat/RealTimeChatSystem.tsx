@@ -32,8 +32,15 @@ export function RealTimeChatSystem() {
   const supabase = useSupabaseClient<Database>();
   const { location } = useLocation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
-  const [channel, setChannel] = useState<any>(null);
+  const [nearbyUsers, setNearbyUsers] = useState<Array<{
+    id: string;
+    name: string;
+    location: {
+      latitude: number;
+      longitude: number;
+    };
+  }>>([]);
+  const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!location) return;
@@ -194,7 +201,14 @@ function ChatInput({
   );
 }
 
-function NearbyUsers({ users }: { users: any[] }) {
+function NearbyUsers({ users }: { users: Array<{
+  id: string;
+  name: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+}> }) {
   return (
     <div className="space-y-2">
       <h3 className="font-semibold mb-4">Nearby Users</h3>

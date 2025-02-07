@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import {Button, Chip} from "@nextui-org/react";
-import {Menu} from "lucide-react";
+import {Chip} from "@nextui-org/react";
 import {cn} from "@/utils/cn";
 import { useChat } from "@/components/contexts/ChatContext";
 

@@ -2,8 +2,8 @@ import { Avatar, Button, Chip, Skeleton } from '@nextui-org/react';
 import { Icon } from '@iconify/react';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useEffect, useState } from 'react';
-import { Database } from '@/types/database.types';
+import { useEffect, useState, useCallback } from 'react';
+import { Database } from '@/types_db';
 import { LngLat } from 'mapbox-gl';
 import { useToast } from '@/hooks/useToast';
 import { AvatarSkeleton } from '@/components/Skeletons';
@@ -23,11 +23,40 @@ export function TopBar() {
   const supabase = createClientComponentClient<Database>();
   const { showToast } = useToast();
 
-  const getLocation = async (retryCount = 0) => {
+  const handleLocationError = useCallback((error: GeolocationPositionError) => {
+    console.error('Error getting location:', error);
+    setLocationError(error.message);
+
+    if (error.code === error.PERMISSION_DENIED) {
+      showToast('Location permission denied. Please allow location access.', 'destructive');
+    } else if (error.code === error.POSITION_UNAVAILABLE) {
+      showToast('Unable to retrieve location. Please try again.', 'destructive');
+    } else if (error.code === error.TIMEOUT) {
+      showToast('Location request timed out. Please try again.', 'destructive');
+    } else {
+      showToast('An unknown error occurred while retrieving location.', 'destructive');
+    }
+  }, [showToast]);
+
+  const getLocation = useCallback(async (retryCount = 0) => {
+    if (retryCount >= MAX_LOCATION_RETRIES) {
+      handleLocationError({
+        name: 'GeolocationPositionError',
+        message: 'Maximum retry attempts reached',
+        code: 3, // TIMEOUT code
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3
+      } as GeolocationPositionError);
+      return;
+    }
+    
     try {
       const position = await new Promise<GeolocationPosition>(
         (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
+          navigator.geolocation.getCurrentPosition(resolve, (error) => {
+            reject(error);
+          }, {
             enableHighAccuracy: true,
             timeout: 5000,
             maximumAge: 0
@@ -40,31 +69,11 @@ export function TopBar() {
       );
       setLocationError(null);
     } catch (error) {
-      console.error('Error getting location:', error);
-      setLocationError(
-        error instanceof Error ? error.message : 'Location error'
-      );
-
-      if (retryCount < MAX_LOCATION_RETRIES) {
-        showToast('Retrying to get location...', 'info');
-        setTimeout(
-          () => {
-            getLocation(retryCount + 1);
-          },
-          RETRY_DELAY * Math.pow(2, retryCount)
-        );
-      } else {
-        showToast('Failed to get location', 'error', {
-          action: {
-            label: 'Retry',
-            onClick: () => getLocation(0)
-          }
-        });
-      }
+      handleLocationError(error as GeolocationPositionError);
     }
-  };
+  }, [handleLocationError]);
 
-  const getCurrentUser = async () => {
+  const getCurrentUser = useCallback(async () => {
     try {
       setLoadingProfile(true);
       const {
@@ -82,7 +91,7 @@ export function TopBar() {
       if (profile) setCurrentUser(profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
-      showToast('Failed to load profile', 'error', {
+      showToast('Failed to load profile', 'destructive', {
         action: {
           label: 'Retry',
           onClick: getCurrentUser
@@ -91,12 +100,12 @@ export function TopBar() {
     } finally {
       setLoadingProfile(false);
     }
-  };
+  }, [supabase, showToast]);
 
   useEffect(() => {
     getLocation();
     getCurrentUser();
-  }, []);
+  }, [getLocation, getCurrentUser]);
 
   return (
     <div className="fixed top-0 w-full px-4 py-2 bg-background/80 backdrop-blur-md z-50">
@@ -106,7 +115,7 @@ export function TopBar() {
             <Skeleton className="h-5 w-32 rounded" />
           ) : (
             <span className="text-default-600">
-              {currentUser?.city || 'Location unavailable'}
+              {currentLocation ? 'Location available' : 'Location unavailable'}
               {locationError && (
                 <Icon
                   icon="lucide:alert-circle"

@@ -1,5 +1,5 @@
 import { PlaceCardProps } from '@/types/map';
-import { Button, Avatar } from '@nextui-org/react';
+import { Button, Avatar, Image } from '@nextui-org/react';
 import { MapPin, X, Calendar, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -49,9 +49,11 @@ export function PlaceCard({ place, onClose, className }: PlaceCardProps) {
       )}
 
       {place.photo_url && (
-        <img
+        <Image
           src={place.photo_url}
           alt={place.name}
+          width={400}
+          height={300}
           className="w-full h-48 object-cover rounded-lg"
         />
       )}

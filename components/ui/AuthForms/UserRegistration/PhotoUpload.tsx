@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Formik, Field, Form, errormessage } from 'formik';
+import { Formik, Field, Form } from 'formik';
 import { Button } from '@nextui-org/react';
 import * as Yup from 'yup';
 
@@ -39,10 +39,13 @@ export default function PhotoUpload({
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Show Your Best Self 📸</h2>
             <p className="text-sm text-gray-500">
-              You're almost done! 🎉 Want to add a photo now or later?
+              You&apos;re almost done! 🎉 Want to add a photo now or later?
             </p>
             <Field name="photo">
-              {({ field, form }: { field: any; form: any }) => (
+              {({ field, form }: {
+                field: { name: string; value: File | null };
+                form: { setFieldValue: (field: string, value: File) => void };
+              }) => (
                 <div className="pt-6 pb-3">
                   <label
                     htmlFor="photo"

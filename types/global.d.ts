@@ -107,4 +107,24 @@ declare global {
   type XRFrameRequestCallback = (time: number, frame: XRFrame) => void;
 }
 
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      mesh: any;
+      sphereGeometry: any;
+      meshStandardMaterial: any;
+    }
+  }
+}
+
+declare module '*.module.css' {
+  const classes: { [key: string]: string };
+  export default classes;
+}
+
+declare module '*.svg' {
+  const content: React.FunctionComponent<React.SVGAttributes<SVGElement>>;
+  export default content;
+}
+
 export {};

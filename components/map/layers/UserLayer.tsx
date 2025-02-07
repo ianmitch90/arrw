@@ -1,31 +1,32 @@
 import { useEffect, useState } from 'react';
-import { Layer, Source, useMap } from 'react-map-gl';
+import { useMap } from 'react-map-gl';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
-import { Avatar, User } from '@nextui-org/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { calculateDistance } from '@/lib/utils';
-import { UserMarker } from '../markers/UserMarker';
-import type { Map as MapboxMap } from 'mapbox-gl';
 
 interface UserLayerProps {
-  currentLocation: { latitude: number; longitude: number };
-  onUserClick: (user: any) => void;
+  currentLocation: UserLocation;
+  onUserClick: (user: UserState) => void;
 }
 
 interface UserState {
   id: string;
-  location: { latitude: number; longitude: number };
+  location: UserLocation;
   status: string;
   lastSeen: Date;
   activity: string;
+}
+
+interface UserLocation {
+  latitude: number;
+  longitude: number;
 }
 
 export function UserLayer({ currentLocation, onUserClick }: UserLayerProps) {
   const supabase = useSupabaseClient<Database>();
   const { current: mapRef } = useMap();
   const [users, setUsers] = useState<UserState[]>([]);
-  const [clusteredPoints, setClusteredPoints] = useState<any[]>([]);
+  // TODO: Implement clustering if needed in the future
+  // const [clusteredPoints, setClusteredPoints] = useState<Point[]>([]);
 
   useEffect(() => {
     if (!mapRef || !currentLocation) return;

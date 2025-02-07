@@ -15,7 +15,8 @@ const supabase = createClient(
 export async function POST(req: Request) {
   try {
     // Get JWT token from Authorization header
-    const authHeader = headers().get('Authorization');
+    const headersList = await headers();
+    const authHeader = headersList.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Missing or invalid token' },

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
@@ -26,7 +26,6 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
   const [location, setLocation] = useState<Coordinates | undefined>(initialLocation);
   const [proposals, setProposals] = useState<PlaceProposal[]>([]);
   const [selectedCluster, setSelectedCluster] = useState<PlaceProposal[]>();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Initialize map
   useEffect(() => {
@@ -72,48 +71,54 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
     };
   }, [location]);
 
-  const initializeMap = () => {
-    if (!mapContainer.current || map.current) return;
+  const lng = location?.longitude || -122.4194;
+  const lat = location?.latitude || 37.7749;
+  const zoom = 13;
 
-    try {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11',
-        center: [location?.longitude || -122.4194, location?.latitude || 37.7749],
-        zoom: 13,
-        preserveDrawingBuffer: true // This can help with rendering issues
-      });
+  const initializeMap = useCallback(() => {
+    if (!mapContainer.current) return;
 
-      // Debug map initialization
-      map.current.on('load', () => {
-        console.log('Map loaded successfully');
-        
-        // Force a resize after load
-        setTimeout(() => {
-          map.current?.resize();
-          console.log('Forced map resize');
-        }, 100);
-      });
+    const map = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [lng, lat],
+      zoom: zoom,
+      preserveDrawingBuffer: true // This can help with rendering issues
+    });
 
-      map.current.on('error', (e) => {
-        console.error('Map error:', e);
-      });
+    // Debug map initialization
+    map.on('load', () => {
+      console.log('Map loaded successfully');
+      
+      // Force a resize after load
+      setTimeout(() => {
+        map.resize();
+        console.log('Forced map resize');
+      }, 100);
+    });
 
-      // Add controls
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-      map.current.addControl(
-        new mapboxgl.GeolocateControl({
-          positionOptions: {
-            enableHighAccuracy: true
-          },
-          trackUserLocation: true
-        }),
-        'top-right'
-      );
-    } catch (error) {
-      console.error('Error initializing map:', error);
-    }
-  };
+    map.on('error', (e) => {
+      console.error('Map error:', e);
+    });
+
+    // Add controls
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: true
+      }),
+      'top-right'
+    );
+
+    return () => map.remove();
+  }, [supabase]);
+
+  useEffect(() => {
+    initializeMap();
+  }, [initializeMap]);
 
   // Update map when location changes
   useEffect(() => {
@@ -126,7 +131,7 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
 
     // Fetch proposals for this area
     fetchNearbyProposals(location);
-  }, [location]);
+  }, [location, fetchNearbyProposals]);
 
   const fetchNearbyProposals = async (coords: Coordinates) => {
     const { data, error } = await supabase.rpc('get_nearby_proposals', {

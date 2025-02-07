@@ -20,6 +20,15 @@ const withPWA = require('next-pwa')({
 });
 
 const nextConfig = {
+  experimental: {
+    // Configure client-side router cache staleness
+    staleTimes: {
+      // 30 seconds for dynamic content
+      dynamic: 30,
+      // 3 minutes for static content
+      static: 180
+    }
+  },
   images: {
     remotePatterns: [
       {
@@ -40,10 +49,9 @@ const nextConfig = {
 };
 
 // Enable experimental features based on environment
+// Server Actions are now stable in Next.js 15
 if (process.env.NODE_ENV === 'development') {
-  nextConfig.experimental = {
-    serverActions: true
-  };
+  nextConfig.experimental = {};
 }
 
 module.exports = withPWA(nextConfig);

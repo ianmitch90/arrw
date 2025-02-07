@@ -55,15 +55,7 @@ export type Database = {
           verification_data?: Json | null
           verified_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "age_verifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       chat_message_reactions: {
         Row: {
@@ -258,15 +250,7 @@ export type Database = {
           subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "customers_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       debug_logs: {
         Row: {
@@ -337,13 +321,6 @@ export type Database = {
             referencedRelation: "features"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "feature_usage_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
         ]
       }
       features: {
@@ -392,22 +369,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "friends_friend_id_fkey"
-            columns: ["friend_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friends_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       location_history: {
         Row: {
@@ -431,15 +393,7 @@ export type Database = {
           location?: unknown
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "location_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       notification_preferences: {
         Row: {
@@ -519,15 +473,7 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "places_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       presence_logs: {
         Row: {
@@ -548,15 +494,7 @@ export type Database = {
           status?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "presence_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       privacy_preferences: {
         Row: {
@@ -819,15 +757,7 @@ export type Database = {
           subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       sexual_preferences: {
         Row: {
@@ -952,15 +882,7 @@ export type Database = {
           status?: string | null
           title?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "stories_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       subscription_features: {
         Row: {
@@ -1016,22 +938,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "trusted_contacts_trusted_user_id_fkey"
-            columns: ["trusted_user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trusted_contacts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       users: {
         Row: {
@@ -1085,15 +992,7 @@ export type Database = {
             | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "users_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       webhook_events: {
         Row: {
@@ -1158,13 +1057,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "zone_presence_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "zone_presence_zone_id_fkey"
             columns: ["zone_id"]
             isOneToOne: false
@@ -1204,15 +1096,7 @@ export type Database = {
           name?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "zones_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -1663,17 +1547,20 @@ export type Database = {
           place_types?: string[]
         }
         Returns: {
-          created_at: string | null
-          created_by: string | null
-          description: string | null
           id: string
-          location: unknown
-          metadata: Json | null
           name: string
-          photo_url: string | null
+          description: string
+          location: unknown
           place_type: string
-          status: string | null
-          updated_at: string | null
+          created_by: string
+          created_at: string
+          updated_at: string
+          photo_url: string
+          status: string
+          metadata: Json
+          creator_id: string
+          creator_full_name: string
+          creator_avatar_url: string
         }[]
       }
       find_stories_within_radius: {
@@ -2498,6 +2385,52 @@ export type Database = {
       postgis_wagyu_version: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      search_groups_with_distance: {
+        Args: {
+          search_query: string
+          user_lat: number
+          user_lng: number
+        }
+        Returns: {
+          id: string
+          name: string
+          description: string
+          avatar_url: string
+          distance: number
+          location: Json
+        }[]
+      }
+      search_places_with_distance: {
+        Args: {
+          search_query: string
+          user_lat: number
+          user_lng: number
+        }
+        Returns: {
+          id: string
+          name: string
+          description: string
+          type: string
+          image_url: string
+          distance: number
+          location: Json
+        }[]
+      }
+      search_users_with_distance: {
+        Args: {
+          search_query: string
+          user_lat: number
+          user_lng: number
+        }
+        Returns: {
+          id: string
+          display_name: string
+          bio: string
+          avatar_url: string
+          distance: number
+          location: Json
+        }[]
       }
       spheroid_in: {
         Args: {
@@ -4629,3 +4562,17 @@ export type Enums<
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
 
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never

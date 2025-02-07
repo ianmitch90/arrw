@@ -164,7 +164,7 @@ const RowSteps = React.forwardRef<HTMLButtonElement, RowStepsProps>(
           className={cn('flex flex-row flex-nowrap gap-x-3', colors, className)}
         >
           {steps?.map((step, stepIdx) => {
-            let status =
+            const status =
               currentStep === stepIdx
                 ? 'active'
                 : currentStep < stepIdx
@@ -245,7 +245,7 @@ const RowSteps = React.forwardRef<HTMLButtonElement, RowStepsProps>(
                       aria-hidden="true"
                       className="pointer-events-none absolute right-0 w-10 flex-none items-center"
                       style={{
-                        // @ts-ignore
+                        // @ts-expect-error - CSS custom property --idx is not recognized by TypeScript
                         '--idx': stepIdx
                       }}
                     >

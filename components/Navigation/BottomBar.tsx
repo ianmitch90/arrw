@@ -1,7 +1,6 @@
 "use client";
 
-import type { NavbarProps } from "@nextui-org/react";
-import { Navbar, NavbarContent, NavbarItem, Link } from "@nextui-org/react";
+
 import { usePathname } from "next/navigation";
 import { MapIcon, MessageCircleIcon, UsersIcon, UserIcon } from "lucide-react";
 import { useChatOverlay, ChatType } from '@/hooks/useChatOverlay';

@@ -4,7 +4,7 @@ import React, { ReactNode } from 'react';
 import { Input as NextInput, InputProps as NextInputProps } from '@nextui-org/react';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export interface InputProps extends Partial<NextInputProps> {
   icon?: string;

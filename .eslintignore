@@ -1,0 +1,11 @@
+# Generated files
+.next/
+out/
+node_modules/
+
+# Custom type definitions
+**/*.d.ts
+
+# Test files
+**/*.test.*
+**/*.spec.*

@@ -3,7 +3,7 @@
 import React from "react";
 import { Avatar } from "@nextui-org/react";
 import { formatDistanceToNow } from "date-fns";
-import { Message, ChatUser } from "@/types/chat";
+import { Message, ChatUser } from "@/types/chat.types";
 import { cn } from "@/utils/cn";
 
 interface ChatMessageProps {
@@ -16,7 +16,8 @@ export function ChatMessage({ message, isSender, className }: ChatMessageProps) 
   const sender: ChatUser = {
     id: message.senderId,
     fullName: `User ${message.senderId}`, // Default to user ID if no name available
-    status: 'active'
+    status: 'active',
+    avatarUrl: undefined // This will allow the Avatar component to fall back to using the name
   };
 
   return (

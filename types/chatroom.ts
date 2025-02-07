@@ -10,4 +10,5 @@ export interface ChatRoom {
   };
   city: string;
   max_participants: number;
+  messages: Message[];
 }

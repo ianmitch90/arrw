@@ -10,14 +10,14 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (user) {
       router.replace('/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [user, router]);
 
   if (isLoading) {
     return (
@@ -27,7 +27,7 @@ export default function AuthLayout({
     );
   }
 
-  if (isAuthenticated) {
+  if (user) {
     return null;
   }
 

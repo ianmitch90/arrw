@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
-import { Modal, ModalContent, Button, Input } from '@nextui-org/react';
-import { Camera, Image as ImageIcon, MapPin, X } from 'lucide-react';
+import { Modal, ModalContent, Button, Input, Image } from '@nextui-org/react';
+import { Camera, ImageIcon, MapPin, X } from 'lucide-react';
 import { useSupabaseClient, SupabaseClient } from '@supabase/auth-helpers-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Database } from '@/types/supabase';
@@ -151,10 +151,12 @@ export function StoryCreator({ isOpen, onClose, location }: StoryCreatorProps) {
           <div className="flex-1 p-4 flex flex-col gap-4">
             {preview ? (
               <div className="relative aspect-[9/16] bg-black rounded-lg overflow-hidden">
-                <img
+                <Image
                   src={preview}
-                  alt="Preview"
-                  className="absolute inset-0 w-full h-full object-contain"
+                  alt="Story preview"
+                  width={400}
+                  height={300}
+                  className="rounded-md"
                 />
                 <Button
                   isIconOnly

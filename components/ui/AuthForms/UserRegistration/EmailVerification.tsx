@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Formik, Field, Form, errormessage } from 'formik';
+import { Formik, Field, Form } from 'formik';
 import { Input } from '@nextui-org/react';
 import * as Yup from 'yup';
 
@@ -37,11 +37,14 @@ export default function EmailVerification({
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Check Your Email 📧</h2>
             <p className="text-sm text-gray-500">
-              We've sent you a special code. Enter it below to verify your
+              We&apos;ve sent you a special code. Enter it below to verify your
               email!
             </p>
             <Field name="verificationCode">
-              {({ field, meta }: { field: any; meta: any }) => (
+              {({ field, meta }: {
+                field: { name: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; onBlur: () => void };
+                meta: { touched: boolean; error?: string };
+              }) => (
                 <Input
                   {...field}
                   label="Verification Code"

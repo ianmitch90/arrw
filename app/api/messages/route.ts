@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabaseClient'; // Ensure this path is correct
+
+export const dynamic = 'force-dynamic';
+import { supabaseClient } from '../../../lib/supabaseClient';
+const supabase = supabaseClient();
 
 export async function POST(request: Request) {
   const { message, recipientId } = await request.json();

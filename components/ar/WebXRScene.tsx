@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from '@/contexts/LocationContext';
 import { useAR } from '@/hooks/useAR';
-import { ARPerformanceMonitor } from '@/utils/ar/performance';
 
 interface WebXRSceneProps {
   onARStart?: () => void;
@@ -12,7 +11,6 @@ export function WebXRScene({ onARStart, onAREnd }: WebXRSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { location, error } = useLocation();
   const { state: arState, startARSession, endARSession } = useAR();
-  const performanceMonitor = ARPerformanceMonitor.getInstance();
 
   useEffect(() => {
     if (!canvasRef.current || !location) return;
@@ -45,7 +43,7 @@ export function WebXRScene({ onARStart, onAREnd }: WebXRSceneProps) {
       endARSession();
       onAREnd?.();
     };
-  }, [arState.isSupported, arState.currentSession, location]);
+  }, [arState.isSupported, arState.currentSession, location, endARSession, onAREnd, onARStart, startARSession]);
 
   const initializeARScene = (
     gl: WebGLRenderingContext,

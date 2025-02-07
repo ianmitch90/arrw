@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { PlaceProposal } from '@/types/core';
@@ -11,23 +11,20 @@ export default function ProposalsPage() {
   const [proposals, setProposals] = useState<PlaceProposal[]>([]);
   const [selectedTab, setSelectedTab] = useState('map');
 
-  useEffect(() => {
-    fetchProposals();
-  }, []);
-
-  const fetchProposals = async () => {
+  const fetchProposals = useCallback(async () => {
     const { data, error } = await supabase
       .from('place_proposals')
       .select('*')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching proposals:', error);
-    } else {
-      setProposals(data || []);
-    }
-  };
+    if (error) console.error('Error fetching proposals:', error);
+    if (data) setProposals(data);
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchProposals();
+  }, [fetchProposals]);
 
   const handleApproveProposal = async (proposalId: string, mergedProposals?: string[]) => {
     const { error } = await supabase.rpc('approve_place_proposal', {
@@ -84,16 +81,17 @@ export default function ProposalsPage() {
           >
             <Tab key="map" title="Map View">
               <div 
+                ref={(el) => {
+                  if (el) {
+                    console.log('Parent container dimensions:', {
+                      offsetHeight: el.offsetHeight,
+                      clientHeight: el.clientHeight,
+                      scrollHeight: el.scrollHeight
+                    });
+                  }
+                }}
                 className="h-[calc(100vh-200px)]"
                 style={{ minHeight: '500px' }}
-                onLoad={(e) => {
-                  const el = e.currentTarget;
-                  console.log('Parent container dimensions:', {
-                    offsetHeight: el.offsetHeight,
-                    clientHeight: el.clientHeight,
-                    scrollHeight: el.scrollHeight
-                  });
-                }}
               >
                 <ProposalMap />
               </div>

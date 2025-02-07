@@ -48,7 +48,7 @@ export default function Chat({ userId, recipientId }: ChatProps) {
   const sendMessage = async () => {
     if (newMessage.trim() === '') return;
 
-    const { data, error } = await supabase.from('messages').insert({
+    const { error } = await supabase.from('messages').insert({
       sender_id: userId,
       recipient_id: recipientId,
       content: newMessage

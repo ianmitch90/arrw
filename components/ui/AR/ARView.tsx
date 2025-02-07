@@ -40,7 +40,7 @@ export function ARView({ onARStart, onAREnd }: ARViewProps) {
         endARSession().then(() => onAREnd?.());
       }
     };
-  }, [state.isSupported, state.currentSession]);
+  }, [state.isSupported, state.currentSession, startARSession, endARSession, onARStart, onAREnd]);
 
   return (
     <div className="relative w-full h-full">

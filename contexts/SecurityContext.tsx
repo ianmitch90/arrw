@@ -74,15 +74,9 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
   // Check for VPN/Proxy using a service like IPHub or IPQualityScore
   const detectVPN = async (): Promise<boolean> => {
     try {
-      // You'll need to sign up for an API key
-      const response = await fetch(`https://v2.api.iphub.info/ip/check`, {
-        headers: {
-          'X-Key': process.env.NEXT_PUBLIC_IPHUB_API_KEY || '',
-        }
-      });
+      const response = await fetch('/api/security/vpn-check');
       const data = await response.json();
-      // block = 1 indicates proxy/VPN
-      return data.block === 1;
+      return data.isVpn;
     } catch (error) {
       console.error('VPN detection error:', error);
       return false;
@@ -151,7 +145,7 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
   const getIPLocation = async (): Promise<LocationResult | null> => {
     try {
       // Using ip-api.com as it's more reliable for location data
-      const response = await fetch('http://ip-api.com/json/?fields=lat,lon,proxy,hosting');
+      const response = await fetch('http://ip-api.com/json/?fields=lat,lon,proxy,hosting', { cache: 'force-cache' });
       const data = await response.json();
       
       if (data.lat && data.lon) {

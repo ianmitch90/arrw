@@ -1,13 +1,30 @@
 import React, { createContext, useContext } from 'react';
 import { FormikHelpers } from 'formik';
 
+interface FormValues {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  name: string;
+  avatar?: string;
+  [key: string]: unknown;
+}
+
+interface FormErrors {
+  [key: string]: string | undefined;
+}
+
+interface FormTouched {
+  [key: string]: boolean | undefined;
+}
+
 interface FormContextType {
-  values: any;
-  errors: any;
-  touched: any;
-  validateForm: () => Promise<any>;
-  handleSubmit: (values: any, helpers: FormikHelpers<any>) => void;
-  setValues: (values: any) => void;
+  values: FormValues;
+  errors: FormErrors;
+  touched: FormTouched;
+  validateForm: () => Promise<FormErrors>;
+  handleSubmit: (values: FormValues, helpers: FormikHelpers<FormValues>) => void;
+  setValues: (values: FormValues) => void;
   isValid: boolean;
   isDirty: boolean;
   isSubmitting: boolean;

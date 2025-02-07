@@ -27,7 +27,7 @@ const Profile = () => {
     if (user) {
       fetchProfile();
     }
-  }, [user]);
+  }, [user, fetchProfile]);
 
   const fetchProfile = async () => {
     const { data, error } = await supabase

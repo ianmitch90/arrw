@@ -14,20 +14,14 @@ interface Message {
   };
 }
 
-interface ChatRoom {
-  id: string;
-  name: string;
-  type: 'location' | 'direct' | 'group';
-  participants: string[];
-}
-
 export function ChatSystem() {
   const supabase = useSupabaseClient<Database>();
   const { location } = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [activeRoom, setActiveRoom] = useState<string | null>(null);
-  const [channel, setChannel] = useState<any>(null);
+  // TODO: Implement room management in the future
+  // const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  // const [activeRoom, setActiveRoom] = useState<string | null>(null);
+  const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!location) return;

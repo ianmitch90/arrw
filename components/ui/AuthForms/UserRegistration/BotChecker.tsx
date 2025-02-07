@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Formik, Field, Form, errormessage } from 'formik';
+import { Formik, Field, Form } from 'formik';
 import { Checkbox } from '@nextui-org/react';
 import * as Yup from 'yup';
 
@@ -35,28 +35,27 @@ export default function BotChecker({
       validationSchema={validationSchema}
       onSubmit={handleSubmit}
     >
-      {({ errors, touched }) => (
+      {({ errors, touched, setFieldTouched, values, setValues }) => (
         <Form>
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Quick Check 🤖</h2>
             <p className="text-sm text-gray-500">
-              We just need to make sure you're human (and hopefully your
+              We just need to make sure you&apos;re human (and hopefully your
               soulmate)!
             </p>
-            <Field name="notABot">
-              {({ field, meta }: { field: any; meta: any }) => (
-                <Checkbox
-                  {...field}
-                  color="primary"
-                  isInvalid={meta.touched && Boolean(meta.error)}
-                >
-                  I confirm I am not a bot
-                </Checkbox>
-              )}
-            </Field>
-            <errormessage name="notABot">
-              {(msg) => <div className="text-red-500">{msg}</div>}
-            </errormessage>
+            <Checkbox
+              color="primary"
+              name="notABot"
+              isSelected={values.notABot}
+              isInvalid={!!errors.notABot && touched.notABot}
+              onChange={(e) => setValues({ notABot: e.target.checked })}
+              onBlur={() => setFieldTouched('notABot', true)}
+            >
+              I confirm I am not a bot
+            </Checkbox>
+            {touched.notABot && errors.notABot && (
+              <div className="text-red-500">{errors.notABot}</div>
+            )}
           </div>
         </Form>
       )}

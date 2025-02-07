@@ -4,13 +4,13 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { MapProvider } from '@/components/contexts/MapContext';
 import { UserProvider } from '@/components/contexts/UserContext';
 import { ChatProvider } from '@/components/contexts/ChatContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatOverlay } from '@/components/chat/ChatOverlay';
 import { useChatOverlay } from '@/hooks/useChatOverlay';
-import TopNav from '@/components/ui/TopNav';
+
 import MapView from '@/components/map/MapView';
 import Messages from '@/components/chat/Messages';
 import LoadingScreen from '@/components/LoadingScreen';

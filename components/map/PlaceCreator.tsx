@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
-import { Button, Card, Input, Textarea, Select, SelectItem } from '@nextui-org/react';
+import { Button, Card, Input, Textarea, Select, SelectItem, Image } from '@nextui-org/react';
 import { Upload } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { PlaceCreatorProps, Coordinates } from '@/types/map';
@@ -201,10 +201,11 @@ export function PlaceCreator({
             <p className="text-sm">Selected: {photoFile.name}</p>
           ) : initialData?.photo_url ? (
             <div>
-              <img
+              <Image
                 src={initialData.photo_url}
                 alt="Current photo"
-                className="w-20 h-20 object-cover mx-auto mb-2 rounded-lg"
+                width={300}
+                height={200}
               />
               <p className="text-sm">Drop a new image to replace</p>
             </div>

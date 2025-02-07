@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Profile } from '../types/index';
 import { supabase } from '../lib/supabaseClient';
-import { Card, CardBody } from '@nextui-org/react'; // Update import here
+
 import UserCard from './UserCard';
 
 export default function UserList() {

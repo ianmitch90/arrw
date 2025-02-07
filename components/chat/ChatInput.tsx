@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Button, Input,Textarea, Popover, PopoverTrigger, PopoverContent, Card } from '@nextui-org/react';
+import { Button, Textarea, Popover, PopoverTrigger, PopoverContent, Card } from '@nextui-org/react';
 import { ArrowUp, Plus, Image as ImageIcon, Smile, Mic } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { useChat } from '../contexts/ChatContext';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 
@@ -18,7 +17,6 @@ export function ChatInput({ onSend, className }: ChatInputProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showActions, setShowActions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { sendMessage } = useChat();
 
   const handleSend = () => {
     if (!message.trim() && !selectedFile) return;
@@ -41,7 +39,7 @@ export function ChatInput({ onSend, className }: ChatInputProps) {
     }
   };
 
-  const onEmojiSelect = (emoji: any) => {
+  const onEmojiSelect = (emoji: { native: string }) => {
     setMessage(prev => prev + emoji.native);
   };
 

@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabaseClient } from '../../../lib/supabaseClient';
+const supabase = supabaseClient();
 
 export async function POST(request: Request) {
   const { subscription, userId } = await request.json();
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('push_subscriptions')
     .insert({ user_id: userId, subscription: JSON.stringify(subscription) });
 

@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { WebXRPerformanceTester } from '@/utils/webxr/performance-testing';
 import { WebXROptimizer } from '@/utils/webxr/optimization';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
 interface WebXRIntegrationProps {
-  onPerformanceResult?: (result: any) => void;
+  onPerformanceResult?: (result: { fps: number; memoryUsage: number; drawCalls: number }) => void;
   onError?: (error: Error) => void;
 }
 
@@ -16,6 +16,7 @@ export function WebXRIntegration({
   const [isSupported, setIsSupported] = useState(false);
   const [isOptimized, setIsOptimized] = useState(false);
   const { state: subscriptionState } = useSubscription();
+  const xrSession = useRef<XRSession | null>(null);
 
   useEffect(() => {
     const checkSupport = async () => {
@@ -38,9 +39,9 @@ export function WebXRIntegration({
     };
 
     checkSupport();
-  }, []);
+  }, [onError, runPerformanceTest]);
 
-  const runPerformanceTest = async () => {
+  const runPerformanceTest = useCallback(async () => {
     if (!canvasRef.current) return;
 
     const gl = canvasRef.current.getContext('webgl2');
@@ -65,7 +66,7 @@ export function WebXRIntegration({
     setIsOptimized(true);
 
     onPerformanceResult?.(result);
-  };
+  }, [onPerformanceResult, subscriptionState.tier]);
 
   if (!isSupported) {
     return (

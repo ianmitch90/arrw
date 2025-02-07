@@ -1,8 +1,9 @@
-const { clsx } = require('clsx');
-const { twMerge } = require('tailwind-merge');
-const { BREAKPOINTS } = require('./Constants');
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { BREAKPOINTS } from './Constants';
+import type { DebounceFn, ThrottleFn } from '@/types';
 
-type ClassValue = string | number | boolean | undefined | null | { [key: string]: any };
+type ClassValue = string | number | boolean | undefined | null | { [key: string]: string | number | boolean | undefined | null };
 
 /**
  * Combines class names with Tailwind CSS classes
@@ -29,16 +30,13 @@ const isServer = typeof window === 'undefined';
 /**
  * Creates a debounced function that delays invoking func until after wait milliseconds
  */
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
+const debounce = <T extends unknown[]>(func: (...args: T) => void, wait: number): DebounceFn<T> => {
   let timeout: NodeJS.Timeout;
 
-  return function executedFunction(...args: Parameters<T>): void {
+  return function executedFunction(...args: T): void {
     const later = () => {
       clearTimeout(timeout);
-      func(...args);
+      return func(...args);
     };
 
     clearTimeout(timeout);
@@ -52,26 +50,51 @@ function debounce<T extends (...args: any[]) => any>(
 function throttle<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
+): ThrottleFn<T> {
   let inThrottle: boolean;
   let lastTime: number;
   let lastResult: ReturnType<T>;
 
-  return function executedFunction(...args: Parameters<T>): void {
+  return function executedFunction(...args: Parameters<T>): ReturnType<T> {
     const now = Date.now();
 
     if (!inThrottle) {
-      func(...args);
+      const result = func(...args);
       lastTime = now;
       inThrottle = true;
+      return result;
     } else {
       clearTimeout(lastResult as any);
       lastResult = setTimeout(() => {
         if (now - lastTime >= wait) {
-          func(...args);
+          const result = func(...args);
           lastTime = now;
+          return result;
         }
       }, Math.max(wait - (now - lastTime), 0)) as any;
+      return lastResult as ReturnType<T>;
+    }
+  };
+}
+
+/**
+ * Creates a throttled function that only invokes func at most once per every wait milliseconds
+ */
+const throttleNew = <T extends unknown[]>(func: (...args: T) => void, limit: number): ThrottleFn<T> => {
+  let lastFunc: NodeJS.Timeout;
+  let lastRan: number;
+  return function(...args: T) {
+    if (!lastRan) {
+      func(...args);
+      lastRan = Date.now();
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(() => {
+        if ((Date.now() - lastRan) >= limit) {
+          func(...args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
     }
   };
 }
@@ -89,14 +112,14 @@ function useMediaQuery(query: string): boolean {
 /**
  * Returns true if the current viewport is mobile
  */
-function isMobile(): boolean {
+function useIsMobile(): boolean {
   return useMediaQuery(`(max-width: ${BREAKPOINTS.MD})`);
 }
 
 /**
  * Returns true if the current viewport is tablet
  */
-function isTablet(): boolean {
+function useIsTablet(): boolean {
   return useMediaQuery(
     `(min-width: ${BREAKPOINTS.MD}) and (max-width: ${BREAKPOINTS.LG})`
   );
@@ -105,7 +128,7 @@ function isTablet(): boolean {
 /**
  * Returns true if the current viewport is desktop
  */
-function isDesktop(): boolean {
+function useIsDesktop(): boolean {
   return useMediaQuery(`(min-width: ${BREAKPOINTS.LG})`);
 }
 
@@ -180,17 +203,18 @@ function toPascalCase(str: string): string {
     .replace(/\s+/g, '');
 }
 
-module.exports = {
+export {
   cn,
   delay,
   isClient,
   isServer,
   debounce,
   throttle,
+  throttleNew,
   useMediaQuery,
-  isMobile,
-  isTablet,
-  isDesktop,
+  useIsMobile,
+  useIsTablet,
+  useIsDesktop,
   formatFileSize,
   formatDuration,
   generateRandomString,

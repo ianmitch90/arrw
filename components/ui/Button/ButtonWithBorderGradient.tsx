@@ -53,7 +53,7 @@ export function ButtonWithBorderGradient({
           backgroundClip: 'padding-box, border-box',
           position: 'relative',
           zIndex: 1
-        } as any}
+        } as React.CSSProperties}
         isDisabled={isDisabled}
         {...props}
       >

@@ -39,7 +39,7 @@ export function PerformanceMonitor({
     return () => {
       unsubscribe();
     };
-  }, [subscriptionState.tier]);
+  }, [subscriptionState.tier, onPerformanceUpdate, onQualityChange, performanceMonitor]);
 
   if (!metrics) return null;
 

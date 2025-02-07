@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { User, Coordinates, VisitingLocation } from '@/types/core';
 import { Avatar, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@nextui-org/react';
-import { MapPin, Navigation, Search, Settings, Bell, Filter } from 'lucide-react';
+import { MapPin, Navigation, Search, Bell, Filter } from 'lucide-react';
 import { SearchOverlay } from '../search/SearchOverlay';
 
 interface TopNavProps {

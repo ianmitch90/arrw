@@ -1,9 +1,20 @@
-import { FilterPanelProps, PlaceType } from '@/types/map';
+import { PlaceType, FilterType } from '@/types/map';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Slider, Switch, Chip } from '@nextui-org/react';
 import { MapPin, Building2, CalendarDays } from 'lucide-react';
 
+type MapFilter = {
+  showStories: boolean;
+  showPlaces: boolean;
+  placeTypes: PlaceType[];
+  radius: number;
+};
 
-export function FilterPanel({ isOpen, onClose, filters, onChange }: FilterPanelProps) {
+export function FilterPanel({ isOpen, onClose, filters, onChange }: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  filters: MapFilter; 
+  onChange: (filter: FilterType) => void 
+}) {
   const placeTypes: { key: PlaceType; label: string; icon: any }[] = [
     { key: 'poi', label: 'Points of Interest', icon: MapPin },
     { key: 'event_venue', label: 'Event Venues', icon: Building2 },

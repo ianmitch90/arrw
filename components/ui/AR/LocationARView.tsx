@@ -12,17 +12,12 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { state: arState, startARSession, endARSession } = useAR();
   const { location, error } = useLocation();
-  const performanceMonitor = ARPerformanceMonitor.getInstance();
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (!location) {
-    return <div>Loading location...</div>;
-  }
+  // TODO: Implement performance monitoring
+  // const performanceMonitor = ARPerformanceMonitor.getInstance();
 
   useEffect(() => {
+    if (error || !location) return;
+
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
@@ -63,7 +58,12 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
   }, [
     arState.isSupported,
     arState.currentSession,
-    location
+    location,
+    error,
+    startARSession,
+    endARSession,
+    onARStart,
+    onAREnd
   ]);
 
   const initializeARScene = (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StoryViewerProps } from '@/types/map';
-import { Modal, ModalContent, Button } from '@nextui-org/react';
+import { Modal, ModalContent, Button, Image } from '@nextui-org/react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -30,9 +30,11 @@ export function StoryViewer({ story, onClose }: StoryViewerProps) {
     const { type, url, thumbnail_url } = story.story_content;
     if (type === 'image') {
       return (
-        <img
+        <Image
           src={url}
           alt="Story content"
+          width={400}
+          height={300}
           className="w-full h-full object-contain"
           loading="eager"
         />
@@ -84,10 +86,12 @@ export function StoryViewer({ story, onClose }: StoryViewerProps) {
 
           {/* User Info */}
           <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
-            <img
+            <Image
               src={story.user.avatar_url}
               alt={story.user.full_name}
-              className="w-10 h-10 rounded-full"
+              width={40}
+              height={40}
+              className="rounded-full"
             />
             <div>
               <p className="text-white font-medium">{story.user.full_name}</p>

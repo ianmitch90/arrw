@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 
 interface Chapter {
   id: string;
@@ -6,6 +7,7 @@ interface Chapter {
   startTime: number;
   endTime: number;
   thumbnail?: string;
+  image?: string;
 }
 
 interface ChapterControlsProps {
@@ -22,25 +24,28 @@ export function ChapterControls({
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const handleTimeUpdate = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const currentTime = video.currentTime;
+    const chapter = chapters.find(
+      (ch) => currentTime >= ch.startTime && currentTime < ch.endTime
+    );
+
+    if (chapter && chapter.id !== currentChapter?.id) {
+      setCurrentChapter(chapter);
+      onChapterChange?.(chapter);
+    }
+  }, [chapters, currentChapter, onChapterChange, videoRef]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleTimeUpdate = () => {
-      const currentTime = video.currentTime;
-      const chapter = chapters.find(
-        (ch) => currentTime >= ch.startTime && currentTime < ch.endTime
-      );
-
-      if (chapter && chapter.id !== currentChapter?.id) {
-        setCurrentChapter(chapter);
-        onChapterChange?.(chapter);
-      }
-    };
-
     video.addEventListener('timeupdate', handleTimeUpdate);
     return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [chapters, currentChapter, onChapterChange]);
+  }, [videoRef, handleTimeUpdate]);
 
   const seekToChapter = (chapter: Chapter) => {
     if (!videoRef.current) return;
@@ -71,10 +76,12 @@ export function ChapterControls({
                 }`}
               >
                 {chapter.thumbnail && (
-                  <img
+                  <Image
                     src={chapter.thumbnail}
                     alt={chapter.title}
-                    className="w-16 h-9 object-cover rounded mr-2"
+                    width={80}
+                    height={45}
+                    className="rounded-md"
                   />
                 )}
                 <div className="flex-1 text-left">

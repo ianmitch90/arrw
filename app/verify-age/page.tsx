@@ -4,10 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import { Card, CardBody, CardHeader } from '@nextui-org/react';
-import Button from '@/components/ui/Button';
+
 import { useToast } from '@/components/ui/use-toast';
 import AgeVerificationForm from '@/components/ui/AuthForms/AgeVerificationForm';
-import { CalendarDate } from '@internationalized/date';
+import { CalendarDate, today, getLocalTimeZone } from '@internationalized/date';
+
+interface VerificationResult {
+  success: boolean;
+  ageVerified: boolean;
+  error?: string;
+}
 
 export default function AgeVerificationPage() {
   const [loading, setLoading] = useState(false);
@@ -39,12 +45,13 @@ export default function AgeVerificationPage() {
 
     setLoading(true);
     try {
-      // Calculate age first
-      const today = new Date();
-      const birth = new Date(birthDate.toString());
-      let age = today.getFullYear() - birth.getFullYear();
-      const monthDiff = today.getMonth() - birth.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      // Convert CalendarDate to Date
+      const birth = birthDate.toDate(getLocalTimeZone());
+      
+      const todayDate = today(getLocalTimeZone());
+      let age = todayDate.year - birthDate.year;
+      const monthDiff = todayDate.month - birthDate.month;
+      if (monthDiff < 0 || (monthDiff === 0 && todayDate.day < birthDate.day)) {
         age--;
       }
 
@@ -56,7 +63,7 @@ export default function AgeVerificationPage() {
             user_id: user.id,
             verified: true,
             verified_at: new Date().toISOString(),
-            birth_date: birthDate.toString(),
+            birth_date: birth.toISOString(),
             method: 'document'
           }, {
             onConflict: 'user_id',
@@ -65,23 +72,34 @@ export default function AgeVerificationPage() {
         supabase
           .from('users')
           .update({
-            birth_date: birthDate.toString(),
+            birth_date: birth.toISOString(),
             age: age,
             status: 'active'
           })
           .eq('id', user.id)
       ]);
 
-      if (verificationError) throw verificationError;
-      if (userError) throw userError;
+      const result: VerificationResult = {
+        success: !verificationError && !userError,
+        ageVerified: age >= 18,
+        error: verificationError?.message || userError?.message
+      };
 
-      toast({
-        title: 'Success',
-        description: 'Age verification completed'
-      });
+      if (result.success && result.ageVerified) {
+        toast({
+          title: 'Success',
+          description: 'Age verification completed'
+        });
 
-      router.push('/map');
-    } catch (error: any) {
+        router.push('/map');
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error,
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
       toast({
         title: 'Error',
         description: error.message,
@@ -102,7 +120,10 @@ export default function AgeVerificationPage() {
           </p>
         </CardHeader>
         <CardBody className="px-8 pb-8">
-          <AgeVerificationForm onSubmit={handleAgeVerification} loading={loading} />
+          <AgeVerificationForm
+            onSubmit={handleAgeVerification}
+            loading={loading}
+          />
         </CardBody>
       </Card>
     </div>

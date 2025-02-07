@@ -2,7 +2,10 @@ import { FC } from 'react';
 import { cn } from '@/lib/utils';
 
 interface FormErrorProps {
-  error?: any;
+  error?: {
+    message: string;
+    code?: string;
+  } | null;
   touched?: boolean;
   className?: string;
 }
@@ -12,7 +15,7 @@ export const FormError: FC<FormErrorProps> = ({ error, touched, className }) => 
 
   return (
     <div className={cn('text-sm text-red-500 mt-1', className)}>
-      {error}
+      {error.message}
     </div>
   );
 };

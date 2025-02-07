@@ -1,22 +1,46 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { ChatRoom, Message, ChatParticipant, toMessage, toChatRoom } from '@/types/chat';
+import { ChatRoom, MessageType, ChatParticipant, toMessage, toChatRoom } from '@/types/chat';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
+import type { Message } from '@/types/chat.types';
+
+interface ChatMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  timestamp: Date;
+}
+
+interface MessageEvent {
+  type: 'message' | 'presence';
+  payload: Message | PresenceUpdate;
+  timestamp: number;
+}
 
 interface ChatContextType {
   rooms: ChatRoom[];
   activeRoom: string | null;
   setActiveRoom: (roomId: string | null) => void;
-  sendMessage: (roomId: string, content: string, type?: 'text' | 'image' | 'file' | 'voice') => Promise<void>;
+  sendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Promise<void>;
   markAsRead: (roomId: string) => Promise<void>;
   loading: boolean;
   error: Error | null;
+  messages: Message[];
 }
 
-const ChatContext = createContext<ChatContextType | undefined>(undefined);
+const ChatContext = createContext<ChatContextType>({
+  rooms: [],
+  activeRoom: null,
+  setActiveRoom: () => {},
+  sendMessage: async () => {},
+  markAsRead: async () => {},
+  loading: false,
+  error: null,
+  messages: []
+});
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClientComponentClient<Database>();
@@ -25,6 +49,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   // Fetch rooms and their participants
   useEffect(() => {
@@ -131,18 +156,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
   }, [rooms, supabase]);
 
-  const sendMessage = async (roomId: string, content: string, type: 'text' | 'image' | 'file' | 'voice' = 'text') => {
+  const handleNewMessage = useCallback((event: MessageEvent) => {
+    // Message handling logic
+  }, [activeRoom]);
+
+  const sendMessage = async (message: Omit<Message, 'id' | 'timestamp'>) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
     const { error } = await supabase
       .from('chat_messages')
       .insert({
-        room_id: roomId,
+        room_id: message.roomId,
         sender_id: user.id,
-        message_type: type,
-        content,
-        metadata: type !== 'text' ? { fileName: content } : null
+        message_type: 'text',
+        content: message.content,
+        metadata: null
       });
 
     if (error) throw error;
@@ -179,7 +208,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       sendMessage,
       markAsRead,
       loading,
-      error
+      error,
+      messages
     }}>
       {children}
     </ChatContext.Provider>

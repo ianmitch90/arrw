@@ -15,7 +15,6 @@ import { useDisclosure, Modal, ModalHeader, ModalBody, ModalFooter, ModalContent
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useToast } from '@/components/ui/use-toast';
 import { loginValidationSchema } from '@/utils/validation/auth';
-import { useSessionManager } from '@/context/SessionManagerContext';
 import { useAgeVerification } from '@/contexts/AgeVerificationContext';
 
 export default function LoginForm() {
@@ -28,7 +27,6 @@ export default function LoginForm() {
   const { isOpen: isMagicLinkOpen, onOpen: onMagicLinkOpen, onClose: onMagicLinkClose } = useDisclosure();
   const { isOpen: isAgeModalOpen, onOpen: onAgeModalOpen, onClose: onAgeModalClose } = useDisclosure();
   const supabase = useSupabaseClient();
-  const sessionManager = useSessionManager();
   const { setIsSignupFlow } = useAgeVerification();
 
   const handleMagicLinkLogin = async () => {
@@ -43,7 +41,7 @@ export default function LoginForm() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email: magicLinkEmail,
       });
       if (error) throw error;
@@ -52,10 +50,11 @@ export default function LoginForm() {
         title: 'Success',
         description: 'Check your email for the magic link',
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { message: string };
       toast({
         title: 'Error',
-        description: error.message,
+        description: err.message,
         variant: 'destructive'
       });
     } finally {
@@ -64,8 +63,20 @@ export default function LoginForm() {
   };
 
   const handleAnonymousLogin = () => {
-    setIsSignupFlow(false); // This is not a signup flow
-    onAgeModalOpen();
+    setIsAnonymousLoading(true);
+    try {
+      setIsSignupFlow(false); // This is not a signup flow
+      onAgeModalOpen();
+    } catch (error) {
+      console.error('Anonymous login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: 'Failed to proceed with anonymous login',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsAnonymousLoading(false);
+    }
   };
 
   const [magicLinkEmail, setMagicLinkEmail] = useState('');
@@ -98,11 +109,12 @@ export default function LoginForm() {
         title: 'Test User Created',
         description: `Email: ${testEmail}\nPassword: ${testPassword}`,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { message: string };
       console.error('Error:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: err.message,
         variant: 'destructive'
       });
     }
@@ -111,7 +123,7 @@ export default function LoginForm() {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="flex w-full max-w-sm flex-col gap-4 rounded-large bg-content1 px-8 pb-10 pt-6 shadow-small">
-        <p className="pb-2 text-xl font-medium">Welcome Back</p>
+        {/* <p className="pb-2 text-xl font-medium">Welcome Back</p> */}
 
         <Formik
           initialValues={{
@@ -122,14 +134,19 @@ export default function LoginForm() {
           onSubmit={async (values: LoginFormValues, { setSubmitting }) => {
             try {
               setError(null);
-              await signIn(values.email, values.password);
+              const { error } = await supabase.auth.signInWithPassword({
+                email: values.email,
+                password: values.password
+              });
+              if (error) throw error;
               router.push('/map');
-            } catch (error: any) {
+            } catch (error) {
+              const err = error as { message: string };
               console.error('Login error:', error);
-              setError(error.message);
+              setError(err.message);
               toast({
                 title: 'Login Failed',
-                description: error.message || 'An error occurred during login',
+                description: err.message || 'An error occurred during login',
                 variant: 'destructive'
               });
             } finally {
@@ -206,7 +223,7 @@ export default function LoginForm() {
                 )}
               </Field>
 
-              {error && <FormError error={error} />}
+              {error && <FormError error={{ message: error }} />}
 
               <div className="space-y-2">
                 <Button
@@ -263,7 +280,7 @@ export default function LoginForm() {
                 </Button>
 
                 <p className="text-center text-sm">
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <Link
                     href="/signup"
                     className="text-primary hover:underline"

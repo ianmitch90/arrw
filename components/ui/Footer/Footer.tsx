@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 import Logo from '@/components/icons/Logo';
 import GitHub from '@/components/icons/GitHub';
@@ -99,10 +100,12 @@ export default function Footer() {
         <div className="flex items-center">
           <span className="text-white">Crafted by</span>
           <a href="https://vercel.com" aria-label="Vercel.com Link">
-            <img
+            <Image
               src="/vercel.svg"
               alt="Vercel.com Logo"
-              className="inline-block h-6 ml-4 text-white"
+              width={120}
+              height={40}
+              className="inline-block ml-4 text-white"
             />
           </a>
         </div>

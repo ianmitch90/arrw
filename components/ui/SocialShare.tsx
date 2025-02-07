@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, ButtonGroup, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input } from '@nextui-org/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Button, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input } from '@nextui-org/react';
+import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';
+import { ShareContent } from '@/types';
 
 interface SocialShareProps {
   url: string;

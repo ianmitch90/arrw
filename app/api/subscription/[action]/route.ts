@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { SubscriptionManager } from '@/utils/stripe/subscription-manager';
-import { validateWebhookSignature } from '@/utils/stripe/webhook-validation';
+
+import type { NextRequest } from 'next/server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export async function POST(
-  req: Request,
-  { params }: { params: { action: string } }
-) {
+export async function POST(req: NextRequest) {
+  const action = req.nextUrl.pathname.split('/').pop();
   try {
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
@@ -32,10 +31,14 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    switch (params.action) {
+    const requestData = action === 'create-checkout' ? await req.json() : null;
+    const priceId = requestData?.priceId;
+
+    let sessionId: string | null = null;
+
+    switch (action) {
       case 'create-checkout':
-        const { priceId } = await req.json();
-        const sessionId = await SubscriptionManager.createCheckoutSession(
+        sessionId = await SubscriptionManager.createCheckoutSession(
           user.id,
           priceId
         );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Progress } from '@nextui-org/react';
 import { UsageTracker, UsageMetrics } from '@/utils/usage-tracking';
 
@@ -12,9 +12,9 @@ export function UsageDisplay({ featureId }: UsageDisplayProps) {
 
   useEffect(() => {
     loadUsageMetrics();
-  }, [featureId]);
+  }, [featureId, loadUsageMetrics]);
 
-  const loadUsageMetrics = async () => {
+  const loadUsageMetrics = useCallback(async () => {
     try {
       const data = await UsageTracker.getUsageMetrics(featureId);
       setMetrics(data);
@@ -23,7 +23,7 @@ export function UsageDisplay({ featureId }: UsageDisplayProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [featureId]);
 
   if (loading) return <div>Loading usage...</div>;
   if (!metrics) return null;
