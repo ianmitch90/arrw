@@ -50,12 +50,12 @@ const debounce = <T extends unknown[]>(func: (...args: T) => void, wait: number)
 function throttle<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): ThrottleFn<T> {
-  let inThrottle: boolean;
-  let lastTime: number;
+): T {
+  let inThrottle = false;
+  let lastTime = 0;
   let lastResult: ReturnType<T>;
 
-  return function executedFunction(...args: Parameters<T>): ReturnType<T> {
+  return function executedFunction(this: any, ...args: Parameters<T>): ReturnType<T> {
     const now = Date.now();
 
     if (!inThrottle) {

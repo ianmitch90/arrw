@@ -1,5 +1,6 @@
  import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map, NavigationControl, GeolocateControl, MapRef, AttributionControl } from 'react-map-gl';
+import type { ErrorEvent } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
@@ -23,11 +24,10 @@ import {
   MapFilters,
   PostGISPoint
 } from '@/types/map';
-import { MapFeature } from '@/types';
 
 interface MapViewProps {
   initialLocation: [number, number];
-  onLocationChange: (coords: [number, number]) => void;
+  onLocationChange: (coords: Coordinates) => void;
 }
 
 const DEFAULT_LOCATION: Coordinates = {
@@ -66,6 +66,8 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<MapFilters>({
     placeTypes: ['poi', 'event_venue'],
     radius: 10,
@@ -205,13 +207,13 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
   }, [setMap, securityLocation, locationAccuracy, setMapLocation]);
 
   // Handle map errors
-  const onMapError = useCallback((e: Error | { message: string }) => {
+  const onMapError = useCallback((e: ErrorEvent) => {
     console.error('Map error:', e);
-    setMapError(e.message || 'Error loading map');
+    setMapError(e.error.message || 'Error loading map');
   }, []);
 
   // Handle viewport changes
-  const handleViewportChange = useCallback((newViewport: Viewport) => {
+  const handleViewportChange = useCallback((newViewport: { latitude: number; longitude: number; zoom: number }) => {
     setViewport(newViewport);
   }, [setViewport]);
 
@@ -229,15 +231,13 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
   // Handle location updates
   const handleGeolocate = useCallback((pos: GeolocationPosition) => {
     try {
-      const newLocation = {
+      const newLocation: Coordinates = {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude
       };
       console.log('New location:', newLocation);
       setMapLocation(newLocation);
-      if (onLocationChange) {
-        onLocationChange(newLocation);
-      }
+      onLocationChange(newLocation);
     } catch (error) {
       console.error('Error handling geolocation:', error);
       setMapError('Failed to update location');
@@ -284,7 +284,13 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
       
       const point: PostGISPoint = {
         type: 'Point',
-        coordinates: [coords.longitude, coords.latitude]
+        coordinates: [coords.longitude, coords.latitude],
+        crs: {
+          type: 'name',
+          properties: {
+            name: 'EPSG:4326'
+          }
+        }
       };
 
       const { data: updatedProfile, error: updateError } = await supabase
@@ -328,13 +334,39 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
       }
 
       if (nearbyData) {
-        setNearbyUsers(nearbyData.map((u: { id: string; latitude: number; longitude: number; avatar_url?: string; username?: string }) => ({
-          ...u,
+        const profiles: Profiles[] = nearbyData.map((u: any) => ({
+          id: u.id,
+          avatar_url: u.avatar_url || null,
+          full_name: u.full_name || null,
+          created_at: u.created_at || new Date().toISOString(),
+          updated_at: u.updated_at || new Date().toISOString(),
           current_location: u.current_location ? {
             type: 'Point',
             coordinates: u.current_location.coordinates
-          } : undefined
-        })));
+          } : undefined,
+          // Add other required fields with default values
+          age_verification_method: null,
+          age_verified: null,
+          age_verified_at: null,
+          bio: null,
+          birth_date: null,
+          deleted_at: null,
+          gender_identity: null,
+          is_anonymous: false,
+          last_location_update: null,
+          last_seen_at: null,
+          location_accuracy: null,
+          location_sharing: null,
+          online_at: null,
+          presence_sharing: null,
+          presence_status: null,
+          privacy_settings: null,
+          relationship_status: null,
+          sexual_orientation: null,
+          status: 'active',
+          subscription_tier: 'free'
+        }));
+        setNearbyUsers(profiles);
       }
     } catch (err) {
       console.error('Error in updateUserLocation:', err);
@@ -342,7 +374,12 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
   }, [user, supabase, filters.radius, setMapLocation, onLocationChange]);
 
   useEffect(() => {
-    updateUserLocation(securityLocation);
+    if (securityLocation) {
+      updateUserLocation({
+        latitude: securityLocation.latitude,
+        longitude: securityLocation.longitude
+      });
+    }
   }, [updateUserLocation, securityLocation]);
 
   // Fetch places and stories
@@ -422,20 +459,23 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
     fetchData();
   }, [fetchData, securityLocation, filters, supabase]);
 
-  const fetchProposals = useCallback(async () => {
-    // Existing logic
-  }, [supabase, viewport]);
+  // Handle place creation
+  const handleMapClick = useCallback((event: mapboxgl.MapMouseEvent) => {
+    if (isCreatingPlace) {
+      setNewPlaceLocation({
+        latitude: event.lngLat.lat,
+        longitude: event.lngLat.lng
+      });
+    }
+  }, [isCreatingPlace]);
 
-  const handleFeatureClick = useCallback((feature: MapFeature) => {
-    // Existing implementation
-  }, []);
-
-  useEffect(() => {
-    const initializeMap = () => {
-      // Map setup logic
-    };
-    initializeMap();
-  }, []);
+  // Toggle place creation mode
+  const togglePlaceCreation = useCallback(() => {
+    setIsCreatingPlace(prev => !prev);
+    if (!isCreatingPlace) {
+      setNewPlaceLocation(null);
+    }
+  }, [isCreatingPlace]);
 
   return (
     <div className="relative w-full h-full">
@@ -451,6 +491,8 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
         onLoad={onMapLoad}
         onError={onMapError}
         onMoveEnd={onMoveEnd}
+        onClick={handleMapClick}
+        cursor={isCreatingPlace ? 'crosshair' : 'grab'}
         reuseMaps
       >
         <AttributionControl position="bottom-right" />
@@ -542,6 +584,15 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
               )}
             </>
           )}
+        </Button>
+        <Button
+          isIconOnly
+          color={isCreatingPlace ? 'secondary' : 'primary'}
+          variant={isCreatingPlace ? 'solid' : 'flat'}
+          onPress={togglePlaceCreation}
+          className="relative"
+        >
+          <MapPin size={20} />
         </Button>
       </div>
 

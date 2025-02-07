@@ -38,12 +38,17 @@ export default function ChatWindow({ chatId, onBack, className }: ChatWindowProp
   }
 
   const handleSendMessage = async (content: string) => {
+    if (!user) {
+      console.error('Cannot send message: No user logged in');
+      return;
+    }
+
     try {
       const now = new Date();
       await sendMessage({
         roomId: chatId,
         content,
-        senderId: user.id, // Use the current user ID from the AuthContext
+        senderId: user.id,
         messageType: 'text',
         createdAt: now,
         updatedAt: now,

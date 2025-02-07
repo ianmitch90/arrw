@@ -4,6 +4,11 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
+// Utility function types
+export type DebounceFn<T extends (...args: any[]) => any> = T;
+
+export type ThrottleFn<T extends (...args: any[]) => any> = T;
+
 // Presence and Location Types
 /**
  * Represents a user's presence state in real-time collaboration

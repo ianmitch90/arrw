@@ -14,6 +14,12 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+interface PresenceUpdate {
+  userId: string;
+  status: 'online' | 'offline' | 'away';
+  lastSeen: Date;
+}
+
 interface MessageEvent {
   type: 'message' | 'presence';
   payload: Message | PresenceUpdate;
@@ -139,8 +145,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           const updatedRooms = [...rooms];
           updatedRooms[roomIndex] = {
             ...updatedRooms[roomIndex],
-            lastMessagePreview: newMessage.content,
-            lastMessageTimestamp: new Date(newMessage.created_at)
+            lastMessageAt: new Date(newMessage.created_at),
+            messages: [...updatedRooms[roomIndex].messages, toMessage(newMessage)]
           };
           setRooms(updatedRooms);
         }
@@ -192,7 +198,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         return {
           ...room,
           participants: room.participants.map(p => 
-            p.id === user.id ? { ...p, unreadCount: 0, lastReadAt: new Date() } : p
+            p.role === 'member' && p.joinedAt ? { ...p, unreadCount: 0, lastReadAt: new Date() } : p
           )
         };
       }

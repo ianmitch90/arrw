@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input } from '@nextui-org/react';
-import { motion } from 'framer-motion';
+import { motion, type Variants, domAnimation, LazyMotion, m } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';
 import { ShareContent } from '@/types';
@@ -62,7 +62,7 @@ const platformConfig = {
   },
 };
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: {
     opacity: 1,
@@ -156,15 +156,17 @@ export function SocialShare({
 
   if (variant === 'floating') {
     return (
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-        variants={containerVariants}
-        className={cn(
-          'fixed bottom-4 right-4 p-4 rounded-2xl bg-background/60 backdrop-blur-xl backdrop-saturate-150 shadow-lg border border-default-200/50',
-          className
-        )}
+      <LazyMotion features={domAnimation}>
+        <m.div
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={containerVariants}
+          transition={{ duration: 0.2 }}
+          className={cn(
+            'fixed bottom-4 right-4 p-4 rounded-2xl bg-background/60 backdrop-blur-xl backdrop-saturate-150 shadow-lg border border-default-200/50',
+            className
+          )}
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -180,7 +182,8 @@ export function SocialShare({
           </div>
           {renderShareButtons()}
         </div>
-      </motion.div>
+        </m.div>
+      </LazyMotion>
     );
   }
 

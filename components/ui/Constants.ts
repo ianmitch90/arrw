@@ -1,12 +1,12 @@
 // UI Component Constants
 
-const ANIMATION_DURATION = {
+export const ANIMATION_DURATION = {
   FAST: 0.15,
   DEFAULT: 0.2,
   SLOW: 0.3,
 };
 
-const SPRING_CONFIGS = {
+export const SPRING_CONFIGS = {
   BOUNCY: {
     type: 'spring',
     stiffness: 300,
@@ -24,14 +24,14 @@ const SPRING_CONFIGS = {
   },
 };
 
-const SIZES = {
+export const SIZES = {
   SM: 'sm',
   MD: 'md',
   LG: 'lg',
   XL: 'xl',
 };
 
-const VARIANTS = {
+export const VARIANTS = {
   DEFAULT: 'default',
   MINIMAL: 'minimal',
   CARD: 'card',
@@ -47,7 +47,7 @@ const COLORS = {
   DANGER: 'danger',
 };
 
-const POSITIONS = {
+export const POSITIONS = {
   TOP: 'top',
   RIGHT: 'right',
   BOTTOM: 'bottom',
@@ -68,7 +68,7 @@ const Z_INDEX = {
   DEFAULT: 1,
 };
 
-const BREAKPOINTS = {
+export const BREAKPOINTS = {
   XS: '320px',
   SM: '640px',
   MD: '768px',
@@ -129,12 +129,12 @@ const Z_INDEX_NEW = {
 const VALIDATION = {
   REQUIRED: 'This field is required',
   EMAIL: 'Please enter a valid email address',
-  MIN_LENGTH: (min) => `Must be at least ${min} characters`,
-  MAX_LENGTH: (max) => `Must be at most ${max} characters`,
+  MIN_LENGTH: (min: number): string => `Must be at least ${min} characters`,
+  MAX_LENGTH: (max: number): string => `Must be at most ${max} characters`,
   MATCH: 'Fields do not match',
   NUMBER: 'Must be a number',
-  MIN: (min) => `Must be at least ${min}`,
-  MAX: (max) => `Must be at most ${max}`,
+  MIN: (min: number): string => `Must be at least ${min}`,
+  MAX: (max: number): string => `Must be at most ${max}`,
 };
 
 const ARIA_LABELS = {

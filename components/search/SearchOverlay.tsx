@@ -5,24 +5,41 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface SearchResult {
+import { PostGISPoint } from '@/types/map';
+
+interface SearchResultBase {
   id: string;
-  title: string;
-  type: 'user' | 'place';
-  coordinates: GeoLocation;
+  distance: number;
 }
 
-type SearchResult = {
-  id: string;
-  name?: string;
-  display_name?: string;
-  description?: string;
-  bio?: string;
-  type: 'user' | 'place' | 'group';
-  avatar_url?: string;
-  location: any; // PostGIS point
-  distance?: number;
-};
+type UserRPCResponse = Database['public']['Functions']['search_users_with_distance']['Returns'][number];
+type PlaceRPCResponse = Database['public']['Functions']['search_places_with_distance']['Returns'][number];
+type GroupRPCResponse = Database['public']['Functions']['search_groups_with_distance']['Returns'][number];
+
+interface UserSearchResult extends SearchResultBase {
+  type: 'user';
+  display_name: string | null;
+  profile_picture_url: string | null;
+  last_location: PostGISPoint | null;
+}
+
+interface PlaceSearchResult extends SearchResultBase {
+  type: 'place';
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  location: PostGISPoint;
+}
+
+interface GroupSearchResult extends SearchResultBase {
+  type: 'group';
+  name: string;
+  description: string | null;
+  avatar_url: string | null;
+  location: PostGISPoint;
+}
+
+type SearchResult = UserSearchResult | PlaceSearchResult | GroupSearchResult;
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -76,9 +93,32 @@ export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverla
         }
 
         const formattedResults = [
-          ...(users?.map(u => ({ ...u, type: 'user' as const })) || []),
-          ...(places?.map(p => ({ ...p, type: 'place' as const })) || []),
-          ...(groups?.map(g => ({ ...g, type: 'group' as const })) || [])
+          ...((users || []).map((u: UserRPCResponse) => ({
+            id: u.id,
+            type: 'user' as const,
+            display_name: u.display_name,
+            profile_picture_url: u.avatar_url,
+            last_location: u.location as PostGISPoint,
+            distance: u.distance || 0
+          })) || []),
+          ...((places || []).map((p: PlaceRPCResponse) => ({
+            id: p.id,
+            type: 'place' as const,
+            name: p.name,
+            description: p.description,
+            image_url: p.image_url,
+            location: p.location as PostGISPoint,
+            distance: p.distance || 0
+          })) || []),
+          ...((groups || []).map((g: GroupRPCResponse) => ({
+            id: g.id,
+            type: 'group' as const,
+            name: g.name,
+            description: g.description,
+            avatar_url: g.avatar_url,
+            location: g.location as PostGISPoint,
+            distance: g.distance || 0
+          })) || [])
         ].sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
         setResults(formattedResults);
@@ -180,19 +220,19 @@ export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverla
                       >
                         <CardBody className="flex flex-row items-center gap-4 p-4">
                           <Avatar
-                            src={result.avatar_url}
-                            name={result.name || result.display_name}
+                            src={result.type === 'user' ? (result.profile_picture_url ?? undefined) : result.type === 'place' ? (result.image_url ?? undefined) : (result.avatar_url ?? undefined)}
+                            name={result.type === 'user' ? (result.display_name ?? '') : result.name}
                             size="md"
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               {getIcon(result.type)}
                               <p className="font-semibold truncate">
-                                {result.name || result.display_name}
+                                {result.type === 'user' ? result.display_name || '' : result.name}
                               </p>
                             </div>
                             <p className="text-sm text-default-500 truncate">
-                              {result.description || result.bio}
+                              {result.type === 'user' ? '' : result.description || ''}
                             </p>
                           </div>
                           {result.distance && (

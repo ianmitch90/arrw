@@ -121,6 +121,20 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
   }, [initializeMap]);
 
   // Update map when location changes
+  const fetchNearbyProposals = useCallback(async (coords: Coordinates) => {
+    const { data, error } = await supabase.rpc('get_nearby_proposals', {
+      lat: coords.latitude,
+      lng: coords.longitude,
+      radius_miles: 1 // 1 mile radius
+    });
+
+    if (error) {
+      console.error('Error fetching proposals:', error);
+    } else {
+      setProposals(data || []);
+    }
+  }, [supabase]);
+
   useEffect(() => {
     if (!map.current || !location) return;
 
@@ -133,19 +147,7 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
     fetchNearbyProposals(location);
   }, [location, fetchNearbyProposals]);
 
-  const fetchNearbyProposals = async (coords: Coordinates) => {
-    const { data, error } = await supabase.rpc('get_nearby_proposals', {
-      lat: coords.latitude,
-      lng: coords.longitude,
-      radius_miles: 1 // 1 mile radius
-    });
 
-    if (error) {
-      console.error('Error fetching proposals:', error);
-    } else {
-      setProposals(data || []);
-    }
-  };
 
   // Add markers to map
   useEffect(() => {
@@ -174,7 +176,7 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
       
       // Create marker element
       const markerContent = document.createElement('div');
-      markerContent.className = 'bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center font-medium cursor-pointer hover:bg-primary-600 transition-colors';
+      markerContent.className = 'proposal-marker';
       markerContent.textContent = clusterProposals.length.toString();
       el.appendChild(markerContent);
       
@@ -184,7 +186,7 @@ export function ProposalMap({ initialLocation }: ProposalMapProps) {
       });
 
       new mapboxgl.Marker(el)
-        .setLngLat([mainProposal.location.longitude, mainProposal.location.latitude])
+        .setLngLat(mainProposal.location.coordinates)
         .addTo(map.current!);
     });
   }, [proposals]);
