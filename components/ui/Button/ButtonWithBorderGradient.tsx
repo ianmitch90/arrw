@@ -3,6 +3,7 @@
 import { ButtonProps } from '@nextui-org/react';
 import { Button } from '@nextui-org/react';
 import Link from 'next/link';
+import styles from '@/styles/components/ButtonWithBorderGradient.module.css';
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
@@ -33,7 +34,7 @@ export function ButtonWithBorderGradient({
 }: ButtonWithBorderGradientProps) {
   const buttonContent = (
     <motion.div
-      className="relative w-full"
+      // className="relative w-full"
       whileHover={pulseOnHover ? { scale: 1.02 } : undefined}
       whileTap={{ scale: 0.98 }}
     >
@@ -73,10 +74,7 @@ export function ButtonWithBorderGradient({
       {/* Glow effect */}
       {glowOnHover && !isDisabled && (
         <div
-          className="absolute -inset-[1px] rounded-[inherit] opacity-0 transition-opacity duration-300 blur-lg group-hover:opacity-25"
-          style={{
-            background: `linear-gradient(var(--gradient-deg), var(--gradient-from), var(--gradient-to))`
-          }}
+          className={`${styles.gradientBorder} ${styles.gradientBackground} rounded-[inherit]`}
         />
       )}
     </motion.div>

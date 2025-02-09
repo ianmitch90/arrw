@@ -10,7 +10,7 @@ interface LocationARViewProps {
 
 export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { state: arState, startARSession, endARSession } = useAR();
+  const { state: arState, startSession, endSession } = useAR();
   const { location, error } = useLocation();
   // TODO: Implement performance monitoring
   // const performanceMonitor = ARPerformanceMonitor.getInstance();
@@ -31,7 +31,7 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
     // Set up WebXR session with location tracking
     const setupLocationAR = async () => {
       try {
-        await startARSession();
+        await startSession();
 
         // Initialize AR scene with location data
         initializeARScene(gl, location);
@@ -52,7 +52,7 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
 
     return () => {
       if (arState.currentSession) {
-        endARSession().then(() => onAREnd?.());
+        endSession().then(() => onAREnd?.());
       }
     };
   }, [
@@ -60,8 +60,8 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
     arState.currentSession,
     location,
     error,
-    startARSession,
-    endARSession,
+    startSession,
+    endSession,
     onARStart,
     onAREnd
   ]);
@@ -78,8 +78,8 @@ export function LocationARView({ onARStart, onAREnd }: LocationARViewProps) {
     <div className="relative w-full h-full">
       <canvas
         ref={canvasRef}
-        className="w-full h-full"
-        style={{ touchAction: 'none' }}
+        className="w-full h-full touch-none"
+      
       />
       {!arState.isSupported && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50">

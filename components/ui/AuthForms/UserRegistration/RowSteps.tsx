@@ -189,7 +189,30 @@ const RowSteps = React.forwardRef<HTMLButtonElement, RowStepsProps>(
                 >
                   <div className="h-ful relative flex items-center">
                     <LazyMotion features={domAnimation}>
-                      <m.div animate={status} className="relative">
+                      <m.div
+                      
+                        animate={status}
+       
+                        initial={false}
+                        transition={{ duration: 0.25 }}
+                        variants={{
+                          inactive: {
+                            backgroundColor: 'transparent',
+                            borderColor: 'var(--inactive-border-color)',
+                            color: 'var(--inactive-color)'
+                          },
+                          active: {
+                            backgroundColor: 'transparent',
+                            borderColor: 'var(--active-border-color)',
+                            color: 'var(--active-color)'
+                          },
+                          complete: {
+                            backgroundColor:
+                              'var(--complete-background-color)',
+                            borderColor: 'var(--complete-border-color)'
+                          }
+                        }}
+                      >
                         <m.div
                           className={cn(
                             'relative flex h-[34px] w-[34px] items-center justify-center rounded-full border-medium text-large font-semibold text-default-foreground',

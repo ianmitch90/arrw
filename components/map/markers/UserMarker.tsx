@@ -74,7 +74,13 @@ export function UserMarker({ user, onClick, distance }: UserMarkerProps) {
           {/* Pulsing effect for online users */}
           {isOnline && (
             <motion.div
-              className="absolute inset-0 rounded-full bg-success/30"
+              as="div"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(34, 197, 94, 0.3)'
+              }}
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.7, 0.3, 0.7]

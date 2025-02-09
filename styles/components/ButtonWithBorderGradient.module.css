@@ -1,0 +1,27 @@
+.gradientBorder {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 300ms;
+  -webkit-backdrop-filter: blur-lg;
+  backdrop-filter: blur-lg;
+}
+
+.gradientBackground {
+  background: linear-gradient(var(--gradient-deg), var(--gradient-from), var(--gradient-to));
+}
+
+.gradientBorder:hover {
+  opacity: 0.25;
+}
+
+.buttonWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.button {
+  position: relative;
+  z-index: 1;
+}

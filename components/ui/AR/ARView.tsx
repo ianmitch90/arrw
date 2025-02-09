@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAR } from '@/contexts/ARContext';
+import styles from '@/styles/components/ARView.module.css';
 
 interface ARViewProps {
   onARStart?: () => void;
@@ -8,7 +9,7 @@ interface ARViewProps {
 
 export function ARView({ onARStart, onAREnd }: ARViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { state, startARSession, endARSession } = useAR();
+  const { state, startSession, endSession } = useAR();
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -24,7 +25,7 @@ export function ARView({ onARStart, onAREnd }: ARViewProps) {
     // Set up WebXR session when component mounts
     const setupAR = async () => {
       try {
-        await startARSession();
+        await startSession();
         onARStart?.();
       } catch (error) {
         console.error('Failed to start AR session:', error);
@@ -37,17 +38,16 @@ export function ARView({ onARStart, onAREnd }: ARViewProps) {
 
     return () => {
       if (state.currentSession) {
-        endARSession().then(() => onAREnd?.());
+        endSession().then(() => onAREnd?.());
       }
     };
-  }, [state.isSupported, state.currentSession, startARSession, endARSession, onARStart, onAREnd]);
+  }, [state.isSupported, state.currentSession, startSession, endSession, onARStart, onAREnd]);
 
   return (
     <div className="relative w-full h-full">
       <canvas
         ref={canvasRef}
-        className="w-full h-full"
-        style={{ touchAction: 'none' }}
+        className={`${styles.canvas} touch-none`} /* This style is required for AR functionality */
       />
       {!state.isSupported && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50">

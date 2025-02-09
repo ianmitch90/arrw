@@ -87,7 +87,7 @@ export function StoryCreator({ isOpen, onClose, location }: StoryCreatorProps) {
         .from('stories')
         .insert({
           content_type: 'image',
-          content_url: publicUrl,
+          content: publicUrl,
           thumbnail_url: thumbnailUrl,
           location: {
             type: 'Point',

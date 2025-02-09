@@ -26,8 +26,8 @@ import {
 } from '@/types/map';
 
 interface MapViewProps {
-  initialLocation: [number, number];
-  onLocationChange: (coords: Coordinates) => void;
+  initialLocation?: [number, number];
+  onLocationChange?: (coords: Coordinates) => void;
 }
 
 const DEFAULT_LOCATION: Coordinates = {
@@ -46,7 +46,7 @@ export default function MapViewContainer({ initialLocation, onLocationChange }: 
   );
 }
 
-const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) => {
+const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude], onLocationChange }) => {
   const mapRef = useRef<MapRef>(null);
   const supabase = useSupabaseClient<Database>();
   const user = useUser();
@@ -237,7 +237,7 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation, onLocationChange }) 
       };
       console.log('New location:', newLocation);
       setMapLocation(newLocation);
-      onLocationChange(newLocation);
+      onLocationChange?.(newLocation);
     } catch (error) {
       console.error('Error handling geolocation:', error);
       setMapError('Failed to update location');

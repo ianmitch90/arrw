@@ -463,6 +463,55 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: {
+          id: string
+          title: string
+          content: string | null
+          content_type: 'text' | 'image' | 'video' | 'audio'
+          location: PostGISPoint
+          created_by: string
+          created_at: string
+          expires_at: string | null
+          media_url: string | null
+          status: string
+          metadata: Json
+        }
+        Insert: {
+          id?: string
+          title: string
+          content?: string | null
+          content_type?: 'text' | 'image' | 'video' | 'audio'
+          location: PostGISPoint
+          created_by?: string
+          created_at?: string
+          expires_at?: string | null
+          media_url?: string | null
+          status?: string
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          title?: string
+          content?: string | null
+          content_type?: 'text' | 'image' | 'video' | 'audio'
+          location?: PostGISPoint
+          created_by?: string
+          created_at?: string
+          expires_at?: string | null
+          media_url?: string | null
+          status?: string
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null

@@ -34,6 +34,27 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  // Map is the default view
+  {
+    id: 'map',
+    label: 'Map',
+    icon: 'solar:map-bold',
+    href: '/map'
+  },
+  // Messages opens the chat
+  {
+    id: 'messages',
+    label: 'Messages',
+    icon: 'solar:chat-round-dots-bold',
+    href: '/map?chat=messages'
+  },
+  // Global chat opens the chat
+  {
+    id: 'global',
+    label: 'Global',
+    icon: 'solar:users-group-rounded-bold',
+    href: '/map?chat=global'
+  },
   {
     id: 'home',
     label: 'Home',

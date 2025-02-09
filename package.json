@@ -75,6 +75,7 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.169.0",
     "uuid": "^11.0.3",
+    "vaul": "^1.1.2",
     "yup": "^1.4.0"
   },
   "devDependencies": {
