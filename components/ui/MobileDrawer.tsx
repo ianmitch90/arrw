@@ -32,29 +32,31 @@ export function MobileDrawer({ children }: MobileDrawerProps) {
         if (!open) handleClose();
       }}
       modal={true}
+      dismissible
     >
       <Drawer.Portal>
         <Drawer.Overlay 
-          className="fixed inset-0 bg-black/40 z-50" 
-          onClick={() => handleClose()}
+          className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" 
         />
         <Drawer.Content 
           className={cn(
-            "fixed bottom-0 left-0 right-0 mt-24 flex h-[85%] flex-col rounded-t-[10px] bg-background z-50",
-            "overflow-hidden" // Prevent content overflow
+            "fixed bottom-0 left-0 right-0 z-50",
+            "h-[85%] flex flex-col",
+            "bg-background/80 backdrop-blur-md",
+            "rounded-t-[20px] shadow-xl",
+            "border-t border-border/50",
+            "will-change-transform",
+            "dark:bg-background/90"
           )}
         >
-          <div className="flex-1 rounded-t-[10px] bg-background p-4">
-            <button 
-              onClick={() => handleClose()}
-              className="absolute right-4 top-4 p-2 hover:bg-gray-100 rounded-full"
-            >
-              ✕
-            </button>
-            <div className="mx-auto mb-8 h-1.5 w-12 flex-shrink-0 rounded-full bg-zinc-300" />
-            <div className="mx-auto max-w-md overflow-y-auto h-full">
-              {children}
-            </div>
+          {/* Drag handle */}
+          <div className="px-4 pt-4 pb-2">
+            <div className="mx-auto h-1.5 w-12 flex-shrink-0 rounded-full bg-border/50" />
+          </div>
+
+          {/* Content */}
+          <div className="relative flex-1 overflow-auto overscroll-contain">
+            {children}
           </div>
         </Drawer.Content>
       </Drawer.Portal>

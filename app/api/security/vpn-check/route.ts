@@ -3,8 +3,13 @@ import { headers } from 'next/headers';
 
 export async function GET() {
   try {
-    const headersList = headers();
+    const headersList = await headers();
     const clientIP = headersList.get('x-forwarded-for') || 'unknown';
+
+    // Skip VPN check in development
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({ isVpn: false });
+    }
 
     const response = await fetch(`https://v2.api.iphub.info/ip/${clientIP}`, {
       headers: {

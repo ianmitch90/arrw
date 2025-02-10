@@ -10,8 +10,18 @@ export function ResponsiveOverlay() {
   if (!isOpen) return null;
 
   return (
-    <MobileDrawer>
-      <OverlayContent />
-    </MobileDrawer>
+    <>
+      {/* Mobile View */}
+      <div className="md:hidden">
+        <MobileDrawer>
+          <OverlayContent />
+        </MobileDrawer>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden md:block">
+        <OverlayContent />
+      </div>
+    </>
   );
 }

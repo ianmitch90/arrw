@@ -39,7 +39,7 @@ export interface ChatUser {
 }
 
 /** Represents a participant in a chat room */
-export interface ChatParticipant {
+export interface ChatParticipant extends ChatUser {
   role: ParticipantRole;
   joinedAt: Date;
   lastReadAt: Date;
@@ -56,11 +56,14 @@ export interface ChatRoom {
   createdAt: Date;
   updatedAt: Date;
   lastMessageAt?: Date;
+  lastMessagePreview?: string;
+  lastMessageTimestamp?: Date;
   messages: Message[];
   participants: ChatParticipant[];
   isArchived: boolean;
   metadata?: {
     description?: string;
     imageUrl?: string;
+    groupName?: string;
   };
 }
