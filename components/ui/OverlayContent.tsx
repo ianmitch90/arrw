@@ -1,21 +1,33 @@
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ChatList } from '@/components/chat/ChatList';
 import { ChatView } from '@/components/chat/ChatView';
-import { VaultContainer } from './VaultContainer';
+import { cn } from '@/lib/utils';
+import { ExpiringChats } from '@/components/chat/ExpiringChats';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export function OverlayContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const chatType = searchParams?.get('chat') ?? null;
   const selectedId = searchParams?.get('id') ?? null;
 
   if (!chatType) return null;
 
+  const isMobile = !useMediaQuery('(min-width: 768px)');
+
+  // On desktop, only show messages list
+  // On mobile, show either list or chat
+  const shouldShowChat = isMobile && selectedId;
+  const shouldShowList = isMobile ? !selectedId : true;
+
+  if (!shouldShowList && !shouldShowChat) return null;
+
   return (
     <div className="h-full w-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-2">
-          {selectedId && (
+          {isMobile && selectedId && (
             <button
               onClick={() => {
                 const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -41,18 +53,34 @@ export function OverlayContent() {
             </button>
           )}
           <h2 className="text-lg font-semibold">
-            {selectedId ? 'Chat' : 'Messages'}
+            {shouldShowChat ? 'Chat' : 'Messages'}
           </h2>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        {selectedId ? (
-          <ChatView chatId={selectedId} chatType={chatType} />
-        ) : (
-          <ChatList chatType={chatType} />
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="h-full flex flex-col">
+          <div className="flex-1 min-h-0">
+            {shouldShowChat ? (
+              <ChatView chatId={selectedId} chatType={chatType} />
+            ) : (
+              <ChatList chatType={chatType} />
+            )}
+          </div>
+          
+          {!shouldShowChat && (
+            <>
+              <ExpiringChats />
+              
+              {/* Safety Disclaimer */}
+              <div className="px-4 py-3 text-xs text-center text-muted-foreground border-t">
+                <p>For your safety and privacy, messages older than 30 days will be automatically deleted.</p>
+                <p className="mt-1">Practice safe and responsible communication.</p>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
