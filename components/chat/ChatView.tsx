@@ -155,7 +155,7 @@ export function ChatView({ chatId, chatType }: ChatViewProps) {
       </ScrollShadow>
 
       {/* Input */}
-      <div className="p-4 border-t bg-background/80 backdrop-blur-sm sticky bottom-0">
+      <div className="p-4 border-t bg-background/95 backdrop-blur-sm sticky bottom-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();

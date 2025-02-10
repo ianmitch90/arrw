@@ -10,12 +10,10 @@ export function OverlayContent() {
   const searchParams = useSearchParams();
   const chatType = searchParams?.get('chat') ?? null;
   const selectedId = searchParams?.get('id') ?? null;
+  const isMobile = !useMediaQuery('(min-width: 768px)');
 
   if (!chatType) return null;
 
-  const isMobile = !useMediaQuery('(min-width: 768px)');
-
-  // On desktop, only show messages list
   // On mobile, show either list or chat
   const shouldShowChat = isMobile && selectedId;
   const shouldShowList = isMobile ? !selectedId : true;
