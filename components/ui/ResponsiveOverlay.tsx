@@ -30,11 +30,7 @@ export function ResponsiveOverlay() {
             'border-r border-border/50',
             'dark:bg-background/90'
           )}>
-            {selectedId ? (
-              <ChatView chatId={selectedId} chatType={chatType} />
-            ) : (
-              <OverlayContent />
-            )}
+            <OverlayContent />
           </div>
         </div>
       )}
