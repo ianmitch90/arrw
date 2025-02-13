@@ -9,7 +9,7 @@ import {
   CardFooter,
   Input,
   Button
-} from '@nextui-org/react';
+} from '@heroui/react';
 
 const ChatRoom = ({ roomId }: { roomId: string }) => {
   const { user } = useUser();

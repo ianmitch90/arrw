@@ -6,7 +6,7 @@ import {
   Button,
   Avatar,
   User
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { MapPin, MessageCircle } from 'lucide-react';
 
 interface UserProfileModalProps {

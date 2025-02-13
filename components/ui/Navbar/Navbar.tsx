@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { Link } from '@nextui-org/react';
+import { Link } from '@heroui/react';
 import Navlinks from './Navlinks';
 
 export default async function Navbar() {

@@ -50,9 +50,7 @@ export function OverlayContent() {
               </svg>
             </button>
           )}
-          <h2 className="text-lg font-semibold">
-            {shouldShowChat ? 'Chat' : 'Messages'}
-          </h2>
+          {!shouldShowChat && <h2 className="text-lg font-semibold">Messages</h2>}
         </div>
       </div>
 

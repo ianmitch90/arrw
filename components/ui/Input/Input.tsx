@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { Input as NextInput, InputProps as NextInputProps } from '@nextui-org/react';
+import { Input as NextInput, InputProps as NextInputProps } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';
 import { motion } from 'framer-motion';

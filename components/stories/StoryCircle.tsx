@@ -1,5 +1,5 @@
 import { Story } from '@/types/core';
-import { Avatar } from '@nextui-org/react';
+import { Avatar } from '@heroui/react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface StoryCircleProps {

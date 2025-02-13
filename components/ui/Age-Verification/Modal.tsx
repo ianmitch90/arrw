@@ -9,7 +9,7 @@ import {
   ModalBody,
   Button,
   Divider
-} from '@nextui-org/react'
+} from '@heroui/react'
 import { DatePicker } from '@/components/ui/date-picker'
 import { m } from 'framer-motion'
 

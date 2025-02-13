@@ -10,7 +10,7 @@ import {
   Input,
   Textarea,
   Button
-} from '@nextui-org/react';
+} from '@heroui/react';
 
 const ReportForm = () => {
   const { user } = useUser();

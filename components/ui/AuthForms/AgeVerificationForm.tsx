@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { DatePicker } from '@nextui-org/date-picker';
+import { DatePicker } from '@heroui/react';
 import Button from '@/components/ui/Button';
 import { today, getLocalTimeZone, CalendarDate } from '@internationalized/date';
 

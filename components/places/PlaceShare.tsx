@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
-import { Button, Card, Popover, PopoverTrigger, PopoverContent } from '@nextui-org/react';
+import { Button, Card, Popover, PopoverTrigger, PopoverContent } from '@heroui/react';
 import { Share2, MessageSquare, Copy, Check } from 'lucide-react';
 import { useRouter } from 'next/router';
 

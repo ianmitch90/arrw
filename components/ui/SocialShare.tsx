@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input } from '@nextui-org/react';
+import { Button, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input } from '@heroui/react';
 import { motion, type Variants, domAnimation, LazyMotion, m } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';

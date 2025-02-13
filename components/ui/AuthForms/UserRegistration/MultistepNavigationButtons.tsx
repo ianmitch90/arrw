@@ -1,7 +1,7 @@
-import type { ButtonProps } from '@nextui-org/react';
+import type { ButtonProps } from '@heroui/react';
 
 import * as React from 'react';
-import { Button, Spinner } from '@nextui-org/react';
+import { Button, Spinner } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';
 import { ButtonWithBorderGradient } from '@/components/ui/Button/ButtonWithBorderGradient';

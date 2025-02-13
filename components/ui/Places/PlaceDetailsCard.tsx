@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, Button, Image } from '@nextui-org/react';
+import { Card, CardBody, CardHeader, Button, Image } from '@heroui/react';
 import { MapPin, Clock, Users } from 'lucide-react';
 
 interface PlaceDetailsProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button, Link, Card, CardBody, Progress } from '@nextui-org/react';
+import { Button, Link, Card, CardBody, Progress } from '@heroui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';

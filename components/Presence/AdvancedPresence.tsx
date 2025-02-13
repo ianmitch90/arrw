@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Card, Chip, Progress, Avatar } from '@nextui-org/react';
+import { Card, Chip, Progress, Avatar } from '@heroui/react';
 import { motion } from 'framer-motion';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';

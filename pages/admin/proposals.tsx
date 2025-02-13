@@ -3,7 +3,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { PlaceProposal } from '@/types/core';
 import { ProposalMap } from '@/components/admin/ProposalMap';
-import { Card, Tab, Tabs } from '@nextui-org/react';
+import { Card, Tab, Tabs } from '@heroui/react';
 import { ProposalCluster } from '@/components/admin/ProposalCluster';
 
 export default function ProposalsPage() {

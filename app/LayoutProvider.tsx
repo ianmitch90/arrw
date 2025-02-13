@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { NextUIProvider } from '@nextui-org/react';
+import { HeroUIProvider } from '@heroui/react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/Toasts/toaster';
 
@@ -11,13 +11,13 @@ export default function LayoutProvider({
   children: React.ReactNode;
 }) {
   return (
-    <NextUIProvider>
+    <HeroUIProvider>
       <NextThemesProvider attribute="class" defaultTheme="dark">
         {children}
         <Suspense>
           <Toaster />
         </Suspense>
       </NextThemesProvider>
-    </NextUIProvider>
+    </HeroUIProvider>
   );
 }

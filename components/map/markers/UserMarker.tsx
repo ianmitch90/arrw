@@ -1,4 +1,4 @@
-import { Avatar, Chip, Modal, ModalContent, ModalHeader, ModalBody } from '@nextui-org/react';
+import { Avatar, Chip, Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';

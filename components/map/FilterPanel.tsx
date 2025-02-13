@@ -1,5 +1,5 @@
 import { PlaceType, MapFilters } from '@/types/map';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Slider, Switch, Chip } from '@nextui-org/react';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Slider, Switch, Chip } from '@heroui/react';
 import { MapPin, Building2, CalendarDays } from 'lucide-react';
 
 export function FilterPanel({ isOpen, onClose, filters, onChange }: { 

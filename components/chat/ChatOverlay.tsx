@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/utils/cn';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 import { X, Pin, Video, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChat } from '@/components/contexts/ChatContext';

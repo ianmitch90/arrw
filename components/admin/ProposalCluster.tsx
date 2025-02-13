@@ -1,5 +1,5 @@
 import { PlaceProposal } from '@/types/core';
-import { Button, Card, Chip, Image, ScrollShadow } from '@nextui-org/react';
+import { Button, Card, Chip, Image, ScrollShadow } from '@heroui/react';
 import { Check, X, MapPin, Calendar, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

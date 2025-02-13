@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Spinner } from '@nextui-org/react';
+import { Spinner } from '@heroui/react';
 import { useState } from 'react';
 import { Coordinates } from '@/types/core';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';

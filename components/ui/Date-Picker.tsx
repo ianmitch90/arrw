@@ -8,7 +8,7 @@ import {
   Select,
   SelectItem,
   ScrollShadow
-} from '@nextui-org/react'
+} from '@heroui/react'
 import { format, isValid } from 'date-fns'
 import { m } from 'framer-motion'
 import { Icon } from '@iconify/react'

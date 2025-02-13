@@ -1,4 +1,4 @@
-// Re-export NextUI components that we use frequently
+// Re-export HeroUI components that we use frequently
 export {
   Button,
   Input,
@@ -28,9 +28,9 @@ export {
   Progress,
   Table,
   useDisclosure
-} from '@nextui-org/react'
+} from '@heroui/react'
 
-// Export our custom components that extend NextUI
+// Export our custom components that extend HeroUI
 export { DatePicker } from './date-picker'
 export { MapView } from './Map/MapView'
 export { ARView } from './AR/ARView'
@@ -42,7 +42,7 @@ export { UserProfileModal } from './Profile/UserProfileModal'
 // Export our custom components
 export * from './toast'
 
-// Export specialized components that don't have NextUI equivalents
+// Export specialized components that don't have HeroUI equivalents
 export { LocationPrivacySettings } from './Location/LocationPrivacySettings'
 export { TravelModeToggle } from './Location/TravelModeToggle'
 export { AdaptiveVideoPlayer } from './Video/AdaptiveVideoPlayer'

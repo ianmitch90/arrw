@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Button, Textarea, Popover, PopoverTrigger, PopoverContent, Card } from '@nextui-org/react';
+import { Button, Textarea, Popover, PopoverTrigger, PopoverContent, Card } from '@heroui/react';
 import { ArrowUp, Plus, Image as ImageIcon, Smile, Mic } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import data from '@emoji-mart/data';

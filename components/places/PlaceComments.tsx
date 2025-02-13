@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { PlaceComment } from '@/types/core';
-import { Avatar, Button, Card, Textarea } from '@nextui-org/react';
+import { Avatar, Button, Card, Textarea } from '@heroui/react';
 import { Rating } from '@smastrom/react-rating';
 import '@smastrom/react-rating/style.css';
 import { formatDistanceToNow } from 'date-fns';

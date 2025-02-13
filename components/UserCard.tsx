@@ -1,4 +1,4 @@
-import { Card, CardBody } from '@nextui-org/react';
+import { Card, CardBody } from '@heroui/react';
 import { Profile } from '../types/profile'; // Updated import
 
 export default function UserCard({ profile }: { profile: Profile }) {

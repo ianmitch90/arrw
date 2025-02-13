@@ -3,7 +3,7 @@
 import { ButtonHTMLAttributes, forwardRef, useRef } from 'react';
 import cn from 'clsx';
 import { mergeRefs } from 'react-merge-refs';
-import { Spinner } from '@nextui-org/react';
+import { Spinner } from '@heroui/react';
 
 import styles from './Button.module.css';
 

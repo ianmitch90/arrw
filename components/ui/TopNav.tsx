@@ -21,7 +21,7 @@ import {
   DropdownMenu,
   DropdownItem,
   User
-} from '@nextui-org/react'
+} from '@heroui/react'
 import { Logo } from '../icons/Logo'
 import { Icon } from '@iconify/react'
 import { m } from 'framer-motion'

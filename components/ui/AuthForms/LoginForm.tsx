@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Input } from '@nextui-org/react';
+import { Button, Input } from '@heroui/react';
 import { Formik, Form, Field, FieldInputProps, FieldMetaProps } from 'formik';
 import { LoginFormValues } from '@/types/auth';
 import { FormError } from '../FormError';
@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import WordDivider from '@/components/ui/WordDivider';
 import AgeVerificationModal from './AgeVerificationModal';
-import { useDisclosure, Modal, ModalHeader, ModalBody, ModalFooter, ModalContent } from '@nextui-org/react';
+import { useDisclosure, Modal, ModalHeader, ModalBody, ModalFooter, ModalContent } from '@heroui/react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useToast } from '@/components/ui/use-toast';
 import { loginValidationSchema } from '@/utils/validation/auth';

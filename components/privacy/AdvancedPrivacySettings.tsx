@@ -21,7 +21,7 @@ import {
   TableRow,
   TableCell,
   useDisclosure,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { Shield, Clock, Users, Trash2, Plus } from 'lucide-react';
 
 type PrivacyLevel = 'precise' | 'approximate' | 'area';

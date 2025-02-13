@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Modal, ModalContent, Button, Input, Image } from '@nextui-org/react';
+import { Modal, ModalContent, Button, Input, Image } from '@heroui/react';
 import { Camera, ImageIcon, MapPin, X } from 'lucide-react';
 import { useSupabaseClient, SupabaseClient } from '@supabase/auth-helpers-react';
 import { v4 as uuidv4 } from 'uuid';

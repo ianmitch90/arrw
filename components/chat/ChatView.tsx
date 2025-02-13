@@ -1,12 +1,18 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ScrollShadow, Avatar, Button, Input, Spinner } from "@nextui-org/react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button, Input, Spinner, Avatar } from "@heroui/react";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useChat } from "@/components/contexts/ChatContext";
 import { cn } from "@/utils/cn";
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Phone, Video, MoreVertical, Plus, Smile } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { ChatBubble } from '@/components/ui/chat/chat-bubble';
+import { ChatInput } from '@/components/ui/chat/chat-input';
+import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
+import { useAutoScroll } from '@/components/ui/chat/hooks/useAutoScroll';
 
 interface ChatViewProps {
   chatId: string;
@@ -75,84 +81,98 @@ export function ChatView({ chatId, chatType }: ChatViewProps) {
           <ArrowLeft size={20} />
         </Button>
 
-        <Avatar
-          src={otherParticipant.avatarUrl || undefined}
-          name={otherParticipant.fullName || 'User'}
-          size="sm"
-          isBordered={otherParticipant.isOnline}
-          color={otherParticipant.isOnline ? "success" : "default"}
-        />
+        <div className="flex items-center gap-3">
 
-        <div className="flex flex-col min-w-0">
-          <span className="text-sm font-semibold truncate">
-            {room.type === "group" ? room.metadata?.groupName || room.name : otherParticipant.fullName}
-          </span>
-          <span className="text-xs text-default-500">
-            {otherParticipant.isOnline ? 'Online' : 'Offline'}
-          </span>
+          <div className="flex items-center gap-2">
+            <UserAvatar
+              userId={otherParticipant.id}
+              size="sm"
+              showPresence
+              showVerification
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-semibold truncate">
+                {room.type === "group" ? room.metadata?.groupName || room.name : otherParticipant.fullName}
+              </span>
+              <span className="text-xs text-default-500">
+                {otherParticipant.isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button isIconOnly variant="light" className="text-default-500">
+            <Phone size={20} />
+          </Button>
+          <Button isIconOnly variant="light" className="text-default-500">
+            <Video size={20} />
+          </Button>
+          <Button isIconOnly variant="light" className="text-default-500">
+            <MoreVertical size={20} />
+          </Button>
         </div>
       </div>
 
       {/* Messages */}
-      <ScrollShadow className="flex-1 p-4">
-        <div className="space-y-4">
-          {room.messages?.map((msg, i) => {
-            const isLastMessage = i === room.messages!.length - 1;
+      <ChatMessageList className="flex-1">
+        <div className="space-y-4 max-w-[95%] mx-auto" ref={messagesEndRef}>
+          {(room.messages || []).map((msg, i) => {
+            const isLastMessage = i === (room.messages || []).length - 1;
             const showAvatar = msg.senderId !== room.createdBy && 
-              (!room.messages![i + 1] || room.messages![i + 1].senderId !== msg.senderId);
+              (!(room.messages || [])[i + 1] || (room.messages || [])[i + 1].senderId !== msg.senderId);
+            const isCurrentUser = msg.senderId === room.createdBy;
 
             return (
               <div
                 key={msg.id}
                 className={cn(
-                  "flex gap-2 max-w-[80%]",
-                  msg.senderId === room.createdBy ? "ml-auto" : "mr-auto"
+                  "flex gap-2",
+                  isCurrentUser ? "justify-end" : "justify-start"
                 )}
               >
-                {showAvatar ? (
+                {!isCurrentUser && showAvatar && (
                   <Avatar
-                    src={otherParticipant.avatarUrl || undefined}
+                    src={otherParticipant.avatarUrl}
                     name={otherParticipant.fullName || 'User'}
                     size="sm"
                     className="mt-auto"
+                    fallback={otherParticipant.fullName?.[0] || 'U'}
                   />
-                ) : (
-                  <div className="w-8" /> // Spacer for alignment
                 )}
-                <div
-                  className={cn(
-                    "rounded-lg p-3",
-                    msg.senderId === room.createdBy
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-default-100",
-                    !showAvatar && msg.senderId !== room.createdBy && "ml-10" // Indent subsequent messages
-                  )}
+                <ChatBubble
+                  variant={isCurrentUser ? "sent" : "received"}
+                  className={!showAvatar && !isCurrentUser ? "ml-10" : ""}
                 >
-                  <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                </div>
+                  <div className={cn(
+                    "rounded-lg p-3",
+                    isCurrentUser
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  )}>
+                    <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                  </div>
+                </ChatBubble>
               </div>
             );
           })}
 
           {/* Typing indicator */}
           {isTyping && (
-            <div className="flex gap-2 max-w-[80%] mr-auto">
+            <div className="flex gap-2 justify-start">
               <Avatar
                 src={otherParticipant.avatarUrl || undefined}
                 name={otherParticipant.fullName || 'User'}
                 size="sm"
                 className="mt-auto"
               />
-              <div className="bg-default-100 rounded-lg p-3">
+              <div className="bg-muted rounded-lg rounded-bl-none p-3">
                 <Spinner size="sm" color="current" />
               </div>
             </div>
           )}
-
-          {/* Invisible element for scrolling */}
-          <div ref={messagesEndRef} />
         </div>
-      </ScrollShadow>
+      </ChatMessageList>
 
       {/* Input */}
       <div className="p-4 border-t bg-background/95 backdrop-blur-sm sticky bottom-0">
@@ -161,29 +181,33 @@ export function ChatView({ chatId, chatType }: ChatViewProps) {
             e.preventDefault();
             handleSend();
           }}
-          className="flex gap-2"
+          className="flex gap-2 items-center max-w-[95%] mx-auto"
         >
-          <Input
+          <Button isIconOnly variant="light" className="text-default-500">
+            <Plus size={20} />
+          </Button>
+          <ChatInput
             value={message}
-            onChange={handleMessageChange}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              handleTyping(e.target.value);
+            }}
             onBlur={() => stopTyping(chatId)}
             placeholder="Type a message..."
-            size="sm"
-            variant="bordered"
-            classNames={{
-              input: 'text-small',
-              inputWrapper: 'h-10'
-            }}
+            className="flex-1 min-h-[40px] max-h-[120px]"
+            rows={1}
           />
+          <Button isIconOnly variant="light" className="text-default-500">
+            <Smile size={20} />
+          </Button>
           <Button
             isIconOnly
-            color="primary"
             type="submit"
-            size="lg"
+            variant="light"
+            className="text-default-500"
             isDisabled={!message.trim()}
-            className="h-10 w-10"
           >
-            <Send size={18} />
+            <Send size={20} />
           </Button>
         </form>
       </div>

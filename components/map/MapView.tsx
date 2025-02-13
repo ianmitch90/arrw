@@ -4,7 +4,7 @@ import type { ErrorEvent } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 import { Filter, MapPin } from 'lucide-react';
 import { FilterPanel } from './FilterPanel';
 import { PlaceCard } from './PlaceCard';
@@ -304,7 +304,12 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.l
         .single();
 
       if (updateError) {
-        console.error('Error updating location:', updateError);
+        console.error('Error updating location:', updateError.message);
+        return;
+      }
+
+      if (!updatedProfile) {
+        console.error('Error updating location: No profile data returned');
         return;
       }
 
@@ -319,7 +324,12 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.l
         });
       }
 
-      onLocationChange?.(coords);
+      if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
+        onLocationChange?.(coords);
+      } else {
+        console.error('Invalid coordinates:', coords);
+        return;
+      }
 
       const { data: nearbyData, error: nearbyError } = await supabase
         .rpc('find_users_within_radius', {

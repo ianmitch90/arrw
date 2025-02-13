@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardBody, Button, Spinner, Progress } from '@nextui-org/react';
+import { Card, CardBody, Button, Spinner, Progress } from '@heroui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { cn } from '@/utils/cn';

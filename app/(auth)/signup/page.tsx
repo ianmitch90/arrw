@@ -1,7 +1,7 @@
 'use client';
 
 import SignUpForm from '@/components/ui/AuthForms/UserRegistration/SignUpForm';
-import { Card, CardBody, CardHeader } from '@nextui-org/react';
+import { Card, CardBody, CardHeader } from '@heroui/react';
 
 
 export default function SignUpPage() {

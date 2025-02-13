@@ -1,5 +1,5 @@
 import { User, MapPin, MessageSquare, Globe } from 'lucide-react';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 
 interface BottomNavProps {
   currentView: 'account' | 'map' | 'chat' | 'global';

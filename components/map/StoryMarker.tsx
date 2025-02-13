@@ -1,5 +1,5 @@
 import { Database } from '@/types_db';
-import { Avatar } from '@nextui-org/react';
+import { Avatar } from '@heroui/react';
 import { formatDistanceToNow } from 'date-fns';
 import { Stories } from '@/types/map';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from "react";
-import { Avatar } from "@nextui-org/react";
+import { Avatar } from "@heroui/react";
 import { formatDistanceToNow } from "date-fns";
 import { Message, ChatUser } from "@/types/chat.types";
 import { cn } from "@/utils/cn";

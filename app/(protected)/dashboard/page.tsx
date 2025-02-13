@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/auth/AuthContext';
-import { Card, CardBody } from '@nextui-org/react';
+import { Card, CardBody } from '@heroui/react';
 
 export default function DashboardPage() {
   const { user } = useAuth();

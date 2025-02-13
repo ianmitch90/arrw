@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ScrollShadow, Input, Avatar, Badge, Spinner } from "@nextui-org/react";
+import { ScrollShadow, Input, Badge, Spinner } from "@heroui/react";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { formatDistanceToNow } from 'date-fns';
 import { useChat } from "@/components/contexts/ChatContext";
 import { cn } from "@/utils/cn";
@@ -85,21 +86,13 @@ export function ChatList({ chatType }: ChatListProps) {
               >
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
-                  <Avatar
-                    src={otherParticipant?.avatarUrl || undefined}
-                    name={otherParticipant?.fullName || 'User'}
+                  <UserAvatar
+                    userId={otherParticipant?.id}
                     size="md"
+                    showPresence
+                    showVerification
                     className="transition-transform"
                   />
-                  {otherParticipant?.isOnline && (
-                    <Badge
-                      content=""
-                      color="success"
-                      placement="bottom-right"
-                      size="sm"
-                      className="border-2 border-background"
-                    />
-                  )}
                 </div>
 
                 {/* Content */}

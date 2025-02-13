@@ -1,7 +1,7 @@
 'use client';
 
 import LoginForm from '@/components/ui/AuthForms/LoginForm';
-import { Card, CardBody, CardHeader } from '@nextui-org/react';
+import { Card, CardBody, CardHeader } from '@heroui/react';
 
 
 export default function LoginPage() {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Input, Tabs, Tab, Avatar, Badge, ScrollShadow, Listbox, ListboxItem } from '@nextui-org/react';
+import { Input, Tabs, Tab, Avatar, Badge, ScrollShadow, Listbox, ListboxItem } from '@heroui/react';
 import { useChat } from '@/components/contexts/ChatContext';
 import { cn } from '@/utils/cn';
 import { Search } from 'lucide-react';

@@ -2,7 +2,7 @@
 
 import { useUser } from '@/components/contexts/UserContext';
 import { useChat } from '@/components/contexts/ChatContext';
-import { ScrollShadow } from '@nextui-org/react';
+import { ScrollShadow } from '@heroui/react';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { format } from 'date-fns';

@@ -8,7 +8,7 @@ import {
   Button,
   Checkbox,
   Input
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { useAgeVerification } from '@/contexts/AgeVerificationContext';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useToast } from '@/components/ui/use-toast';

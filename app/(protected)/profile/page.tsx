@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardBody, Avatar, Button } from '@nextui-org/react';
+import { Card, CardBody, Avatar, Button } from '@heroui/react';
 import { useUser } from '@/components/contexts/UserContext';
 import { Icon } from '@iconify/react';
 

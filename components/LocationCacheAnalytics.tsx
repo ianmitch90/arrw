@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Card, Progress } from '@nextui-org/react';
+import { Card, Progress } from '@heroui/react';
 import { CacheAnalytics } from '@/hooks/useLocationCache';
 import Chart from 'chart.js/auto';
 

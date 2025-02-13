@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Story, Coordinates } from '@/types/core';
-import { ScrollShadow, Button } from '@nextui-org/react';
+import { ScrollShadow, Button } from '@heroui/react';
 import { Plus } from 'lucide-react';
 import { StoryCircle } from './StoryCircle';
 import { StoryViewer } from './StoryViewer';

@@ -1,4 +1,4 @@
-import { Card, Skeleton } from '@nextui-org/react';
+import { Card, Skeleton } from '@heroui/react';
 
 export function AvatarSkeleton() {
   return <Skeleton className="rounded-full w-8 h-8" />;

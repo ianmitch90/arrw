@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button, Input } from '@nextui-org/react';
+import { Button, Input } from '@heroui/react';
 import { updatePassword } from '@/utils/auth-helpers/server'; // Import your update password function
 import { handleRequest } from '@/utils/auth-helpers/client'; // Import your request handler
 

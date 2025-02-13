@@ -1,6 +1,6 @@
 'use client'
 
-import { NextUIProvider } from '@nextui-org/react'
+import { HeroUIProvider } from '@heroui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Toaster } from '@/components/ui/toaster'
@@ -18,7 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabaseClient}>
-        <NextUIProvider>
+        <HeroUIProvider>
           <AuthProvider>
             <AgeVerificationProvider>
               <SecurityProvider>
@@ -29,7 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               </SecurityProvider>
             </AgeVerificationProvider>
           </AuthProvider>
-        </NextUIProvider>
+        </HeroUIProvider>
       </SessionContextProvider>
     </QueryClientProvider>
   )

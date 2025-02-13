@@ -12,7 +12,7 @@ import {
   Card,
   CardBody,
   CardHeader,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];

@@ -1,6 +1,7 @@
 'use client';
 
-import { Avatar, Badge } from "@nextui-org/react";
+import { Badge } from "@heroui/react";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ChatRoom } from "@/types/chat";
 
 interface ChatAvatarProps {
@@ -9,16 +10,29 @@ interface ChatAvatarProps {
 }
 
 export function ChatAvatar({ room, isActive }: ChatAvatarProps) {
-  const isOnline = room.participants[0]?.status === "online";
   const unreadCount = room.participants[0]?.unreadCount || 0;
 
+  // For group chats, use a regular Avatar
+  if (room.type === "group") {
+    return (
+      <UserAvatar
+        userId="group"
+        src={room.metadata?.groupAvatar}
+        name={room.metadata?.groupName || room.name}
+        size="lg"
+        showPresence={false}
+        className="transition-transform"
+      />
+    );
+  }
+
+  // For individual chats, use UserAvatar with presence
   const avatar = (
-    <Avatar
-      src={room.type === "group" ? room.metadata?.groupAvatar : room.participants[0]?.avatarUrl}
-      name={room.type === "group" ? (room.metadata?.groupName || room.name) : room.participants[0]?.name}
+    <UserAvatar
+      userId={room.participants[0]?.id}
       size="lg"
-      isBordered={isOnline}
-      color={isOnline ? "success" : undefined}
+      showPresence
+      showVerification
       className="transition-transform"
     />
   );

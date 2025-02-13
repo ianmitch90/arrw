@@ -10,7 +10,7 @@ import {
   Checkbox,
   Divider,
   Spacer
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { DatePicker } from '@/components/ui/date-picker';
 import { useAgeVerification } from '@/contexts/AgeVerificationContext';
 import { useToast } from '@/components/ui/toast';

@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { Icon } from '@iconify/react';
-import { Card as NextCard, CardBody, CardHeader, CardFooter, Divider } from '@nextui-org/react';
+import { Card as NextCard, CardBody, CardHeader, CardFooter, Divider } from '@heroui/react';
 
 interface CardProps {
   title?: string | ReactNode;

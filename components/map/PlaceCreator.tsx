@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
-import { Button, Card, Input, Textarea, Select, SelectItem, Image } from '@nextui-org/react';
+import { Button, Card, Input, Textarea, Select, SelectItem, Image } from '@heroui/react';
 import { Upload } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { PlaceCreatorProps, Coordinates } from '@/types/map';

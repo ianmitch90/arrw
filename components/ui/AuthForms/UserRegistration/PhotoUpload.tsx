@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Formik, Field, Form } from 'formik';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 import * as Yup from 'yup';
 
 interface FormValues {

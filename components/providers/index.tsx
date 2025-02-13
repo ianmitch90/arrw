@@ -3,7 +3,7 @@
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { ThemeProviderProps } from 'next-themes/dist/types';
 import { AppProvider } from '@/contexts/AppContext';
-import { NextUIProvider } from '@nextui-org/react';
+import { HeroUIProvider } from '@heroui/react';
 
 export function Providers({
   children,
@@ -14,9 +14,9 @@ export function Providers({
 }) {
   return (
     <NextThemesProvider {...themeProps}>
-      <NextUIProvider>
+      <HeroUIProvider>
         <AppProvider>{children}</AppProvider>
-      </NextUIProvider>
+      </HeroUIProvider>
     </NextThemesProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { Switch, Card, CardBody } from '@nextui-org/react';
+import { Switch, Card, CardBody } from '@heroui/react';
 import { useLocation } from '@/contexts/LocationContext';
 import { supabase } from '@/utils/supabase/client';
 

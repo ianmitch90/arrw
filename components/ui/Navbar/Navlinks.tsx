@@ -7,7 +7,7 @@ import { Logo } from '@/components/icons/Logo';
 import { usePathname, useRouter } from 'next/navigation';
 import { getRedirectMethod } from '@/utils/auth-helpers/settings';
 import s from './Navbar.module.css';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 
 interface NavItem {
   name: string;

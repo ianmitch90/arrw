@@ -1,7 +1,7 @@
 import React from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Box, useHelper } from '@react-three/drei';
-import { Card, CardHeader, CardBody } from '@nextui-org/react';
+import { Card, CardHeader, CardBody } from '@heroui/react';
 import { PointLight, PointLightHelper } from 'three';
 
 const Scene = () => {

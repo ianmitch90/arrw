@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Avatar, Card, Chip } from '@nextui-org/react';
+import { Avatar, Card, Chip } from '@heroui/react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { formatDistanceToNow } from 'date-fns';

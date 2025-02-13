@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useSecurityContext } from '@/contexts/SecurityContext';
-import { Card, CardBody, CardHeader } from '@nextui-org/react';
+import { Card, CardBody, CardHeader } from '@heroui/react';
 
 interface SecurityGateProps {
   children: ReactNode;

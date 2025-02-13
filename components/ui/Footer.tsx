@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
-import { Button, Divider } from '@nextui-org/react';
+import { Button, Divider } from '@heroui/react';
 import { cn } from '@/utils/cn';
 import { motion } from 'framer-motion';
 

@@ -45,11 +45,50 @@ export class MockChatProvider {
   }
 
   public getMockData() {
-    return this.mockData;
+    // Ensure dates are properly handled
+    const processedData = {
+      ...this.mockData,
+      rooms: this.mockData.rooms.map(room => ({
+        ...room,
+        createdAt: new Date(room.createdAt),
+        updatedAt: new Date(room.updatedAt),
+        lastMessageAt: room.lastMessageAt ? new Date(room.lastMessageAt) : undefined,
+        lastMessageTimestamp: room.lastMessageTimestamp ? new Date(room.lastMessageTimestamp) : undefined,
+        messages: room.messages.map(msg => ({
+          ...msg,
+          createdAt: new Date(msg.createdAt),
+          updatedAt: new Date(msg.updatedAt)
+        })),
+        participants: room.participants.map(p => ({
+          ...p,
+          joinedAt: new Date(p.joinedAt),
+          lastReadAt: new Date(p.lastReadAt),
+          lastSeen: p.lastSeen ? new Date(p.lastSeen) : undefined
+        }))
+      }))
+    };
+    return processedData;
   }
 
   public getRooms(): ChatRoom[] {
-    return this.rooms;
+    return this.mockData.rooms.map(room => ({
+      ...room,
+      createdAt: new Date(room.createdAt),
+      updatedAt: new Date(room.updatedAt),
+      lastMessageAt: room.lastMessageAt ? new Date(room.lastMessageAt) : undefined,
+      lastMessageTimestamp: room.lastMessageTimestamp ? new Date(room.lastMessageTimestamp) : undefined,
+      messages: room.messages.map(msg => ({
+        ...msg,
+        createdAt: new Date(msg.createdAt),
+        updatedAt: new Date(msg.updatedAt)
+      })),
+      participants: room.participants.map(p => ({
+        ...p,
+        joinedAt: new Date(p.joinedAt),
+        lastReadAt: new Date(p.lastReadAt),
+        lastSeen: p.lastSeen ? new Date(p.lastSeen) : undefined
+      }))
+    }));
   }
 
   public startTyping(roomId: string, userId: string) {

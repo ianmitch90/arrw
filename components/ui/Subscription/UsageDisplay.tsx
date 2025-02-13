@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Progress } from '@nextui-org/react';
+import { Progress } from '@heroui/react';
 import { UsageTracker, UsageMetrics } from '@/utils/usage-tracking';
 
 interface UsageDisplayProps {

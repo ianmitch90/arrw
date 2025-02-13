@@ -8,7 +8,7 @@ import EmailVerification from './EmailVerification';
 import PhotoUpload from './PhotoUpload';
 import MultistepSidebar from './MultistepSidebar';
 import MultistepNavigationButtons from './MultistepNavigationButtons';
-import { Spinner } from '@nextui-org/react';
+import { Spinner } from '@heroui/react';
 import { FormProvider, useFormContext } from './FormContext';
 
 const variants = {

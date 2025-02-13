@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Formik, Field, Form } from 'formik';
-import { Input } from '@nextui-org/react';
+import { Input } from '@heroui/react';
 import * as Yup from 'yup';
 
 interface FormValues {

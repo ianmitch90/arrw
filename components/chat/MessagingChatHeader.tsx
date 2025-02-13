@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import {Chip} from "@nextui-org/react";
+import {Chip} from "@heroui/react";
 import {cn} from "@/utils/cn";
 import { useChat } from "@/components/contexts/ChatContext";
 

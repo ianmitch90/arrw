@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StoryViewerProps } from '@/types/map';
-import { Modal, ModalContent, Button, Image } from '@nextui-org/react';
+import { Modal, ModalContent, Button, Image } from '@heroui/react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 
 interface FeatureGateProps {
   featureId: string;

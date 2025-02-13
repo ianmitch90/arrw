@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tab, Tabs } from '@nextui-org/react';
+import { Tab, Tabs } from '@heroui/react';
 import { Users, UsersRound, MapPin } from 'lucide-react';
 
 export type TabKey = 'users' | 'groups' | 'places';

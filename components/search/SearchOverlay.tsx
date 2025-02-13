@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, ModalContent, ModalBody, Input, Tabs, Tab, Card, CardBody, Button, Avatar } from '@nextui-org/react';
+import { Modal, ModalContent, ModalBody, Input, Tabs, Tab, Card, CardBody, Button, Avatar } from '@heroui/react';
 import { Search, MapPin, Users, Coffee, Navigation } from 'lucide-react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';

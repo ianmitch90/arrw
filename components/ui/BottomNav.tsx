@@ -15,7 +15,7 @@ import {
   Badge,
   Link,
   Progress
-} from '@nextui-org/react'
+} from '@heroui/react'
 import { useUser } from '@/components/contexts/UserContext'
 
 const transition = {

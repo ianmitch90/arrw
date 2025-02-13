@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Divider } from '@nextui-org/react';
+import { Divider } from '@heroui/react';
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 

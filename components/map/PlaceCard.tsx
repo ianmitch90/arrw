@@ -1,5 +1,5 @@
 import { PlaceCardProps } from '@/types/map';
-import { Button, Avatar, Image } from '@nextui-org/react';
+import { Button, Avatar, Image } from '@heroui/react';
 import { MapPin, X, Calendar, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

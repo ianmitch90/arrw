@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { ScrollShadow } from "@nextui-org/react";
+import { ScrollShadow } from "@heroui/react";
 import { cn } from "@/utils/cn";
 import { useChat } from "@/components/contexts/ChatContext";
 import { useAuth } from "@/lib/auth/AuthContext"; // Import the AuthContext

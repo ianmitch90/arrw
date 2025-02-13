@@ -4,7 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types/supabase';
 import { Coordinates, PlaceProposal } from '@/types/core';
-import { Button, Card } from '@nextui-org/react';
+import { Button, Card } from '@heroui/react';
 import { Filter, Navigation } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
 import { ProposalCluster } from './ProposalCluster';

@@ -1,7 +1,7 @@
 'use client';
 
-import { ButtonProps } from '@nextui-org/react';
-import { Button } from '@nextui-org/react';
+import { ButtonProps } from '@heroui/react';
+import { Button } from '@heroui/react';
 import Link from 'next/link';
 import styles from '@/styles/components/ButtonWithBorderGradient.module.css';
 import { motion } from 'framer-motion';
@@ -49,7 +49,7 @@ export function ButtonWithBorderGradient({
           '--gradient-to': gradientTo,
           '--gradient-deg': `${gradientDeg}deg`,
           border: `solid ${borderWidth}px transparent`,
-          backgroundImage: `linear-gradient(to bottom, hsl(var(--nextui-background)) 0 100%), linear-gradient(var(--gradient-deg), var(--gradient-from), var(--gradient-to))`,
+          backgroundImage: `linear-gradient(to bottom, hsl(var(--heroui-background)) 0 100%), linear-gradient(var(--gradient-deg), var(--gradient-from), var(--gradient-to))`,
           backgroundOrigin: 'border-box',
           backgroundClip: 'padding-box, border-box',
           position: 'relative',

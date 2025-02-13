@@ -2,7 +2,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
-import { Spinner } from '@nextui-org/spinner';
+import { Spinner } from '@heroui/react';
 import { MapView } from '@/components/map/MapView';
 import { useCallback } from 'react';
 import { Coordinates } from '@/types/core';

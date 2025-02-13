@@ -1,4 +1,4 @@
-import { Avatar, Button, Chip, Skeleton } from '@nextui-org/react';
+import { Avatar, Button, Chip, Skeleton } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
