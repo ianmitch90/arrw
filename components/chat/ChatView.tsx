@@ -24,6 +24,8 @@ export function ChatView({ chatId, chatType }: ChatViewProps) {
   const searchParams = useSearchParams();
   const { rooms, sendMessage, typingUsers, startTyping, stopTyping } = useChat();
   const [message, setMessage] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isNewChat = room?.messages?.length === 0;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const room = rooms.find(r => r.id === chatId);
@@ -34,6 +36,13 @@ export function ChatView({ chatId, chatType }: ChatViewProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [room?.messages, isTyping]);
+
+  // Auto-focus input for new chats
+  useEffect(() => {
+    if (inputRef.current && isNewChat) {
+      inputRef.current.focus();
+    }
+  }, [isNewChat]);
 
   const handleBack = () => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -176,6 +185,9 @@ export function ChatView({ chatId, chatType }: ChatViewProps) {
 
       {/* Input */}
       <div className="p-4 border-t bg-background/95 backdrop-blur-sm sticky bottom-0">
+        {isNewChat && (
+          <p className="text-xs text-muted-foreground mb-2 text-center">Start a new conversation...</p>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -188,6 +200,7 @@ export function ChatView({ chatId, chatType }: ChatViewProps) {
           </Button>
           <ChatInput
             value={message}
+            ref={inputRef}
             onChange={(e) => {
               setMessage(e.target.value);
               handleTyping(e.target.value);

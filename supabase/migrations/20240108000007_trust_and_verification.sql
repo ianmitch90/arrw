@@ -35,44 +35,105 @@ ALTER TABLE public.trusted_contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.age_verifications ENABLE ROW LEVEL SECURITY;
 
 -- Add RLS policies
-CREATE POLICY "Users can view their own trusted contacts"
-    ON public.trusted_contacts
-    FOR SELECT
-    USING (auth.uid() = user_id OR auth.uid() = trusted_user_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'trusted_contacts' 
+        AND policyname = 'Users can view their own trusted contacts'
+    ) THEN
+        CREATE POLICY "Users can view their own trusted contacts"
+            ON public.trusted_contacts
+            FOR SELECT
+            USING (auth.uid() = user_id OR auth.uid() = trusted_user_id);
+    END IF;
 
-CREATE POLICY "Users can create their own trusted contacts"
-    ON public.trusted_contacts
-    FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'trusted_contacts' 
+        AND policyname = 'Users can create their own trusted contacts'
+    ) THEN
+        CREATE POLICY "Users can create their own trusted contacts"
+            ON public.trusted_contacts
+            FOR INSERT
+            WITH CHECK (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can update their own trusted contacts"
-    ON public.trusted_contacts
-    FOR UPDATE
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'trusted_contacts' 
+        AND policyname = 'Users can update their own trusted contacts'
+    ) THEN
+        CREATE POLICY "Users can update their own trusted contacts"
+            ON public.trusted_contacts
+            FOR UPDATE
+            USING (auth.uid() = user_id);
+    END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own trusted contacts"
-    ON public.trusted_contacts
-    FOR DELETE
-    USING (auth.uid() = user_id);
+-- Add trusted contacts delete policy
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'trusted_contacts' 
+        AND policyname = 'Users can delete their own trusted contacts'
+    ) THEN
+        CREATE POLICY "Users can delete their own trusted contacts"
+            ON public.trusted_contacts
+            FOR DELETE
+            USING (auth.uid() = user_id);
+    END IF;
+END $$;
 
-CREATE POLICY "Users can view their own verifications"
-    ON public.age_verifications
-    FOR SELECT
-    USING (user_id = auth.uid());
+-- Add age verification policies
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'age_verifications' 
+        AND policyname = 'Users can view their own verifications'
+    ) THEN
+        CREATE POLICY "Users can view their own verifications"
+            ON public.age_verifications
+            FOR SELECT
+            USING (user_id = auth.uid());
+    END IF;
 
-CREATE POLICY "Only system can manage age verifications"
-    ON public.age_verifications
-    FOR ALL
-    USING (auth.uid() IS NULL);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'age_verifications' 
+        AND policyname = 'Only system can manage age verifications'
+    ) THEN
+        CREATE POLICY "Only system can manage age verifications"
+            ON public.age_verifications
+            FOR ALL
+            USING (auth.uid() IS NULL);
+    END IF;
+END $$;
 
 -- Add triggers for updated_at
-CREATE TRIGGER set_updated_at
-    BEFORE UPDATE ON public.trusted_contacts
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'set_updated_at'
+        AND tgrelid = 'public.trusted_contacts'::regclass
+    ) THEN
+        CREATE TRIGGER set_updated_at
+            BEFORE UPDATE ON public.trusted_contacts
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_updated_at();
+    END IF;
 
-CREATE TRIGGER set_updated_at
-    BEFORE UPDATE ON public.age_verifications
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'set_updated_at'
+        AND tgrelid = 'public.age_verifications'::regclass
+    ) THEN
+        CREATE TRIGGER set_updated_at
+            BEFORE UPDATE ON public.age_verifications
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_updated_at();
+    END IF;
+END $$;

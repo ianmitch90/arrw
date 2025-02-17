@@ -52,65 +52,129 @@ ALTER TABLE public.chat_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_message_reactions ENABLE ROW LEVEL SECURITY;
 
--- Add RLS policies
-CREATE POLICY "Users can view rooms they're in"
-    ON public.chat_rooms
-    FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.chat_participants
-            WHERE room_id = id AND user_id = auth.uid()
-        )
-        OR type = 'global'
-    );
+-- Add RLS policies defensively
+DO $$
+BEGIN
+    -- Chat rooms policies
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'chat_rooms' 
+        AND policyname = 'Users can view rooms they''re in'
+    ) THEN
+        CREATE POLICY "Users can view rooms they're in"
+            ON public.chat_rooms
+            FOR SELECT
+            USING (
+                EXISTS (
+                    SELECT 1 FROM public.chat_participants
+                    WHERE room_id = id AND user_id = auth.uid()
+                )
+                OR type = 'global'
+            );
+    END IF;
 
-CREATE POLICY "Users can view their chat participation"
-    ON public.chat_participants
-    FOR SELECT
-    USING (user_id = auth.uid());
+    -- Chat participants policies
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'chat_participants' 
+        AND policyname = 'Users can view their chat participation'
+    ) THEN
+        CREATE POLICY "Users can view their chat participation"
+            ON public.chat_participants
+            FOR SELECT
+            USING (user_id = auth.uid());
+    END IF;
 
-CREATE POLICY "Users can manage their chat participation"
-    ON public.chat_participants
-    FOR ALL
-    USING (user_id = auth.uid());
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'chat_participants' 
+        AND policyname = 'Users can manage their chat participation'
+    ) THEN
+        CREATE POLICY "Users can manage their chat participation"
+            ON public.chat_participants
+            FOR ALL
+            USING (user_id = auth.uid());
+    END IF;
 
-CREATE POLICY "Users can view messages in their rooms"
-    ON public.chat_messages
-    FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.chat_participants
-            WHERE room_id = chat_messages.room_id AND user_id = auth.uid()
-        )
-    );
+    -- Chat messages policies
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'chat_messages' 
+        AND policyname = 'Users can view messages in their rooms'
+    ) THEN
+        CREATE POLICY "Users can view messages in their rooms"
+            ON public.chat_messages
+            FOR SELECT
+            USING (
+                EXISTS (
+                    SELECT 1 FROM public.chat_participants
+                    WHERE room_id = chat_messages.room_id AND user_id = auth.uid()
+                )
+            );
+    END IF;
 
-CREATE POLICY "Users can send messages to their rooms"
-    ON public.chat_messages
-    FOR INSERT
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.chat_participants
-            WHERE room_id = chat_messages.room_id AND user_id = auth.uid()
-        )
-    );
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'chat_messages' 
+        AND policyname = 'Users can send messages to their rooms'
+    ) THEN
+        CREATE POLICY "Users can send messages to their rooms"
+            ON public.chat_messages
+            FOR INSERT
+            WITH CHECK (
+                EXISTS (
+                    SELECT 1 FROM public.chat_participants
+                    WHERE room_id = chat_messages.room_id AND user_id = auth.uid()
+                )
+            );
+    END IF;
 
-CREATE POLICY "Users can manage their reactions"
-    ON public.chat_message_reactions
-    FOR ALL
-    USING (user_id = auth.uid());
+    -- Chat message reactions policies
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'chat_message_reactions' 
+        AND policyname = 'Users can manage their reactions'
+    ) THEN
+        CREATE POLICY "Users can manage their reactions"
+            ON public.chat_message_reactions
+            FOR ALL
+            USING (user_id = auth.uid());
+    END IF;
+END $$;
 
--- Add triggers for updated_at
-CREATE TRIGGER set_updated_at
-    BEFORE UPDATE ON public.chat_rooms
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+-- Add triggers defensively
+DO $$
+BEGIN
+    -- Chat rooms trigger
+    IF NOT EXISTS (
+        SELECT FROM pg_trigger WHERE tgname = 'set_updated_at' 
+        AND tgrelid = 'public.chat_rooms'::regclass
+    ) THEN
+        CREATE TRIGGER set_updated_at
+            BEFORE UPDATE ON public.chat_rooms
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_updated_at();
+    END IF;
 
-CREATE TRIGGER set_updated_at
-    BEFORE UPDATE ON public.chat_participants
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+    -- Chat participants trigger
+    IF NOT EXISTS (
+        SELECT FROM pg_trigger WHERE tgname = 'set_updated_at' 
+        AND tgrelid = 'public.chat_participants'::regclass
+    ) THEN
+        CREATE TRIGGER set_updated_at
+            BEFORE UPDATE ON public.chat_participants
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_updated_at();
+    END IF;
 
-CREATE TRIGGER set_updated_at
-    BEFORE UPDATE ON public.chat_messages
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+    -- Chat messages trigger
+    IF NOT EXISTS (
+        SELECT FROM pg_trigger WHERE tgname = 'set_updated_at' 
+        AND tgrelid = 'public.chat_messages'::regclass
+    ) THEN
+        CREATE TRIGGER set_updated_at
+            BEFORE UPDATE ON public.chat_messages
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_updated_at();
+    END IF;
+END $$;

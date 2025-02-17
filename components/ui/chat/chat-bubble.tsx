@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { Avatar, Button } from "@heroui/react";
+import { Avatar, Button, type ButtonProps } from "@heroui/react";
 import MessageLoading from "./message-loading";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 
@@ -62,7 +62,7 @@ interface ChatBubbleAvatarProps {
 }
 
 const ChatBubbleAvatar = React.forwardRef<HTMLDivElement, ChatBubbleAvatarProps>(
-  ({ src, fallback, className }) => (
+  ({ src, fallback, className }, ref) => (
     <Avatar
       src={src}
       name={fallback}
@@ -92,22 +92,17 @@ const chatBubbleMessageVariants = cva("p-4", {
   },
 });
 
-interface ChatBubbleMessageProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof chatBubbleMessageVariants> {
+// ChatBubbleMessage
+interface ChatBubbleMessageProps extends React.HTMLAttributes<HTMLDivElement> {
   isLoading?: boolean;
 }
 
 const ChatBubbleMessage = React.forwardRef<HTMLDivElement, ChatBubbleMessageProps>(
-  ({ className, variant, layout, children, isLoading, ...props }, ref) => (
-    <div
-      className={cn(chatBubbleMessageVariants({ variant, layout }), className)}
-      ref={ref}
-      {...props}
-    >
+  ({ children, isLoading, className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex-1", className)} {...props}>
       {isLoading ? <MessageLoading /> : children}
     </div>
-  ),
+  )
 );
 
 ChatBubbleMessage.displayName = "ChatBubbleMessage";
@@ -136,29 +131,28 @@ const ChatBubbleTimestamp = React.forwardRef<
 
 ChatBubbleTimestamp.displayName = "ChatBubbleTimestamp";
 
-// ChatBubbleAction
-interface ChatBubbleActionProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type ChatBubbleActionProps = ButtonProps & {
   icon: React.ReactNode;
-}
+};
 
-const ChatBubbleAction = React.forwardRef<HTMLButtonElement, ChatBubbleActionProps>(
-  ({ icon, onClick, className, ...props }, ref) => (
-    <Button
-      ref={ref}
-      onClick={onClick}
-      className={cn(
-        "opacity-0 group-hover:opacity-100 transition-opacity",
-        className,
-      )}
-      isIconOnly
-      variant="light"
-      size="sm"
-      {...props}
-    >
-      {icon}
-    </Button>
-  ),
-);
+const ChatBubbleAction = React.forwardRef<
+  HTMLButtonElement,
+  ChatBubbleActionProps
+>(({ icon, className, ...props }, ref) => (
+  <Button
+    ref={ref}
+    className={cn(
+      'opacity-0 group-hover:opacity-100 transition-opacity',
+      className
+    )}
+    isIconOnly
+    variant="light"
+    size="sm"
+    {...props}
+  >
+    {icon}
+  </Button>
+));
 
 ChatBubbleAction.displayName = "ChatBubbleAction";
 

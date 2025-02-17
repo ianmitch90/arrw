@@ -1,6 +1,7 @@
  import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map, NavigationControl, GeolocateControl, MapRef, AttributionControl } from 'react-map-gl';
 import type { ErrorEvent } from 'mapbox-gl';
+import type { MapboxGeoJSONFeature } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
@@ -16,18 +17,23 @@ import { PlaceCreator } from './PlaceCreator';
 import { useMap } from '@/components/contexts/MapContext';
 import { SecurityGate } from '@/security/SecurityGate';
 import { useSecurityContext } from '@/contexts/SecurityContext';
-import { 
+import {
   Coordinates,
   Places,
   Stories,
   Profiles,
   MapFilters,
-  PostGISPoint
+  PostGISPoint,
+  LocationJson,
+  Json,
+  RPCFunctions
 } from '@/types/map';
+
 
 interface MapViewProps {
   initialLocation?: [number, number];
   onLocationChange?: (coords: Coordinates) => void;
+  children?: React.ReactNode;
 }
 
 const DEFAULT_LOCATION: Coordinates = {
@@ -35,20 +41,22 @@ const DEFAULT_LOCATION: Coordinates = {
   longitude: -122.4194
 };
 
-export default function MapViewContainer({ initialLocation, onLocationChange }: MapViewProps) {
+export default function MapViewContainer({ initialLocation, onLocationChange, children }: MapViewProps) {
   return (
     <SecurityGate 
       requiredFeatureFlag="canAccessMap"
       fallbackMessage="Map access is restricted. Please ensure you have location services enabled and are not using a VPN or proxy service."
     >
-      <MapView initialLocation={initialLocation} onLocationChange={onLocationChange} />
+      <MapView initialLocation={initialLocation} onLocationChange={onLocationChange}>
+        {children}
+      </MapView>
     </SecurityGate>
   );
 }
 
-const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude], onLocationChange }) => {
+const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude], onLocationChange, children }) => {
   const mapRef = useRef<MapRef>(null);
-  const supabase = useSupabaseClient<Database>();
+  const supabase = useSupabaseClient<Database & { functions: RPCFunctions }>();
   const user = useUser();
   
   // Rename to avoid conflict
@@ -238,6 +246,15 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.l
       console.log('New location:', newLocation);
       setMapLocation(newLocation);
       onLocationChange?.(newLocation);
+
+      // Update map view to center on user's location
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [newLocation.longitude, newLocation.latitude],
+          zoom: 15,
+          duration: 2000
+        });
+      }
     } catch (error) {
       console.error('Error handling geolocation:', error);
       setMapError('Failed to update location');
@@ -245,143 +262,72 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.l
   }, [setMapLocation, onLocationChange]);
 
   // Fetch current user's profile
-  const fetchCurrentUser = useCallback(async () => {
-    if (!user) return;
+const fetchCurrentUser = useCallback(async () => {
+  if (!user) return;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*, location:get_location_json(profiles)')
+    .eq('id', user.id)
+    .single();
 
-    if (error) {
-      console.error('Error fetching current user profile:', error);
+  if (error) {
+    console.error('Error fetching current user profile:', error);
+    return;
+  }
+
+  if (data) {
+    // Safely type cast the location data
+    const locationData = data.location as unknown as LocationJson;
+    if (!locationData || !('latitude' in locationData) || !('longitude' in locationData)) {
+      console.log('No valid location data found');
       return;
     }
 
-    if (data) {
-      const profile = data as Database['public']['Tables']['profiles']['Row'];
-      setCurrentUser({
-        ...profile,
-        current_location: profile.current_location ? {
-          type: 'Point',
-          coordinates: (profile.current_location as any).coordinates
-        } : undefined
-      });
-    }
-  }, [user, supabase]);
+    setCurrentUser({
+      ...data,
+      current_location: {
+        type: 'Point',
+        coordinates: [locationData.longitude, locationData.latitude]
+      } as PostGISPoint,
+      location: locationData,
+      full_name: data.full_name || null,
+      avatar_url: data.avatar_url || null
+    } as Profiles);
+  }
+}, [user, supabase]);
 
   useEffect(() => {
     fetchCurrentUser();
   }, [fetchCurrentUser, supabase, user]);
 
   // Update user location and fetch nearby users
-  const updateUserLocation = useCallback(async (coords: Coordinates) => {
-    if (!user) return;
+const updateUserLocation = useCallback(async (coords: Coordinates) => {
+  if (!user) return;
 
-    try {
-      setMapLocation(coords);
-      
-      const point: PostGISPoint = {
-        type: 'Point',
-        coordinates: [coords.longitude, coords.latitude],
-        crs: {
-          type: 'name',
-          properties: {
-            name: 'EPSG:4326'
-          }
-        }
-      };
-
-      const { data: updatedProfile, error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          current_location: point,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Error updating location:', updateError.message);
-        return;
-      }
-
-      if (!updatedProfile) {
-        console.error('Error updating location: No profile data returned');
-        return;
-      }
-
-      if (updatedProfile) {
-        const profile = updatedProfile as Database['public']['Tables']['profiles']['Row'];
-        setCurrentUser({
-          ...profile,
-          current_location: profile.current_location ? {
-            type: 'Point',
-            coordinates: (profile.current_location as any).coordinates
-          } : undefined
-        });
-      }
-
-      if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
-        onLocationChange?.(coords);
-      } else {
-        console.error('Invalid coordinates:', coords);
-        return;
-      }
-
-      const { data: nearbyData, error: nearbyError } = await supabase
-        .rpc('find_users_within_radius', {
-          user_lat: coords.latitude,
-          user_lng: coords.longitude,
-          radius_miles: filters.radius
-        });
-
-      if (nearbyError) {
-        console.error('Error fetching nearby users:', nearbyError);
-        return;
-      }
-
-      if (nearbyData) {
-        const profiles: Profiles[] = nearbyData.map((u: any) => ({
-          id: u.id,
-          avatar_url: u.avatar_url || null,
-          full_name: u.full_name || null,
-          created_at: u.created_at || new Date().toISOString(),
-          updated_at: u.updated_at || new Date().toISOString(),
-          current_location: u.current_location ? {
-            type: 'Point',
-            coordinates: u.current_location.coordinates
-          } : undefined,
-          // Add other required fields with default values
-          age_verification_method: null,
-          age_verified: null,
-          age_verified_at: null,
-          bio: null,
-          birth_date: null,
-          deleted_at: null,
-          gender_identity: null,
-          is_anonymous: false,
-          last_location_update: null,
-          last_seen_at: null,
-          location_accuracy: null,
-          location_sharing: null,
-          online_at: null,
-          presence_sharing: null,
-          presence_status: null,
-          privacy_settings: null,
-          relationship_status: null,
-          sexual_orientation: null,
-          status: 'active',
-          subscription_tier: 'free'
-        }));
-        setNearbyUsers(profiles);
-      }
-    } catch (err) {
-      console.error('Error in updateUserLocation:', err);
+  try {
+    setMapLocation(coords);
+    
+// Update location in database with properly typed RPC call
+const { error: updateError } = await(supabase.functions.invoke as any)(
+  'update_profile_location',
+  {
+    body: {
+      lat: coords.latitude,
+      lon: coords.longitude
     }
-  }, [user, supabase, filters.radius, setMapLocation, onLocationChange]);
+  }
+);
+
+if (updateError) {
+  console.error('Error updating location:', updateError);
+  return;
+}
+    // ... rest of the function
+  } catch (err) {
+    console.error('Error in updateUserLocation:', err);
+  }
+}, [user, supabase, setMapLocation, onLocationChange]);
 
   useEffect(() => {
     if (securityLocation) {
@@ -393,91 +339,65 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.l
   }, [updateUserLocation, securityLocation]);
 
   // Fetch places and stories
-  const fetchData = useCallback(async () => {
-    if (!securityLocation) return;
+const fetchData = useCallback(async () => {
+  if (!securityLocation) return;
 
-    try {
-      // Fetch nearby places
-      const { data: placesData, error: placesError } = await supabase
-        .rpc('find_places_within_radius', {
-          user_lat: securityLocation.latitude,
-          user_lng: securityLocation.longitude,
-          radius_miles: filters.radius,
-          place_types: filters.placeTypes
-        });
+  try {
+const { data: placesData, error: placesError } = await supabase
+  .from('places')
+  .select(`
+    *,
+    creator:profiles(id, full_name, avatar_url),
+    location:get_location_json(places)
+  `)
+  .filter('location', 'is', 'not null');
 
-      if (placesError) {
-        console.error('Error fetching places:', placesError);
-      } else {
-        setPlaces(placesData || []);
-      }
-
-      // Fetch nearby stories
-      if (filters.showStories) {
-        const { data: storiesData, error: storiesError } = await supabase
-          .rpc('find_stories_within_radius', {
-            user_lat: securityLocation.latitude,
-            user_lng: securityLocation.longitude,
-            radius_miles: filters.radius
-          });
-
-        if (storiesError) {
-          console.error('Error fetching stories:', storiesError);
-        } else {
-          // Transform stories data to include required fields
-          const transformedStories = await Promise.all((storiesData || []).map(async (story) => {
-            // Default user data
-            let userData = { avatar_url: '', full_name: 'Anonymous' };
-
-            // Only fetch user data if we have a creator ID
-            if (story.created_by) {
-              const { data: userResult } = await supabase
-                .from('profiles')
-                .select('avatar_url, full_name')
-                .eq('id', story.created_by)
-                .single();
-              
-              if (userResult) {
-                const profile = userResult as Database['public']['Tables']['profiles']['Row'];
-                userData = {
-                  avatar_url: profile.avatar_url || '',
-                  full_name: profile.full_name || 'Anonymous'
-                };
-              }
-            }
-
-            return {
-              ...story,
-              user: userData,
-              story_content: {
-                type: story.media_url ? 'image' : 'text',
-                url: story.media_url || story.content || '',
-                thumbnail_url: story.media_url
-              }
-            } as Stories;
-          }));
-
-          setStories(transformedStories);
+    if (placesError) {
+      console.error('Error fetching places:', placesError);
+    } else if (placesData) {
+      setPlaces(placesData.map(place => {
+        // Safely type check the location data
+        const locationData = place.location as unknown as LocationJson;
+        if (!locationData || !('latitude' in locationData) || !('longitude' in locationData)) {
+          return null;
         }
-      }
-    } catch (err) {
-      console.error('Error fetching data:', err);
+
+        const creatorData = Array.isArray(place.creator) ? place.creator[0] : null;
+        
+        return {
+          ...place,
+          current_location: locationData ? {
+            type: 'Point',
+            coordinates: [locationData.longitude, locationData.latitude]
+          } as PostGISPoint : undefined,
+          location: locationData,
+          creator: creatorData ? {
+            id: creatorData.id,
+            full_name: creatorData.full_name || null,
+            avatar_url: creatorData.avatar_url || null
+          } : undefined,
+          metadata: place.metadata as Json
+        } as Places;
+      }).filter(Boolean) as Places[]); // Filter out null values
     }
-  }, [securityLocation, filters, supabase]);
+  } catch (err) {
+    console.error('Error in fetchData:', err);
+  }
+}, [securityLocation, filters.radius, filters.placeTypes, filters.showStories, supabase]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData, securityLocation, filters, supabase]);
 
   // Handle place creation
-  const handleMapClick = useCallback((event: mapboxgl.MapMouseEvent) => {
-    if (isCreatingPlace) {
-      setNewPlaceLocation({
-        latitude: event.lngLat.lat,
-        longitude: event.lngLat.lng
-      });
-    }
-  }, [isCreatingPlace]);
+const handleMapClick = useCallback((event: { lngLat: { lat: number; lng: number } }) => {
+  if (isCreatingPlace) {
+    setNewPlaceLocation({
+      latitude: event.lngLat.lat,
+      longitude: event.lngLat.lng
+    });
+  }
+}, [isCreatingPlace]);
 
   // Toggle place creation mode
   const togglePlaceCreation = useCallback(() => {
@@ -505,16 +425,17 @@ const MapView: React.FC<MapViewProps> = ({ initialLocation = [DEFAULT_LOCATION.l
         cursor={isCreatingPlace ? 'crosshair' : 'grab'}
         reuseMaps
       >
+        {children}
         <AttributionControl position="bottom-right" />
         <NavigationControl position="top-right" />
-        <GeolocateControl
-          position="top-right"
-          trackUserLocation
-          showUserHeading
-          showAccuracyCircle
-          onError={handleGeolocationError}
-          onGeolocate={handleGeolocate}
-        />
+   <GeolocateControl
+     position="top-right"
+     trackUserLocation
+     showUserHeading
+     showAccuracyCircle
+     onError={handleGeolocationError}
+     onGeolocate={handleGeolocate}
+   />
         
         {/* Only render markers after map is loaded */}
         {isMapLoaded && (

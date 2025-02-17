@@ -73,13 +73,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           .select(`
             *,
             chat_participants!inner (user_id),
-            chat_messages (*, sender:profiles(*))
+            chat_messages!left (*, sender:profiles!left(*))
           `)
           .eq('chat_participants.user_id', user.id)
-          .order('updated_at', { ascending: false })
-          .order('chat_messages.created_at', { foreignTable: 'chat_messages', ascending: true });
+          .order('updated_at', { ascending: false });
 
         if (roomsError) throw roomsError;
+
+        if (!rooms) {
+          setRooms([]);
+          setIsLoading(false);
+          return;
+        }
 
         // Transform the data to match our ChatRoom type
         const transformedRooms = rooms.map(room => ({
@@ -89,7 +94,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           createdBy: room.created_by,
           createdAt: new Date(room.created_at),
           updatedAt: new Date(room.updated_at),
-          messages: room.chat_messages.map(msg => ({
+          messages: (room.chat_messages || []).map(msg => ({
             id: msg.id,
             roomId: msg.room_id,
             senderId: msg.sender_id,

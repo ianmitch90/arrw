@@ -13,13 +13,8 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          method:
-            | "none"
-            | "id_upload"
-            | "credit_card"
-            | "phone"
-            | "social_media"
-          status: "unverified" | "pending" | "verified" | "rejected" | null
+          method: Database["public"]["Enums"]["age_verification_method"]
+          status: Database["public"]["Enums"]["verification_status"] | null
           updated_at: string | null
           user_id: string | null
           verification_data: Json | null
@@ -28,13 +23,8 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          method:
-            | "none"
-            | "id_upload"
-            | "credit_card"
-            | "phone"
-            | "social_media"
-          status?: "unverified" | "pending" | "verified" | "rejected" | null
+          method: Database["public"]["Enums"]["age_verification_method"]
+          status?: Database["public"]["Enums"]["verification_status"] | null
           updated_at?: string | null
           user_id?: string | null
           verification_data?: Json | null
@@ -43,13 +33,8 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
-          method?:
-            | "none"
-            | "id_upload"
-            | "credit_card"
-            | "phone"
-            | "social_media"
-          status?: "unverified" | "pending" | "verified" | "rejected" | null
+          method?: Database["public"]["Enums"]["age_verification_method"]
+          status?: Database["public"]["Enums"]["verification_status"] | null
           updated_at?: string | null
           user_id?: string | null
           verification_data?: Json | null
@@ -225,7 +210,6 @@ export type Database = {
           subscription_period_end: string | null
           subscription_period_start: string | null
           subscription_status: string | null
-          subscription_tier: "free" | "basic" | "premium" | "enterprise" | null
           updated_at: string | null
         }
         Insert: {
@@ -236,7 +220,6 @@ export type Database = {
           subscription_period_end?: string | null
           subscription_period_start?: string | null
           subscription_status?: string | null
-          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Update: {
@@ -247,7 +230,6 @@ export type Database = {
           subscription_period_end?: string | null
           subscription_period_start?: string | null
           subscription_status?: string | null
-          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Relationships: []
@@ -546,67 +528,14 @@ export type Database = {
           current_location: unknown | null
           deleted_at: string | null
           full_name: string | null
-          gender_identity:
-            | "male"
-            | "female"
-            | "non_binary"
-            | "other"
-            | "prefer_not_to_say"
-            | null
           id: string
           is_anonymous: boolean | null
           last_location_update: string | null
           last_seen_at: string | null
+          location: unknown | null
           location_accuracy: number | null
-          location_sharing:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
           online_at: string | null
-          presence_sharing:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
-          presence_status:
-            | "online"
-            | "away"
-            | "busy"
-            | "offline"
-            | "invisible"
-            | null
           privacy_settings: Json | null
-          relationship_status:
-            | "single"
-            | "in_relationship"
-            | "married"
-            | "divorced"
-            | "widowed"
-            | "its_complicated"
-            | "prefer_not_to_say"
-            | null
-          sexual_orientation:
-            | "straight"
-            | "gay"
-            | "lesbian"
-            | "bisexual"
-            | "pansexual"
-            | "asexual"
-            | "other"
-            | "prefer_not_to_say"
-            | null
-          status:
-            | "active"
-            | "inactive"
-            | "suspended"
-            | "banned"
-            | "pending_verification"
-            | "deleted"
-            | null
-          subscription_tier: "free" | "basic" | "premium" | "enterprise" | null
           updated_at: string | null
         }
         Insert: {
@@ -620,67 +549,14 @@ export type Database = {
           current_location?: unknown | null
           deleted_at?: string | null
           full_name?: string | null
-          gender_identity?:
-            | "male"
-            | "female"
-            | "non_binary"
-            | "other"
-            | "prefer_not_to_say"
-            | null
           id: string
           is_anonymous?: boolean | null
           last_location_update?: string | null
           last_seen_at?: string | null
+          location?: unknown | null
           location_accuracy?: number | null
-          location_sharing?:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
           online_at?: string | null
-          presence_sharing?:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
-          presence_status?:
-            | "online"
-            | "away"
-            | "busy"
-            | "offline"
-            | "invisible"
-            | null
           privacy_settings?: Json | null
-          relationship_status?:
-            | "single"
-            | "in_relationship"
-            | "married"
-            | "divorced"
-            | "widowed"
-            | "its_complicated"
-            | "prefer_not_to_say"
-            | null
-          sexual_orientation?:
-            | "straight"
-            | "gay"
-            | "lesbian"
-            | "bisexual"
-            | "pansexual"
-            | "asexual"
-            | "other"
-            | "prefer_not_to_say"
-            | null
-          status?:
-            | "active"
-            | "inactive"
-            | "suspended"
-            | "banned"
-            | "pending_verification"
-            | "deleted"
-            | null
-          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Update: {
@@ -694,67 +570,14 @@ export type Database = {
           current_location?: unknown | null
           deleted_at?: string | null
           full_name?: string | null
-          gender_identity?:
-            | "male"
-            | "female"
-            | "non_binary"
-            | "other"
-            | "prefer_not_to_say"
-            | null
           id?: string
           is_anonymous?: boolean | null
           last_location_update?: string | null
           last_seen_at?: string | null
+          location?: unknown | null
           location_accuracy?: number | null
-          location_sharing?:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
           online_at?: string | null
-          presence_sharing?:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
-          presence_status?:
-            | "online"
-            | "away"
-            | "busy"
-            | "offline"
-            | "invisible"
-            | null
           privacy_settings?: Json | null
-          relationship_status?:
-            | "single"
-            | "in_relationship"
-            | "married"
-            | "divorced"
-            | "widowed"
-            | "its_complicated"
-            | "prefer_not_to_say"
-            | null
-          sexual_orientation?:
-            | "straight"
-            | "gay"
-            | "lesbian"
-            | "bisexual"
-            | "pansexual"
-            | "asexual"
-            | "other"
-            | "prefer_not_to_say"
-            | null
-          status?:
-            | "active"
-            | "inactive"
-            | "suspended"
-            | "banned"
-            | "pending_verification"
-            | "deleted"
-            | null
-          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Relationships: []
@@ -766,13 +589,7 @@ export type Database = {
           preferred_age_min: number | null
           preferred_distance: number | null
           preferred_genders:
-            | (
-                | "male"
-                | "female"
-                | "non_binary"
-                | "other"
-                | "prefer_not_to_say"
-              )[]
+            | Database["public"]["Enums"]["gender_identity"][]
             | null
           updated_at: string | null
           user_id: string
@@ -783,13 +600,7 @@ export type Database = {
           preferred_age_min?: number | null
           preferred_distance?: number | null
           preferred_genders?:
-            | (
-                | "male"
-                | "female"
-                | "non_binary"
-                | "other"
-                | "prefer_not_to_say"
-              )[]
+            | Database["public"]["Enums"]["gender_identity"][]
             | null
           updated_at?: string | null
           user_id: string
@@ -800,13 +611,7 @@ export type Database = {
           preferred_age_min?: number | null
           preferred_distance?: number | null
           preferred_genders?:
-            | (
-                | "male"
-                | "female"
-                | "non_binary"
-                | "other"
-                | "prefer_not_to_say"
-              )[]
+            | Database["public"]["Enums"]["gender_identity"][]
             | null
           updated_at?: string | null
           user_id?: string
@@ -848,6 +653,7 @@ export type Database = {
       stories: {
         Row: {
           content: string | null
+          content_type: string | null
           created_at: string | null
           created_by: string | null
           expires_at: string | null
@@ -860,6 +666,7 @@ export type Database = {
         }
         Insert: {
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           created_by?: string | null
           expires_at?: string | null
@@ -872,6 +679,7 @@ export type Database = {
         }
         Update: {
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           created_by?: string | null
           expires_at?: string | null
@@ -889,19 +697,16 @@ export type Database = {
           created_at: string | null
           feature_id: string | null
           id: string
-          subscription_tier: "free" | "basic" | "premium" | "enterprise"
         }
         Insert: {
           created_at?: string | null
           feature_id?: string | null
           id?: string
-          subscription_tier: "free" | "basic" | "premium" | "enterprise"
         }
         Update: {
           created_at?: string | null
           feature_id?: string | null
           id?: string
-          subscription_tier?: "free" | "basic" | "premium" | "enterprise"
         }
         Relationships: [
           {
@@ -947,15 +752,6 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
-          role: "admin" | "moderator" | "premium" | "free" | "anonymous" | null
-          status:
-            | "active"
-            | "inactive"
-            | "suspended"
-            | "banned"
-            | "pending_verification"
-            | "deleted"
-            | null
           updated_at: string | null
         }
         Insert: {
@@ -964,15 +760,6 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
-          role?: "admin" | "moderator" | "premium" | "free" | "anonymous" | null
-          status?:
-            | "active"
-            | "inactive"
-            | "suspended"
-            | "banned"
-            | "pending_verification"
-            | "deleted"
-            | null
           updated_at?: string | null
         }
         Update: {
@@ -981,15 +768,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
-          role?: "admin" | "moderator" | "premium" | "free" | "anonymous" | null
-          status?:
-            | "active"
-            | "inactive"
-            | "suspended"
-            | "banned"
-            | "pending_verification"
-            | "deleted"
-            | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1571,6 +1349,7 @@ export type Database = {
         }
         Returns: {
           content: string | null
+          content_type: string | null
           created_at: string | null
           created_by: string | null
           expires_at: string | null
@@ -1599,67 +1378,14 @@ export type Database = {
           current_location: unknown | null
           deleted_at: string | null
           full_name: string | null
-          gender_identity:
-            | "male"
-            | "female"
-            | "non_binary"
-            | "other"
-            | "prefer_not_to_say"
-            | null
           id: string
           is_anonymous: boolean | null
           last_location_update: string | null
           last_seen_at: string | null
+          location: unknown | null
           location_accuracy: number | null
-          location_sharing:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
           online_at: string | null
-          presence_sharing:
-            | "public"
-            | "friends"
-            | "friends_of_friends"
-            | "private"
-            | null
-          presence_status:
-            | "online"
-            | "away"
-            | "busy"
-            | "offline"
-            | "invisible"
-            | null
           privacy_settings: Json | null
-          relationship_status:
-            | "single"
-            | "in_relationship"
-            | "married"
-            | "divorced"
-            | "widowed"
-            | "its_complicated"
-            | "prefer_not_to_say"
-            | null
-          sexual_orientation:
-            | "straight"
-            | "gay"
-            | "lesbian"
-            | "bisexual"
-            | "pansexual"
-            | "asexual"
-            | "other"
-            | "prefer_not_to_say"
-            | null
-          status:
-            | "active"
-            | "inactive"
-            | "suspended"
-            | "banned"
-            | "pending_verification"
-            | "deleted"
-            | null
-          subscription_tier: "free" | "basic" | "premium" | "enterprise" | null
           updated_at: string | null
         }[]
       }
@@ -2071,6 +1797,12 @@ export type Database = {
       get_age_verification_status: {
         Args: {
           user_id: string
+        }
+        Returns: Json
+      }
+      get_location_json: {
+        Args: {
+          geom: unknown
         }
         Returns: Json
       }
@@ -4377,10 +4109,26 @@ export type Database = {
       }
       update_presence: {
         Args: {
-          p_status: "online" | "away" | "busy" | "offline" | "invisible"
+          p_status: Database["public"]["Enums"]["presence_status"]
         }
         Returns: undefined
       }
+      update_profile_location:
+        | {
+            Args: {
+              lat: number
+              lon: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              profile_id: string
+              lat: number
+              lon: number
+            }
+            Returns: undefined
+          }
       updategeometrysrid: {
         Args: {
           catalogn_name: string

@@ -102,22 +102,42 @@ DROP POLICY IF EXISTS "Users can view their own age verifications" ON public.age
 DROP POLICY IF EXISTS "Users can verify their age" ON public.age_verifications;
 DROP POLICY IF EXISTS "Users can update pending verifications" ON public.age_verifications;
 
--- Update policies to be more permissive for both regular and anonymous users
-CREATE POLICY "Users can view their own age verifications"
-    ON public.age_verifications
-    FOR SELECT
-    USING (user_id = auth.uid());
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'age_verifications' 
+        AND policyname = 'Users can view their own age verifications'
+    ) THEN
+        CREATE POLICY "Users can view their own age verifications"
+            ON public.age_verifications
+            FOR SELECT
+            USING (user_id = auth.uid());
+    END IF;
 
-CREATE POLICY "Users can verify their age"
-    ON public.age_verifications
-    FOR INSERT
-    WITH CHECK (user_id = auth.uid());
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'age_verifications' 
+        AND policyname = 'Users can verify their age'
+    ) THEN
+        CREATE POLICY "Users can verify their age"
+            ON public.age_verifications
+            FOR INSERT
+            WITH CHECK (user_id = auth.uid());
+    END IF;
 
-CREATE POLICY "Users can update pending verifications"
-    ON public.age_verifications
-    FOR UPDATE
-    USING (user_id = auth.uid() AND status = 'pending')
-    WITH CHECK (user_id = auth.uid() AND status = 'pending');
+    IF NOT EXISTS (
+        SELECT FROM pg_policies WHERE schemaname = 'public' 
+        AND tablename = 'age_verifications' 
+        AND policyname = 'Users can update pending verifications'
+    ) THEN
+        CREATE POLICY "Users can update pending verifications"
+            ON public.age_verifications
+            FOR UPDATE
+            USING (user_id = auth.uid() AND status = 'pending')
+            WITH CHECK (user_id = auth.uid() AND status = 'pending');
+    END IF;
+END $$;
 
 -- Create a function to check if a user is age verified
 CREATE OR REPLACE FUNCTION public.is_age_verified(user_id uuid)

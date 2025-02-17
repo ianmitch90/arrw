@@ -15,9 +15,17 @@ CREATE TABLE IF NOT EXISTS public.users (
     updated_at timestamptz DEFAULT now()
 );
 
--- Create partial unique indexes for email and phone
-CREATE UNIQUE INDEX users_email_key ON public.users (email) WHERE email IS NOT NULL;
-CREATE UNIQUE INDEX users_phone_key ON public.users (phone) WHERE phone IS NOT NULL;
+-- Create partial unique indexes for email and phone if they don't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'users_email_key') THEN
+        CREATE UNIQUE INDEX users_email_key ON public.users (email) WHERE email IS NOT NULL;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'users_phone_key') THEN
+        CREATE UNIQUE INDEX users_phone_key ON public.users (phone) WHERE phone IS NOT NULL;
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,

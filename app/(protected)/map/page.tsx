@@ -4,7 +4,8 @@ import dynamic from 'next/dynamic';
 import { Spinner } from '@heroui/react';
 import { useState } from 'react';
 import { Coordinates } from '@/types/core';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { UserLocations } from '@/components/map/UserLocations';
 
 // Dynamically import MapView to avoid SSR issues with map libraries
 const MapView = dynamic(
@@ -21,25 +22,35 @@ const MapView = dynamic(
 
 export default function MapPage() {
   const [location, setLocation] = useState<Coordinates>();
-  const supabase = useSupabaseClient();
+  const supabase = createClientComponentClient();
 
   // Handle location changes
-  const handleLocationChange = async (coords: Coordinates, isVisiting?: boolean) => {
+  const handleLocationChange = async (coords: Coordinates) => {
+    console.log('Location changed:', coords);
     setLocation(coords);
     
-    if (isVisiting) {
-      // Update user's last known location
-      try {
-        await supabase
-          .from('users')
-          .update({
-            last_active_location: `POINT(${coords.longitude} ${coords.latitude})`,
-            last_seen: new Date().toISOString()
-          })
-          .eq('id', (await supabase.auth.getUser()).data.user?.id);
-      } catch (error) {
-        console.error('Failed to update location:', error);
+    // Update user's last known location
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('No user found');
+        return;
       }
+
+      console.log('Updating location for user:', user.id);
+      const { data, error: updateError } = await supabase
+        .rpc('update_profile_location', {
+          profile_id: user.id,
+          lat: coords.latitude,
+          lon: coords.longitude
+        });
+
+      if (updateError) {
+        throw updateError;
+      }
+      console.log('Location updated successfully:', data);
+    } catch (error) {
+      console.error('Failed to update location:', error);
     }
   };
 
@@ -49,7 +60,9 @@ export default function MapPage() {
         <MapView 
           initialLocation={location}
           onLocationChange={handleLocationChange}
-        />
+        >
+          <UserLocations />
+        </MapView>
       </div>
     </div>
   );

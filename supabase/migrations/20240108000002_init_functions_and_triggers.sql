@@ -342,24 +342,48 @@ END;
 $$;
 
 -- Set up core triggers
-CREATE TRIGGER handle_new_user
-    AFTER INSERT ON auth.users
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_new_user();
+DO $$
+DECLARE
+    presence_status_exists boolean;
+BEGIN
+    -- Check if presence_status column exists
+    SELECT EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'profiles'
+        AND column_name = 'presence_status'
+    ) INTO presence_status_exists;
 
-CREATE TRIGGER set_updated_at_profiles
-    BEFORE UPDATE ON public.profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+    -- Handle new user trigger
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'handle_new_user') THEN
+        CREATE TRIGGER handle_new_user
+            AFTER INSERT ON auth.users
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_new_user();
+    END IF;
 
-CREATE TRIGGER set_updated_at_webhook_events
-    BEFORE UPDATE ON public.webhook_events
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+    -- Profile updated_at trigger
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_profiles') THEN
+        CREATE TRIGGER set_updated_at_profiles
+            BEFORE UPDATE ON public.profiles
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_updated_at();
+    END IF;
 
--- Set up presence triggers
-CREATE TRIGGER on_presence_update
-    AFTER UPDATE OF presence_status ON public.profiles
-    FOR EACH ROW
-    WHEN (OLD.presence_status IS DISTINCT FROM NEW.presence_status)
-    EXECUTE FUNCTION public.handle_presence_update();
+    -- Webhook events updated_at trigger
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_webhook_events') THEN
+        CREATE TRIGGER set_updated_at_webhook_events
+            BEFORE UPDATE ON public.webhook_events
+            FOR EACH ROW
+            EXECUTE FUNCTION public.handle_updated_at();
+    END IF;
+
+    -- Presence update trigger - only create if presence_status column exists
+    IF presence_status_exists AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'on_presence_update') THEN
+        CREATE TRIGGER on_presence_update
+            AFTER UPDATE OF presence_status ON public.profiles
+            FOR EACH ROW
+            WHEN (OLD.presence_status IS DISTINCT FROM NEW.presence_status)
+            EXECUTE FUNCTION public.handle_presence_update();
+    END IF;
+END $$;
