@@ -3,7 +3,7 @@ import { useMap } from '@/components/contexts/MapContext';
 import { LngLat, Map } from 'mapbox-gl';
 import { toast } from '@/components/ui/use-toast';
 import { Coordinates } from '@/types/map';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
 
 interface UseUserLocationReturn {
@@ -27,22 +27,30 @@ export function useUserLocation(): UseUserLocationReturn {
   const [error, setError] = useState<string | null>(null);
   const { map } = useMap();
   const supabase = useSupabaseClient<Database>();
+  const user = useUser();
 
-  const updateLocationInDatabase = useCallback(async (coords: Coordinates) => {
-    const { error: updateError } = await supabase.rpc('update_profile_location', {
-      lat: coords.latitude,
-      lon: coords.longitude
+const updateLocationInDatabase = useCallback(async (coords: Coordinates) => {
+    if (!user?.id) return; 
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({
+      current_location: {
+        type: 'Point',
+        coordinates: [coords.longitude, coords.latitude]
+      },
+      last_location_update: new Date().toISOString()
+    })
+    .eq('id', user?.id);
+
+  if (updateError) {
+    console.error('Error updating location:', updateError);
+    toast({
+      title: 'Error updating location',
+      description: 'Failed to update your location in the database',
+      variant: 'destructive'
     });
-
-    if (updateError) {
-      console.error('Error updating location:', updateError);
-      toast({
-        title: 'Error updating location',
-        description: 'Failed to update your location in the database',
-        variant: 'destructive'
-      });
-    }
-  }, [supabase]);
+  }
+}, [supabase, user?.id]);
 
   const handleGeolocate = useCallback((event: GeolocateResultEvent) => {
     const newLocation = new LngLat(event.coords.longitude, event.coords.latitude);

@@ -347,39 +347,33 @@ const { data: placesData, error: placesError } = await supabase
   .from('places')
   .select(`
     *,
-    creator:profiles(id, full_name, avatar_url),
-    location:get_location_json(places)
+    creator:profiles!places_created_by_fkey(id, full_name, avatar_url)
   `)
-  .filter('location', 'is', 'not null');
+  .not('current_location', 'is', null)
+  .returns<Places[]>();
 
-    if (placesError) {
-      console.error('Error fetching places:', placesError);
-    } else if (placesData) {
-      setPlaces(placesData.map(place => {
-        // Safely type check the location data
-        const locationData = place.location as unknown as LocationJson;
-        if (!locationData || !('latitude' in locationData) || !('longitude' in locationData)) {
-          return null;
-        }
-
-        const creatorData = Array.isArray(place.creator) ? place.creator[0] : null;
-        
-        return {
-          ...place,
-          current_location: locationData ? {
-            type: 'Point',
-            coordinates: [locationData.longitude, locationData.latitude]
-          } as PostGISPoint : undefined,
-          location: locationData,
-          creator: creatorData ? {
-            id: creatorData.id,
-            full_name: creatorData.full_name || null,
-            avatar_url: creatorData.avatar_url || null
-          } : undefined,
-          metadata: place.metadata as Json
-        } as Places;
-      }).filter(Boolean) as Places[]); // Filter out null values
-    }
+if (placesError) {
+  console.error('Error fetching places:', placesError);
+} else if (placesData) {
+  setPlaces(placesData.map(place => {
+    const creatorData = Array.isArray(place.creator) ? place.creator[0] : null;
+    
+    return {
+      ...place,
+      current_location: place.current_location as PostGISPoint,
+      location: place.current_location ? {
+        latitude: (place.current_location as PostGISPoint).coordinates[1],
+        longitude: (place.current_location as PostGISPoint).coordinates[0]
+      } : undefined,
+      creator: creatorData ? {
+        id: creatorData.id,
+        full_name: creatorData.full_name || null,
+        avatar_url: creatorData.avatar_url || null
+      } : undefined,
+      metadata: place.metadata as Json
+    } as Places;
+  }).filter(Boolean) as Places[]);
+}
   } catch (err) {
     console.error('Error in fetchData:', err);
   }

@@ -43,6 +43,7 @@ export type Places = Database['public']['Tables']['places']['Row'] & {
   created_at: string | null;
   created_by: string | null;
   description: string | null;
+  current_location: PostGISPoint; 
   metadata: Json;
   name: string;
   photo_url: string | null;

@@ -32,25 +32,18 @@ export const UserLocations = () => {
     if (!user) return;
 
     const fetchNearbyUsers = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          avatar_url,
-          current_location,
-          last_location_update,
-          age_verification_method,
-          age_verified,
-          age_verified_at,
-          bio,
-          birth_date,
-          created_at,
-          updated_at
-        `)
-        .neq('id', user.id)
-        .not('current_location', 'is', null)
-        .gte('last_location_update', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+const { data, error } = await supabase
+  .from('profiles')
+  .select(`
+    id,
+    full_name,
+    avatar_url,
+    current_location,
+    last_location_update
+  `)
+  .neq('id', user.id)
+  .not('current_location', 'is', null)
+  .gte('last_location_update', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (error) {
         console.error('Error fetching nearby users:', error);
