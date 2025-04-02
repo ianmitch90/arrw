@@ -1,5 +1,5 @@
-import { Database } from './supabase';
-import type { PostGISPoint } from './supabase';
+import { Database } from '../types_db';
+import type { PostGISPoint } from './index';
 
 /** Geographic coordinates */
 export interface Coordinates {
@@ -65,7 +65,9 @@ export interface UserProfile extends User {
   profile_views: number | null;
   followers_count: number | null;
   following_count: number | null;
-  verification_status: Database['public']['Enums']['verification_status'] | null;
+  verification_status:
+    | Database['public']['Enums']['verification_status']
+    | null;
   verified_badges: string[] | null;
 }
 

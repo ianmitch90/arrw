@@ -7,7 +7,7 @@ import {
   MessageType,
   RoomType,
   ParticipantRole 
-} from '@/types/chat.types';
+} from '@/types/chat';
 
 // Helper to create dates relative to now
 const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);

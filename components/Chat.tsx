@@ -1,41 +1,74 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { Message } from '../types/message'; // Updated import
+import { useState, useEffect, SetStateAction } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/types/supabase';
+import { Message, ChatRoom } from '../types/chat';
+import { toMessage } from '../types/chat';
+import { Card, Input, Button } from '@heroui/react';
 
 interface ChatProps {
+  roomId: string;
   userId: string;
-  recipientId: string;
 }
 
-export default function Chat({ userId, recipientId }: ChatProps) {
+export default function Chat({ roomId, userId }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [room, setRoom] = useState<ChatRoom | null>(null);
+
+  // Initialize Supabase client
+  const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-        .order('sent_at', { ascending: true });
+    const fetchRoom = async () => {
+      const { data: roomData, error: roomError } = await supabase
+        .from('chat_rooms')
+        .select(
+          `
+          *,
+          chat_participants (*)
+        `
+        )
+        .eq('id', roomId)
+        .single();
 
-      if (error) {
-        console.error('Error fetching messages:', error);
-      } else {
-        setMessages(data);
+      if (roomError) {
+        console.error('Error fetching room:', roomError);
+      } else if (roomData) {
+        setRoom(roomData);
       }
     };
 
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+      } else if (data) {
+        setMessages(data.map((msg) => toMessage(msg)));
+      }
+    };
+
+    fetchRoom();
     fetchMessages();
 
     // Create a channel for real-time updates
     const channel = supabase
-      .channel('messages')
+      .channel(`room:${roomId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${roomId}`
+        },
         (payload) => {
-          setMessages((current) => [...current, payload.new as Message]);
+          const newMessage = toMessage(payload.new);
+          setMessages((current) => [...current, newMessage]);
         }
       )
       .subscribe();
@@ -43,15 +76,16 @@ export default function Chat({ userId, recipientId }: ChatProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, recipientId]);
+  }, [roomId]);
 
   const sendMessage = async () => {
     if (newMessage.trim() === '') return;
 
-    const { error } = await supabase.from('messages').insert({
+    const { error } = await supabase.from('chat_messages').insert({
+      room_id: roomId,
       sender_id: userId,
-      recipient_id: recipientId,
-      content: newMessage
+      content: newMessage,
+      message_type: 'text'
     });
 
     if (error) {
@@ -62,22 +96,31 @@ export default function Chat({ userId, recipientId }: ChatProps) {
   };
 
   return (
-    <div>
-      <div>
+    <Card className="chat-container">
+      <div className="messages-container">
         {messages.map((message) => (
-          <div key={message.id}>
-            <p>{message.content}</p>
-            <small>{new Date(message.sent_at).toLocaleString()}</small>
-          </div>
+          <Card key={message.id} className="message-item">
+            <p className="message-content">{message.content}</p>
+            <small className="message-timestamp">
+              {message.createdAt.toLocaleString()}
+            </small>
+          </Card>
         ))}
       </div>
-      <input
-        type="text"
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-        placeholder="Type your message here"
-      />
-      <button onClick={sendMessage}>Send</button>
-    </div>
+      <div className="message-input-container">
+        <Input
+          type="text"
+          value={newMessage}
+          onChange={(e: { target: { value: SetStateAction<string> } }) =>
+            setNewMessage(e.target.value)
+          }
+          placeholder="Type your message here"
+          className="message-input"
+        />
+        <Button onClick={sendMessage} className="send-button">
+          Send
+        </Button>
+      </div>
+    </Card>
   );
 }

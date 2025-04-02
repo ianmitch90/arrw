@@ -1,16 +1,5 @@
 import { Database } from '@/types_db';
-
-// Define the PostGIS point type (shared with User type)
-export interface PostGISPoint {
-  type: 'Point';
-  coordinates: [number, number]; // [longitude, latitude]
-  crs?: {
-    type: 'name';
-    properties: {
-      name: 'urn:ogc:def:crs:EPSG::4326';
-    };
-  };
-}
+import { PostGISPoint } from './index';
 
 export type PlaceType = 'poi' | 'event_venue' | 'user_created' | 'other';
 

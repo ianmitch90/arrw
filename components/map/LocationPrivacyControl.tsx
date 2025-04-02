@@ -11,7 +11,7 @@ import {
   Slider,
   Card,
   CardBody,
-  CardHeader,
+  CardHeader
 } from '@heroui/react';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
@@ -22,7 +22,7 @@ const LOCATION_SHARING_OPTIONS = [
   { value: 'public', label: 'Public' },
   { value: 'friends', label: 'Friends Only' },
   { value: 'friends_of_friends', label: 'Friends of Friends' },
-  { value: 'private', label: 'Private' },
+  { value: 'private', label: 'Private' }
 ] as const;
 
 interface LocationPrivacySettings {
@@ -35,7 +35,7 @@ export function LocationPrivacyControl() {
   const user = useUser();
   const [settings, setSettings] = useState<LocationPrivacySettings>({
     locationSharing: 'private',
-    locationAccuracy: 100,
+    locationAccuracy: 100
   });
   const [isOpen, setIsOpen] = useState(false);
 
@@ -46,50 +46,49 @@ export function LocationPrivacyControl() {
   }, [user]);
 
   const fetchPrivacySettings = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('location_sharing, location_accuracy')
-      .eq('id', user!.id)
-      .single();
+    const { data, error } = await supabase.rpc('get_profile_privacy_settings', {
+      profile_id: user!.id
+    });
 
     if (data && !error) {
       setSettings({
         locationSharing: data.location_sharing,
-        locationAccuracy: data.location_accuracy,
+        locationAccuracy: data.location_accuracy
       });
     }
   };
 
   const updateLocationSharing = async (sharing: LocationSharing) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ location_sharing: sharing })
-      .eq('id', user!.id);
+    const { error } = await supabase.rpc('update_location_sharing_setting', {
+      user_id: user!.id,
+      sharing_level: sharing
+    });
 
     if (!error) {
-      setSettings(prev => ({ ...prev, locationSharing: sharing }));
+      setSettings((prev) => ({ ...prev, locationSharing: sharing }));
     }
   };
 
   const updateLocationAccuracy = async (accuracy: number | null) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ location_accuracy: accuracy })
-      .eq('id', user!.id);
+    const { error } = await supabase.rpc('update_location_accuracy_setting', {
+      user_id: user!.id,
+      accuracy_level: accuracy
+    });
 
     if (!error) {
-      setSettings(prev => ({ ...prev, locationAccuracy: accuracy }));
+      setSettings((prev) => ({ ...prev, locationAccuracy: accuracy }));
     }
   };
 
   const toggleLocationSharing = () => {
-    const newSharing = settings.locationSharing === 'public' ? 'private' : 'public';
+    const newSharing =
+      settings.locationSharing === 'public' ? 'private' : 'public';
     updateLocationSharing(newSharing);
   };
 
   const handleSharingChange = (value: string) => {
     const newSharing = value as LocationSharing;
-    if (LOCATION_SHARING_OPTIONS.some(opt => opt.value === newSharing)) {
+    if (LOCATION_SHARING_OPTIONS.some((opt) => opt.value === newSharing)) {
       updateLocationSharing(newSharing);
     }
   };
@@ -114,7 +113,11 @@ export function LocationPrivacyControl() {
               size="sm"
               variant="light"
               onClick={toggleLocationSharing}
-              className={settings.locationSharing === 'public' ? 'text-success' : 'text-danger'}
+              className={
+                settings.locationSharing === 'public'
+                  ? 'text-success'
+                  : 'text-danger'
+              }
             >
               {settings.locationSharing === 'public' ? (
                 <Eye className="w-4 h-4" />
@@ -130,7 +133,7 @@ export function LocationPrivacyControl() {
                 value={settings.locationSharing || 'private'}
                 onValueChange={handleSharingChange}
               >
-                {LOCATION_SHARING_OPTIONS.map(option => (
+                {LOCATION_SHARING_OPTIONS.map((option) => (
                   <Radio key={option.value} value={option.value}>
                     {option.label}
                   </Radio>
@@ -145,7 +148,9 @@ export function LocationPrivacyControl() {
                 maxValue={100}
                 minValue={0}
                 value={settings.locationAccuracy || 0}
-                onChange={(value) => updateLocationAccuracy(value as number)}
+                onChange={(value: number) =>
+                  updateLocationAccuracy(value as number)
+                }
                 className="max-w-md"
               />
             </div>

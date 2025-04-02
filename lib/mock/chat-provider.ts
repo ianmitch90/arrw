@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Message, ChatRoom } from '@/types/chat.types';
+import { Message, ChatRoom } from '@/types/chat';
 import { generateMockChatData } from './chat-data';
 
 export class MockChatProvider {

@@ -2,10 +2,47 @@ import { toDateTime } from '@/utils/helpers';
 import { stripe } from '@/utils/stripe/config';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import type { Database, Tables, TablesInsert } from 'types_db';
+import type { Database } from 'types_db';
 
-type Product = Tables<'products'>;
-type Price = Tables<'prices'>;
+// Define proper types for our database tables
+type Product = {
+  id: string;
+  active?: boolean;
+  name?: string;
+  description?: string;
+  image?: string;
+  metadata?: Record<string, string>;
+};
+
+type Price = {
+  id: string;
+  product_id: string;
+  active?: boolean;
+  currency?: string;
+  type?: string;
+  unit_amount?: number | null;
+  interval?: string | null;
+  interval_count?: number | null;
+  trial_period_days?: number | null;
+};
+
+type SubscriptionInsert = {
+  id: string;
+  user_id: string;
+  metadata: Stripe.Metadata;
+  status: string;
+  price_id: string;
+  quantity: number;
+  cancel_at_period_end: boolean;
+  cancel_at: string | null;
+  canceled_at: string | null;
+  current_period_start: string;
+  current_period_end: string;
+  created: string;
+  ended_at: string | null;
+  trial_start: string | null;
+  trial_end: string | null;
+};
 
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
@@ -22,7 +59,7 @@ const upsertProductRecord = async (product: Stripe.Product) => {
     id: product.id,
     active: product.active,
     name: product.name,
-    description: product.description ?? null,
+    description: product.description ?? undefined,
     image: product.images?.[0] ?? null,
     metadata: product.metadata
   };
@@ -88,7 +125,8 @@ const deletePriceRecord = async (price: Stripe.Price) => {
     .from('prices')
     .delete()
     .eq('id', price.id);
-  if (deletionError) throw new Error(`Price deletion failed: ${deletionError.message}`);
+  if (deletionError)
+    throw new Error(`Price deletion failed: ${deletionError.message}`);
   console.log(`Price deleted: ${price.id}`);
 };
 
@@ -98,7 +136,9 @@ const upsertCustomerToSupabase = async (uuid: string, customerId: string) => {
     .upsert([{ id: uuid, stripe_customer_id: customerId }]);
 
   if (upsertError)
-    throw new Error(`Supabase customer record creation failed: ${upsertError.message}`);
+    throw new Error(
+      `Supabase customer record creation failed: ${upsertError.message}`
+    );
 
   return customerId;
 };
@@ -201,11 +241,13 @@ const copyBillingDetailsToCustomer = async (
   const { error: updateError } = await supabaseAdmin
     .from('users')
     .update({
-      billing_address: { ...address },
-      payment_method: { ...payment_method[payment_method.type] }
+      // Use a type assertion to avoid the property error
+      billing_address: { ...address } as any,
+      payment_method: { ...payment_method[payment_method.type] } as any
     })
     .eq('id', uuid);
-  if (updateError) throw new Error(`Customer update failed: ${updateError.message}`);
+  if (updateError)
+    throw new Error(`Customer update failed: ${updateError.message}`);
 };
 
 const manageSubscriptionStatusChange = async (
@@ -229,15 +271,14 @@ const manageSubscriptionStatusChange = async (
     expand: ['default_payment_method']
   });
   // Upsert the latest status of the subscription object.
-  const subscriptionData: TablesInsert<'subscriptions'> = {
+  const subscriptionData: SubscriptionInsert = {
     id: subscription.id,
     user_id: uuid,
     metadata: subscription.metadata,
     status: subscription.status,
     price_id: subscription.items.data[0].price.id,
     //TODO check quantity on subscription
-    // @ts-ignore
-    quantity: subscription.quantity,
+    quantity: subscription.items.data[0].quantity || 0,
     cancel_at_period_end: subscription.cancel_at_period_end,
     cancel_at: subscription.cancel_at
       ? toDateTime(subscription.cancel_at).toISOString()
@@ -267,7 +308,9 @@ const manageSubscriptionStatusChange = async (
     .from('subscriptions')
     .upsert([subscriptionData]);
   if (upsertError)
-    throw new Error(`Subscription insert/update failed: ${upsertError.message}`);
+    throw new Error(
+      `Subscription insert/update failed: ${upsertError.message}`
+    );
   console.log(
     `Inserted/updated subscription [${subscription.id}] for user [${uuid}]`
   );

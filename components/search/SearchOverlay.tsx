@@ -1,20 +1,34 @@
 import { useState, useEffect } from 'react';
-import { Modal, ModalContent, ModalBody, Input, Tabs, Tab, Card, CardBody, Button, Avatar } from '@heroui/react';
+import {
+  Modal,
+  ModalContent,
+  ModalBody,
+  Input,
+  Tabs,
+  Tab,
+  Card,
+  CardBody,
+  Button,
+  Avatar
+} from '@heroui/react';
 import { Search, MapPin, Users, Coffee, Navigation } from 'lucide-react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '@/types_db';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { PostGISPoint } from '@/types/map';
+import { PostGISPoint } from '@/types/index';
 
 interface SearchResultBase {
   id: string;
   distance: number;
 }
 
-type UserRPCResponse = Database['public']['Functions']['search_users_with_distance']['Returns'][number];
-type PlaceRPCResponse = Database['public']['Functions']['search_places_with_distance']['Returns'][number];
-type GroupRPCResponse = Database['public']['Functions']['search_groups_with_distance']['Returns'][number];
+type UserRPCResponse =
+  Database['public']['Functions']['search_users_with_distance']['Returns'][number];
+type PlaceRPCResponse =
+  Database['public']['Functions']['search_places_with_distance']['Returns'][number];
+type GroupRPCResponse =
+  Database['public']['Functions']['search_groups_with_distance']['Returns'][number];
 
 interface UserSearchResult extends SearchResultBase {
   type: 'user';
@@ -47,7 +61,11 @@ interface SearchOverlayProps {
   currentLocation?: { latitude: number; longitude: number };
 }
 
-export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverlayProps) {
+export function SearchOverlay({
+  isOpen,
+  onClose,
+  currentLocation
+}: SearchOverlayProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -64,31 +82,41 @@ export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverla
       setIsLoading(true);
       try {
         // Search users
-        const { data: users, error: usersError } = await supabase
-          .rpc('search_users_with_distance', {
+        const { data: users, error: usersError } = await supabase.rpc(
+          'search_users_with_distance',
+          {
             search_query: searchQuery,
             user_lat: currentLocation?.latitude || 38.8977,
             user_lng: currentLocation?.longitude || -77.0365
-          });
+          }
+        );
 
         // Search places
-        const { data: places, error: placesError } = await supabase
-          .rpc('search_places_with_distance', {
+        const { data: places, error: placesError } = await supabase.rpc(
+          'search_places_with_distance',
+          {
             search_query: searchQuery,
             user_lat: currentLocation?.latitude || 38.8977,
             user_lng: currentLocation?.longitude || -77.0365
-          });
+          }
+        );
 
         // Search groups
-        const { data: groups, error: groupsError } = await supabase
-          .rpc('search_groups_with_distance', {
+        const { data: groups, error: groupsError } = await supabase.rpc(
+          'search_groups_with_distance',
+          {
             search_query: searchQuery,
             user_lat: currentLocation?.latitude || 38.8977,
             user_lng: currentLocation?.longitude || -77.0365
-          });
+          }
+        );
 
         if (usersError || placesError || groupsError) {
-          console.error('Search error:', { usersError, placesError, groupsError });
+          console.error('Search error:', {
+            usersError,
+            placesError,
+            groupsError
+          });
           return;
         }
 
@@ -133,9 +161,8 @@ export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverla
     return () => clearTimeout(timer);
   }, [searchQuery, currentLocation, supabase]);
 
-  const filteredResults = activeTab === 'all' 
-    ? results 
-    : results.filter(r => r.type === activeTab);
+  const filteredResults =
+    activeTab === 'all' ? results : results.filter((r) => r.type === activeTab);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -151,15 +178,15 @@ export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverla
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
+    <Modal
+      isOpen={isOpen}
       onClose={onClose}
       size="2xl"
       scrollBehavior="inside"
       classNames={{
-        base: "h-[80vh]",
-        backdrop: "backdrop-blur-sm",
-        body: "p-0"
+        base: 'h-[80vh]',
+        backdrop: 'backdrop-blur-sm',
+        body: 'p-0'
       }}
     >
       <ModalContent>
@@ -173,20 +200,20 @@ export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverla
               startContent={<Search className="w-4 h-4 text-default-400" />}
               size="lg"
               classNames={{
-                input: "h-12"
+                input: 'h-12'
               }}
             />
           </div>
 
-          <Tabs 
+          <Tabs
             selectedKey={activeTab}
             onSelectionChange={setActiveTab as any}
             variant="underlined"
             classNames={{
-              tabList: "px-4 w-full",
-              cursor: "bg-primary",
-              tab: "px-0 h-12",
-              tabContent: "group-data-[selected=true]:text-primary"
+              tabList: 'px-4 w-full',
+              cursor: 'bg-primary',
+              tab: 'px-0 h-12',
+              tabContent: 'group-data-[selected=true]:text-primary'
             }}
           >
             <Tab key="all" title="All" />
@@ -220,19 +247,33 @@ export function SearchOverlay({ isOpen, onClose, currentLocation }: SearchOverla
                       >
                         <CardBody className="flex flex-row items-center gap-4 p-4">
                           <Avatar
-                            src={result.type === 'user' ? (result.profile_picture_url ?? undefined) : result.type === 'place' ? (result.image_url ?? undefined) : (result.avatar_url ?? undefined)}
-                            name={result.type === 'user' ? (result.display_name ?? '') : result.name}
+                            src={
+                              result.type === 'user'
+                                ? (result.profile_picture_url ?? undefined)
+                                : result.type === 'place'
+                                  ? (result.image_url ?? undefined)
+                                  : (result.avatar_url ?? undefined)
+                            }
+                            name={
+                              result.type === 'user'
+                                ? (result.display_name ?? '')
+                                : result.name
+                            }
                             size="md"
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               {getIcon(result.type)}
                               <p className="font-semibold truncate">
-                                {result.type === 'user' ? result.display_name || '' : result.name}
+                                {result.type === 'user'
+                                  ? result.display_name || ''
+                                  : result.name}
                               </p>
                             </div>
                             <p className="text-sm text-default-500 truncate">
-                              {result.type === 'user' ? '' : result.description || ''}
+                              {result.type === 'user'
+                                ? ''
+                                : result.description || ''}
                             </p>
                           </div>
                           {result.distance && (

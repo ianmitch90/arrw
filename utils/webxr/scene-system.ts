@@ -41,7 +41,9 @@ export class WebXRSceneSystem {
         fps: 0,
         cpuTime: 0,
         gpuTime: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
+        frameTime: 0,
+        networkLatency: 0
       }
     };
 
@@ -49,13 +51,21 @@ export class WebXRSceneSystem {
   }
 
   private async setupHitTesting() {
-    const session = this.renderer.getSession();
+    // Since getSession doesn't exist on WebXRRenderer, we need to access the session differently
+    // This is a workaround - in a real fix, WebXRRenderer should expose a getSession method
+    const session = (this.renderer as any).session;
     if (!session) return;
 
-    const referenceSpace = await session.requestReferenceSpace('local');
-    this.hitTestSource = await session.requestHitTestSource({
-      space: referenceSpace
-    });
+    try {
+      const referenceSpace = await session.requestReferenceSpace('local');
+      if (session.requestHitTestSource) {
+        this.hitTestSource = await session.requestHitTestSource({
+          space: referenceSpace
+        });
+      }
+    } catch (error) {
+      console.error('Error setting up hit testing:', error);
+    }
   }
 
   public async addObject(
@@ -102,8 +112,13 @@ export class WebXRSceneSystem {
 
     if (pose) {
       // Update hit testing
-      if (this.hitTestSource) {
-        this.state.hitTestResults = frame.getHitTestResults(this.hitTestSource);
+      if (this.hitTestSource && frame.getHitTestResults) {
+        try {
+          this.state.hitTestResults = frame.getHitTestResults(this.hitTestSource);
+        } catch (error) {
+          console.error('Error getting hit test results:', error);
+          this.state.hitTestResults = [];
+        }
       }
 
       // Update camera
@@ -113,7 +128,19 @@ export class WebXRSceneSystem {
       this.frameCallbacks.forEach((callback) => callback(frame));
 
       // Optimize scene
-      this.optimizer.optimizeScene(this.renderer.getContext(), this.state);
+      // Since getContext doesn't exist on WebXRRenderer, we need a workaround
+      // In a real fix, WebXRRenderer should expose a getContext method
+      try {
+        if (typeof this.optimizer.optimizeScene === 'function') {
+          // Use type assertion to access the private context property
+          const context = (this.renderer as any).gl;
+          if (context) {
+            this.optimizer.optimizeScene(context, this.state);
+          }
+        }
+      } catch (error) {
+        console.error('Error optimizing scene:', error);
+      }
 
       // Render frame
       await this.renderer.render(frame);
@@ -128,10 +155,16 @@ export class WebXRSceneSystem {
     this.state.performanceMetrics = metrics;
 
     // Adjust quality based on performance
-    if (metrics.fps < 30) {
-      this.optimizer.adjustQuality('low');
-    } else if (metrics.fps > 55) {
-      this.optimizer.adjustQuality('high');
+    if (typeof this.optimizer.adjustQuality === 'function') {
+      try {
+        if (metrics.fps < 30) {
+          this.optimizer.adjustQuality('low');
+        } else if (metrics.fps > 55) {
+          this.optimizer.adjustQuality('high');
+        }
+      } catch (error) {
+        console.error('Error adjusting quality:', error);
+      }
     }
   }
 

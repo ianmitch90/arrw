@@ -13,8 +13,13 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          method: Database["public"]["Enums"]["age_verification_method"]
-          status: Database["public"]["Enums"]["verification_status"] | null
+          method:
+            | "none"
+            | "id_upload"
+            | "credit_card"
+            | "phone"
+            | "social_media"
+          status: "unverified" | "pending" | "verified" | "rejected" | null
           updated_at: string | null
           user_id: string | null
           verification_data: Json | null
@@ -23,8 +28,13 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          method: Database["public"]["Enums"]["age_verification_method"]
-          status?: Database["public"]["Enums"]["verification_status"] | null
+          method:
+            | "none"
+            | "id_upload"
+            | "credit_card"
+            | "phone"
+            | "social_media"
+          status?: "unverified" | "pending" | "verified" | "rejected" | null
           updated_at?: string | null
           user_id?: string | null
           verification_data?: Json | null
@@ -33,8 +43,13 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
-          method?: Database["public"]["Enums"]["age_verification_method"]
-          status?: Database["public"]["Enums"]["verification_status"] | null
+          method?:
+            | "none"
+            | "id_upload"
+            | "credit_card"
+            | "phone"
+            | "social_media"
+          status?: "unverified" | "pending" | "verified" | "rejected" | null
           updated_at?: string | null
           user_id?: string | null
           verification_data?: Json | null
@@ -86,7 +101,10 @@ export type Database = {
           content: string | null
           created_at: string | null
           id: string
+          is_edited: boolean | null
+          message_type: string | null
           metadata: Json | null
+          parent_id: string | null
           room_id: string | null
           sender_id: string | null
           updated_at: string | null
@@ -95,7 +113,10 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           id?: string
+          is_edited?: boolean | null
+          message_type?: string | null
           metadata?: Json | null
+          parent_id?: string | null
           room_id?: string | null
           sender_id?: string | null
           updated_at?: string | null
@@ -104,12 +125,22 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           id?: string
+          is_edited?: boolean | null
+          message_type?: string | null
           metadata?: Json | null
+          parent_id?: string | null
           room_id?: string | null
           sender_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_messages_room_id_fkey"
             columns: ["room_id"]
@@ -174,8 +205,12 @@ export type Database = {
       chat_rooms: {
         Row: {
           created_at: string | null
+          created_by: string | null
           description: string | null
           id: string
+          is_archived: boolean | null
+          last_message_preview: string | null
+          last_message_timestamp: string | null
           metadata: Json | null
           name: string | null
           type: string
@@ -183,8 +218,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           id?: string
+          is_archived?: boolean | null
+          last_message_preview?: string | null
+          last_message_timestamp?: string | null
           metadata?: Json | null
           name?: string | null
           type: string
@@ -192,14 +231,26 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           id?: string
+          is_archived?: boolean | null
+          last_message_preview?: string | null
+          last_message_timestamp?: string | null
           metadata?: Json | null
           name?: string | null
           type?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_rooms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customers: {
         Row: {
@@ -210,6 +261,7 @@ export type Database = {
           subscription_period_end: string | null
           subscription_period_start: string | null
           subscription_status: string | null
+          subscription_tier: "free" | "basic" | "premium" | "enterprise" | null
           updated_at: string | null
         }
         Insert: {
@@ -220,6 +272,7 @@ export type Database = {
           subscription_period_end?: string | null
           subscription_period_start?: string | null
           subscription_status?: string | null
+          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Update: {
@@ -230,6 +283,7 @@ export type Database = {
           subscription_period_end?: string | null
           subscription_period_start?: string | null
           subscription_status?: string | null
+          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Relationships: []
@@ -455,7 +509,15 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "places_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       presence_logs: {
         Row: {
@@ -528,14 +590,67 @@ export type Database = {
           current_location: unknown | null
           deleted_at: string | null
           full_name: string | null
+          gender_identity:
+            | "male"
+            | "female"
+            | "non_binary"
+            | "other"
+            | "prefer_not_to_say"
+            | null
           id: string
           is_anonymous: boolean | null
           last_location_update: string | null
           last_seen_at: string | null
-          location: unknown | null
           location_accuracy: number | null
+          location_sharing:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
           online_at: string | null
+          presence_sharing:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
+          presence_status:
+            | "online"
+            | "away"
+            | "busy"
+            | "offline"
+            | "invisible"
+            | null
           privacy_settings: Json | null
+          relationship_status:
+            | "single"
+            | "in_relationship"
+            | "married"
+            | "divorced"
+            | "widowed"
+            | "its_complicated"
+            | "prefer_not_to_say"
+            | null
+          sexual_orientation:
+            | "straight"
+            | "gay"
+            | "lesbian"
+            | "bisexual"
+            | "pansexual"
+            | "asexual"
+            | "other"
+            | "prefer_not_to_say"
+            | null
+          status:
+            | "active"
+            | "inactive"
+            | "suspended"
+            | "banned"
+            | "pending_verification"
+            | "deleted"
+            | null
+          subscription_tier: "free" | "basic" | "premium" | "enterprise" | null
           updated_at: string | null
         }
         Insert: {
@@ -549,14 +664,67 @@ export type Database = {
           current_location?: unknown | null
           deleted_at?: string | null
           full_name?: string | null
+          gender_identity?:
+            | "male"
+            | "female"
+            | "non_binary"
+            | "other"
+            | "prefer_not_to_say"
+            | null
           id: string
           is_anonymous?: boolean | null
           last_location_update?: string | null
           last_seen_at?: string | null
-          location?: unknown | null
           location_accuracy?: number | null
+          location_sharing?:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
           online_at?: string | null
+          presence_sharing?:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
+          presence_status?:
+            | "online"
+            | "away"
+            | "busy"
+            | "offline"
+            | "invisible"
+            | null
           privacy_settings?: Json | null
+          relationship_status?:
+            | "single"
+            | "in_relationship"
+            | "married"
+            | "divorced"
+            | "widowed"
+            | "its_complicated"
+            | "prefer_not_to_say"
+            | null
+          sexual_orientation?:
+            | "straight"
+            | "gay"
+            | "lesbian"
+            | "bisexual"
+            | "pansexual"
+            | "asexual"
+            | "other"
+            | "prefer_not_to_say"
+            | null
+          status?:
+            | "active"
+            | "inactive"
+            | "suspended"
+            | "banned"
+            | "pending_verification"
+            | "deleted"
+            | null
+          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Update: {
@@ -570,14 +738,67 @@ export type Database = {
           current_location?: unknown | null
           deleted_at?: string | null
           full_name?: string | null
+          gender_identity?:
+            | "male"
+            | "female"
+            | "non_binary"
+            | "other"
+            | "prefer_not_to_say"
+            | null
           id?: string
           is_anonymous?: boolean | null
           last_location_update?: string | null
           last_seen_at?: string | null
-          location?: unknown | null
           location_accuracy?: number | null
+          location_sharing?:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
           online_at?: string | null
+          presence_sharing?:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
+          presence_status?:
+            | "online"
+            | "away"
+            | "busy"
+            | "offline"
+            | "invisible"
+            | null
           privacy_settings?: Json | null
+          relationship_status?:
+            | "single"
+            | "in_relationship"
+            | "married"
+            | "divorced"
+            | "widowed"
+            | "its_complicated"
+            | "prefer_not_to_say"
+            | null
+          sexual_orientation?:
+            | "straight"
+            | "gay"
+            | "lesbian"
+            | "bisexual"
+            | "pansexual"
+            | "asexual"
+            | "other"
+            | "prefer_not_to_say"
+            | null
+          status?:
+            | "active"
+            | "inactive"
+            | "suspended"
+            | "banned"
+            | "pending_verification"
+            | "deleted"
+            | null
+          subscription_tier?: "free" | "basic" | "premium" | "enterprise" | null
           updated_at?: string | null
         }
         Relationships: []
@@ -589,7 +810,13 @@ export type Database = {
           preferred_age_min: number | null
           preferred_distance: number | null
           preferred_genders:
-            | Database["public"]["Enums"]["gender_identity"][]
+            | (
+                | "male"
+                | "female"
+                | "non_binary"
+                | "other"
+                | "prefer_not_to_say"
+              )[]
             | null
           updated_at: string | null
           user_id: string
@@ -600,7 +827,13 @@ export type Database = {
           preferred_age_min?: number | null
           preferred_distance?: number | null
           preferred_genders?:
-            | Database["public"]["Enums"]["gender_identity"][]
+            | (
+                | "male"
+                | "female"
+                | "non_binary"
+                | "other"
+                | "prefer_not_to_say"
+              )[]
             | null
           updated_at?: string | null
           user_id: string
@@ -611,7 +844,13 @@ export type Database = {
           preferred_age_min?: number | null
           preferred_distance?: number | null
           preferred_genders?:
-            | Database["public"]["Enums"]["gender_identity"][]
+            | (
+                | "male"
+                | "female"
+                | "non_binary"
+                | "other"
+                | "prefer_not_to_say"
+              )[]
             | null
           updated_at?: string | null
           user_id?: string
@@ -697,16 +936,19 @@ export type Database = {
           created_at: string | null
           feature_id: string | null
           id: string
+          subscription_tier: "free" | "basic" | "premium" | "enterprise"
         }
         Insert: {
           created_at?: string | null
           feature_id?: string | null
           id?: string
+          subscription_tier: "free" | "basic" | "premium" | "enterprise"
         }
         Update: {
           created_at?: string | null
           feature_id?: string | null
           id?: string
+          subscription_tier?: "free" | "basic" | "premium" | "enterprise"
         }
         Relationships: [
           {
@@ -752,6 +994,15 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          role: "admin" | "moderator" | "premium" | "free" | "anonymous" | null
+          status:
+            | "active"
+            | "inactive"
+            | "suspended"
+            | "banned"
+            | "pending_verification"
+            | "deleted"
+            | null
           updated_at: string | null
         }
         Insert: {
@@ -760,6 +1011,15 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          role?: "admin" | "moderator" | "premium" | "free" | "anonymous" | null
+          status?:
+            | "active"
+            | "inactive"
+            | "suspended"
+            | "banned"
+            | "pending_verification"
+            | "deleted"
+            | null
           updated_at?: string | null
         }
         Update: {
@@ -768,6 +1028,15 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          role?: "admin" | "moderator" | "premium" | "free" | "anonymous" | null
+          status?:
+            | "active"
+            | "inactive"
+            | "suspended"
+            | "banned"
+            | "pending_verification"
+            | "deleted"
+            | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1248,10 +1517,22 @@ export type Database = {
             }
             Returns: string
           }
+      can_access_user_location: {
+        Args: {
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       check_feature_access: {
         Args: {
           feature_id: string
           for_user_id?: string
+        }
+        Returns: boolean
+      }
+      check_profile_access: {
+        Args: {
+          target_profile_id: string
         }
         Returns: boolean
       }
@@ -1378,14 +1659,67 @@ export type Database = {
           current_location: unknown | null
           deleted_at: string | null
           full_name: string | null
+          gender_identity:
+            | "male"
+            | "female"
+            | "non_binary"
+            | "other"
+            | "prefer_not_to_say"
+            | null
           id: string
           is_anonymous: boolean | null
           last_location_update: string | null
           last_seen_at: string | null
-          location: unknown | null
           location_accuracy: number | null
+          location_sharing:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
           online_at: string | null
+          presence_sharing:
+            | "public"
+            | "friends"
+            | "friends_of_friends"
+            | "private"
+            | null
+          presence_status:
+            | "online"
+            | "away"
+            | "busy"
+            | "offline"
+            | "invisible"
+            | null
           privacy_settings: Json | null
+          relationship_status:
+            | "single"
+            | "in_relationship"
+            | "married"
+            | "divorced"
+            | "widowed"
+            | "its_complicated"
+            | "prefer_not_to_say"
+            | null
+          sexual_orientation:
+            | "straight"
+            | "gay"
+            | "lesbian"
+            | "bisexual"
+            | "pansexual"
+            | "asexual"
+            | "other"
+            | "prefer_not_to_say"
+            | null
+          status:
+            | "active"
+            | "inactive"
+            | "suspended"
+            | "banned"
+            | "pending_verification"
+            | "deleted"
+            | null
+          subscription_tier: "free" | "basic" | "premium" | "enterprise" | null
           updated_at: string | null
         }[]
       }
@@ -1802,7 +2136,7 @@ export type Database = {
       }
       get_location_json: {
         Args: {
-          geom: unknown
+          profile_row: unknown
         }
         Returns: Json
       }
@@ -4109,26 +4443,17 @@ export type Database = {
       }
       update_presence: {
         Args: {
-          p_status: Database["public"]["Enums"]["presence_status"]
+          p_status: "online" | "away" | "busy" | "offline" | "invisible"
         }
         Returns: undefined
       }
-      update_profile_location:
-        | {
-            Args: {
-              lat: number
-              lon: number
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              profile_id: string
-              lat: number
-              lon: number
-            }
-            Returns: undefined
-          }
+      update_profile_location: {
+        Args: {
+          lat: number
+          lon: number
+        }
+        Returns: undefined
+      }
       updategeometrysrid: {
         Args: {
           catalogn_name: string

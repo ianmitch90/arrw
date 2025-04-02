@@ -7,7 +7,7 @@ import { useChat } from "@/components/contexts/ChatContext";
 import { useAuth } from "@/lib/auth/AuthContext"; // Import the AuthContext
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import type { Message, ChatRoom } from '@/types/chat.types';
+import type { Message, ChatRoom } from '@/types/chat';
 
 interface ChatWindowProps {
   chatId: string;

@@ -1,5 +1,5 @@
 import { Database } from '@/types_db';
-import { PostGISPoint } from './place';
+import { PostGISPoint } from './index';
 
 export interface Event {
   id: string;

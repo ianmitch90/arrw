@@ -9,9 +9,12 @@ import {
   getErrorRedirect,
   calculateTrialEndUnixTimestamp
 } from '@/utils/helpers';
-import { Tables } from '@/types_db';
 
-type Price = Tables<'prices'>;
+type Price = {
+  id: string;
+  type: 'recurring' | 'one_time';
+  trial_period_days: number | null;
+};
 
 type CheckoutResponse = {
   errorRedirect?: string;
@@ -66,14 +69,16 @@ export async function checkoutWithStripe(
 
     console.log(
       'Trial end:',
-      calculateTrialEndUnixTimestamp(price.trial_period_days)
+      calculateTrialEndUnixTimestamp(price.trial_period_days || 0)
     );
     if (price.type === 'recurring') {
       params = {
         ...params,
         mode: 'subscription',
         subscription_data: {
-          trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days)
+          trial_end: calculateTrialEndUnixTimestamp(
+            price.trial_period_days || 0
+          )
         }
       };
     } else if (price.type === 'one_time') {

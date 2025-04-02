@@ -1,4 +1,4 @@
-import { PostGISPoint } from './supabase';
+import { PostGISPoint } from './index';
 
 /** Simple coordinates interface for basic latitude/longitude pairs */
 export interface Coordinates {

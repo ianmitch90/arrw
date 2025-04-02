@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { ChatRoom, ChatUser } from '@/types/chat.types';
+import { ChatRoom, ChatUser } from '@/types/chat';
 import { Database } from '@/types/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -73,7 +73,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           .select(`
             *,
             chat_participants!inner (user_id),
-            chat_messages!left (*, sender:profiles!left(*))
+            chat_messages!left (id, room_id, sender_id, content, metadata, created_at, updated_at, parent_id)
           `)
           .eq('chat_participants.user_id', user.id)
           .order('updated_at', { ascending: false });

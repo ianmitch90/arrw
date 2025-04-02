@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/utils/supabase/client';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/types/supabase';
 import { useUser } from '@/components/contexts/UserContext';
-import { Message } from '@/components/types';
+import { Message } from '@/types/chat.types';
 import {
   Card,
   CardHeader,
@@ -16,24 +17,27 @@ const ChatRoom = ({ roomId }: { roomId: string }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
+  // Initialize Supabase client
+  const supabase = createClientComponentClient<Database>();
+
   useEffect(() => {
     const fetchMessages = async () => {
       const { data } = await supabase
-        .from('messages')
+        .from('chat_messages')
         .select('*')
-        .eq('chat_room_id', roomId)
-        .order('sent_at', { ascending: true });
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
 
-      setMessages((data as Message[]) || []);
+      setMessages((data as unknown as Message[]) || []);
     };
 
     fetchMessages();
 
     const messageSubscription = supabase
-      .channel(`messages:chat_room_id=eq.${roomId}`)
+      .channel(`messages:room_id=eq.${roomId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         (payload: { new: Message }) => {
           setMessages((currentMessages) => [...currentMessages, payload.new]);
         }
@@ -46,12 +50,13 @@ const ChatRoom = ({ roomId }: { roomId: string }) => {
   }, [roomId]);
 
   const sendMessage = async () => {
-    const { error } = await supabase.from('messages').insert([
+    const { error } = await supabase.from('chat_messages').insert([
       {
-        chat_room_id: roomId,
+        room_id: roomId,
         sender_id: user?.id,
         content: newMessage,
-        sent_at: new Date().toISOString()
+        message_type: 'text',
+        created_at: new Date().toISOString()
       }
     ]);
 
@@ -70,13 +75,15 @@ const ChatRoom = ({ roomId }: { roomId: string }) => {
       <CardBody>
         {messages.map((message) => (
           <div key={message.id}>
-            <strong>{message.sender_id}</strong>: {message.content}
+            <strong>{message.senderId}</strong>: {message.content}
           </div>
         ))}
         <Input
           fullWidth
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          onChange={(e: { target: { value: React.SetStateAction<string> } }) =>
+            setNewMessage(e.target.value)
+          }
           placeholder="Type a message"
         />
       </CardBody>

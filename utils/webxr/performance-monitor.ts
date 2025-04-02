@@ -6,7 +6,7 @@ import {
 
 export class WebXRPerformanceMonitor implements PerformanceMonitor {
   private static instance: WebXRPerformanceMonitor;
-  private metrics: ARPerformanceMetrics = {
+  metrics: ARPerformanceMetrics = {
     fps: 0,
     frameTime: 0,
     cpuTime: 0,

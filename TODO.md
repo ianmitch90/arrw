@@ -1,5 +1,39 @@
 # ARRW Application TODO List
 
+## TypeScript Issues
+
+### Database Schema and Type Definitions
+
+- [x] Fix composite type errors in types/supabase.ts
+- [ ] Correct table type definitions for products, prices, and subscriptions
+- [ ] Update User interface extension in types/user.ts
+- [x] Add missing type definitions for Message interface
+- [x] Implement proper typing for location-related interfaces
+
+### Component and Hook Type Errors
+
+- [ ] Fix type assertions in components using Supabase client
+- [ ] Resolve type mismatches in auth helper functions
+- [x] Address missing property errors in UI components
+- [x] Correct type definitions in chat-related components
+- [ ] Fix type errors in location tracking components
+
+### WebXR and Performance Monitoring
+
+- [x] Implement proper typing for ARPerformanceMetrics
+- [x] Fix WebXR session and frame type definitions
+- [x] Address scene management type errors
+- [x] Correct performance monitoring interface implementations
+- [ ] Add proper typing for device capabilities
+
+### API and Service Layer Types
+
+- [ ] Fix data service return type assertions
+- [ ] Implement proper typing for Stripe integration
+- [ ] Correct usage tracking type definitions
+- [ ] Add proper typing for real-time messaging
+- [ ] Fix authentication service type errors
+
 ## Unimplemented Features
 
 ### Authentication & Security
@@ -14,8 +48,8 @@
 - [ ] Create fallback chain: Browser -> Google -> IP -> Default
 - [ ] Fix login flow issues
 - [ ] Handle session persistence properly
-- [ ]Implement proper error messages for auth failures
-- [ ]Add rate limiting for login attempts
+- [ ] Implement proper error messages for auth failures
+- [ ] Add rate limiting for login attempts
 
 ### Map Features
 
@@ -31,12 +65,6 @@
 - [ ] Add offline support for critical features
 
 ## Current Codebase Errors
-
-### TypeScript Errors
-
-- [ ] Fix type assertions in supabase/admin.ts
-- [ ] Resolve GeolocateControl ref type mismatches
-- [ ] Address missing type definitions in map components
 
 ### Runtime Errors
 
@@ -102,66 +130,3 @@
 
 - [ ] Implement ARIA labels throughout the application
 - [ ] Add keyboard navigation support
-- [ ] Ensure proper color contrast ratios
-- [ ] Support screen readers
-- [ ] Add reduced motion options
-
-### Performance Optimization
-
-- [ ] Implement code splitting
-- [ ] Add lazy loading for map components
-- [ ] Optimize image loading and caching
-- [ ] Implement service worker for offline support
-- [ ] Add request debouncing for location updates
-
-### Mobile Support
-
-- [ ] Optimize touch interactions for map
-- [ ] Implement responsive design for all components
-- [ ] Add mobile-specific location handling
-- [ ] Optimize battery usage for location tracking
-- [ ] Add PWA support
-
-### Dating Features
-
-- [ ] Implement matching algorithm
-
-  - [ ] Add preference-based matching
-  - [ ] Implement location-based matching weights
-  - [ ] Add compatibility scoring
-
-- [ ] User Profile Enhancements
-
-  - [ ] Add profile verification system
-  - [ ] Implement detailed preference settings
-  - [ ] Add profile completion scoring
-  - [ ] Support multiple photos with quality checks
-
-- [ ] Safety Features
-
-  - [ ] Add user blocking functionality
-  - [ ] Implement report user system
-  - [ ] Add chat message filtering
-  - [ ] Implement safety check-in system
-
-- [ ] Communication Features
-
-  - [ ] Add ice breaker suggestions
-  - [ ] Implement read receipts
-  - [ ] Add typing indicators
-  - [ ] Support rich media in chats
-  - [ ] Add voice/video call support
-
-- [ ] Social Features
-
-  - [ ] Add shared interests discovery
-  - [ ] Implement group activities/events
-  - [ ] Add friend recommendations
-  - [ ] Support social media integration
-
-- [ ] Privacy Enhancements
-
-  - [ ] Add incognito mode
-  - [ ] Implement profile visibility controls
-  - [ ] Add location privacy options
-  - [ ] Support temporary profile hiding

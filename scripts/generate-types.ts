@@ -71,8 +71,9 @@ export interface Database {
   }
 }`
 
+    // Write to types_db.ts in the root directory instead of types/supabase.ts
     writeFileSync(
-      path.join(process.cwd(), 'types', 'supabase.ts'),
+      path.join(process.cwd(), 'types_db.ts'),
       types
     )
     

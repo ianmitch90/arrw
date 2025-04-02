@@ -88,6 +88,11 @@ export class WebXROptimizer {
     this.applyOptimizations();
   }
 
+  // Public method to adjust quality from outside the class
+  public adjustQuality(level: 'low' | 'medium' | 'high') {
+    this.setQualityLevel(level);
+  }
+
   private applyOptimizations() {
     // Texture optimization
     this.optimizeTextures();

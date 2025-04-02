@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabase/client';
+import { Message } from '@/types/chat.types';
 
 export interface Place {
   id: string;
@@ -54,7 +55,7 @@ export class DataService {
 
   static async getMessages(roomId: string): Promise<Message[]> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('chat_messages')
       .select('*')
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });

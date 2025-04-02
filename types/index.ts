@@ -13,7 +13,7 @@ export type ThrottleFn<T extends (...args: any[]) => any> = T;
 /**
  * Represents a user's presence state in real-time collaboration
  * @property {string} userId - Unique user identifier
- * @property {LocationData} location - Current geographic coordinates
+ * @property {LocationData | PostGISPoint} location - Current geographic coordinates
  * @property {'online' | 'away' | 'offline'} status - Availability status
  * @property {Date} lastActive - Timestamp of last activity
  * @property {Activity} activity - Current activity (optional)
@@ -21,7 +21,7 @@ export type ThrottleFn<T extends (...args: any[]) => any> = T;
  */
 export interface PresenceState {
   userId: string;
-  location: LocationData;
+  location: LocationData | PostGISPoint;
   status: 'online' | 'away' | 'offline';
   lastActive: Date;
   activity?: {
@@ -43,6 +43,47 @@ export interface LocationData {
   longitude: number;
   accuracy?: number;
   timestamp: number;
+}
+
+/**
+ * PostGIS point type representing geographic coordinates
+ * This is the canonical definition to be used throughout the application
+ */
+export interface PostGISPoint {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+  crs?: {
+    type: 'name';
+    properties: {
+      name: 'urn:ogc:def:crs:EPSG::4326';
+    };
+  };
+}
+
+/**
+ * Convert LocationData to PostGISPoint format
+ */
+export function toPostGISPoint(
+  location: LocationData
+): PostGISPoint {
+  return {
+    type: 'Point',
+    coordinates: [location.longitude, location.latitude],
+    crs: {
+      type: 'name',
+      properties: {
+        name: 'urn:ogc:def:crs:EPSG::4326'
+      }
+    }
+  };
+}
+
+/**
+ * Helper function to extract latitude/longitude from PostGISPoint
+ */
+export function fromPostGISPoint(point: PostGISPoint): { latitude: number; longitude: number } {
+  const [longitude, latitude] = point.coordinates;
+  return { latitude, longitude };
 }
 
 // Chat System Types

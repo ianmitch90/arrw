@@ -106,8 +106,10 @@ export class WebXRRenderer {
 
     // Set up view
     for (const view of pose.views) {
-      const viewport = this.session.renderState.baseLayer!.getViewport(view);
-      this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+      const viewport = this.session.renderState.baseLayer?.getViewport(view);
+      if (viewport) {
+        this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+      }
 
       // Clear buffers
       this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -142,7 +144,9 @@ export class WebXRRenderer {
       fps: 1000 / frameTime,
       cpuTime: renderTime,
       gpuTime: 0, // Would need GPU timer queries for accurate measurement
-      memoryUsage: performance?.memory?.usedJSHeapSize || 0
+      memoryUsage: performance?.memory?.usedJSHeapSize || 0,
+      frameTime: frameTime,
+      networkLatency: 0 // Initialize with default value
     };
 
     this.performanceMonitor.subscribe((data) => {

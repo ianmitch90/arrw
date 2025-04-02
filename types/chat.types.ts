@@ -1,4 +1,4 @@
-import { Database } from './supabase';
+import { Database } from '../types_db';
 
 /** Type of message that can be sent in a chat */
 export type MessageType = 'text' | 'image' | 'file' | 'voice' | 'system';

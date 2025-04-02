@@ -1,15 +1,28 @@
-// This file is no longer needed as we're using URL parameters for drawer state management
-// You can safely delete this file after updating all imports
+'use client';
+
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 export type OverlayView = 'chat' | 'global' | 'profile' | 'groups' | 'events' | 'stories' | null;
 
-// Keeping the type export for now in case other files still reference it
-      setActiveView('global');
-    } else {
-      setIsOpen(false);
-      setActiveView(null);
-    }
-  }, [searchParams]);
+interface OverlayContextType {
+  isOpen: boolean;
+  activeView: OverlayView;
+  selectedId: string | null;
+  openOverlay: (view: OverlayView) => void;
+  closeOverlay: () => void;
+  setSelectedId: (id: string | null) => void;
+}
+
+const OverlayContext = createContext<OverlayContextType | undefined>(undefined);
+
+interface OverlayProviderProps {
+  children: ReactNode;
+}
+
+export function OverlayProvider({ children }: OverlayProviderProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeView, setActiveView] = useState<OverlayView>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // These are kept for compatibility but URL changes are handled in components
   const openOverlay = (view: OverlayView) => {

@@ -48,6 +48,7 @@ USING (
   auth.uid() = id OR (
     current_location IS NOT NULL 
     AND last_location_update >= (now() - interval '24 hours')
+    AND privacy_settings->>'location_sharing' = 'public'
   )
 );
 

@@ -31,16 +31,12 @@ export function useUserLocation(): UseUserLocationReturn {
 
 const updateLocationInDatabase = useCallback(async (coords: Coordinates) => {
     if (!user?.id) return; 
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({
-      current_location: {
-        type: 'Point',
-        coordinates: [coords.longitude, coords.latitude]
-      },
-      last_location_update: new Date().toISOString()
-    })
-    .eq('id', user?.id);
+  const { error: updateError } = await supabase.functions.invoke('update_profile_location', {
+    body: {
+      lat: coords.latitude,
+      lon: coords.longitude
+    }
+  });
 
   if (updateError) {
     console.error('Error updating location:', updateError);

@@ -1,3 +1,5 @@
+import { Message } from './chat.types';
+
 export interface ChatRoom {
   id: string;
   name: string;

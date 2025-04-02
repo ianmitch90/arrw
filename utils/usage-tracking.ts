@@ -7,6 +7,19 @@ export interface UsageMetrics {
   resetDate?: Date;
 }
 
+interface Subscription {
+  id: string;
+  status: string;
+  current_period_end?: string;
+  prices?: {
+    products?: {
+      metadata?: {
+        limits?: Record<string, number>;
+      };
+    };
+  };
+}
+
 export class UsageTracker {
   static async trackUsage(featureId: string, amount = 1): Promise<void> {
     const {
@@ -42,21 +55,18 @@ export class UsageTracker {
     } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: subscription } = await supabase
+    const { data: subscription } = (await supabase
       .from('subscriptions')
       .select(
         `
         id,
         status,
-        prices (
-          products (
-            metadata
-          )
-        )
+        current_period_end,
+        prices (products (metadata))
       `
       )
       .eq('user_id', user.id)
-      .single();
+      .single()) as { data: Subscription | null };
 
     if (!subscription) return null;
 
@@ -68,15 +78,17 @@ export class UsageTracker {
       .eq('feature_name', featureId);
 
     const totalUsed =
-      usage?.reduce((sum, record) => sum + record.quantity, 0) || 0;
+      usage?.reduce((sum, record) => sum + (record.quantity || 0), 0) || 0;
     const limit =
-      subscription.prices.products.metadata.limits?.[featureId] || 0;
+      subscription.prices?.products?.metadata?.limits?.[featureId] || 0;
 
     return {
       featureId,
       used: totalUsed,
       remaining: Math.max(0, limit - totalUsed),
-      resetDate: new Date(subscription.current_period_end)
+      resetDate: subscription.current_period_end
+        ? new Date(subscription.current_period_end)
+        : undefined
     };
   }
 

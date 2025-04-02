@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
-const withPWA = require('next-pwa')({
+import nextPWA from 'next-pwa';
+
+const withPWA = nextPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
@@ -35,17 +37,17 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.supabase.co',
         port: '',
-        pathname: '/**',
-      },
-    ],
+        pathname: '/**'
+      }
+    ]
   },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
-      use: ['@svgr/webpack'],
+      use: ['@svgr/webpack']
     });
     return config;
-  },
+  }
 };
 
 // Enable experimental features based on environment
@@ -54,4 +56,4 @@ if (process.env.NODE_ENV === 'development') {
   nextConfig.experimental = {};
 }
 
-module.exports = withPWA(nextConfig);
+export default withPWA(nextConfig);

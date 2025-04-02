@@ -13,9 +13,17 @@ export interface AuthResponse {
   error: Error | null;
 }
 
-export async function signIn(email: string, password: string): Promise<AuthResponse> {
+export async function signIn(
+  email: string,
+  password: string
+): Promise<AuthResponse> {
   const supabase = supabaseClient();
-  if (!supabase) return { user: null, session: null, error: new Error('Supabase client not initialized') };
+  if (!supabase)
+    return {
+      user: null,
+      session: null,
+      error: new Error('Supabase client not initialized')
+    };
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -23,7 +31,12 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
   });
 
   if (data.session) {
-    setSession(data.session);
+    // Use the session's access_token and refresh_token
+    await setSession(
+      data.session.access_token,
+      data.session.refresh_token,
+      data.session
+    );
   }
 
   return { user: data.user, session: data.session, error: error };
@@ -31,7 +44,8 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
 
 export async function signInWithMagicLink(email: string) {
   const supabase = supabaseClient();
-  if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
+  if (!supabase)
+    return { data: null, error: new Error('Supabase client not initialized') };
 
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
@@ -45,7 +59,12 @@ export async function signInWithMagicLink(email: string) {
 
 export async function signInAnonymously(): Promise<AuthResponse> {
   const supabase = supabaseClient();
-  if (!supabase) return { user: null, session: null, error: new Error('Supabase client not initialized') };
+  if (!supabase)
+    return {
+      user: null,
+      session: null,
+      error: new Error('Supabase client not initialized')
+    };
 
   const { data, error } = await supabase.auth.signInAnonymously();
 
@@ -54,18 +73,26 @@ export async function signInAnonymously(): Promise<AuthResponse> {
   }
 
   if (data.session) {
-    setSession(data.session);
+    await setSession(
+      data.session.access_token,
+      data.session.refresh_token,
+      data.session
+    );
   }
 
   return { user: data.user, session: data.session, error: null };
 }
 
-export function setSession(session: Session) {
+export function setSession(
+  access_token: string,
+  refresh_token: string,
+  session: Session
+) {
   if (typeof window === 'undefined') return;
-  
+
   localStorage.setItem(TOKEN_KEY, session.access_token);
   localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token);
-  
+
   // Set up Supabase to use the new session
   const supabase = supabaseClient();
   if (supabase) {
@@ -76,7 +103,10 @@ export function setSession(session: Session) {
   }
 }
 
-export function getSession(): { access_token: string | null; refresh_token: string | null } {
+export function getSession(): {
+  access_token: string | null;
+  refresh_token: string | null;
+} {
   if (typeof window === 'undefined') {
     return { access_token: null, refresh_token: null };
   }
@@ -102,7 +132,11 @@ export async function refreshSession() {
 
     if (error) throw error;
     if (data.session) {
-      setSession(data.session);
+      setSession(
+        data.session.access_token,
+        data.session.refresh_token,
+        data.session
+      );
       return data.session;
     }
     return null;
@@ -122,7 +156,7 @@ export function clearSession() {
 export async function signOut() {
   const supabase = supabaseClient();
   if (!supabase) return;
-  
+
   await supabase.auth.signOut();
   clearSession();
 }
@@ -132,7 +166,9 @@ export async function getCurrentUser(): Promise<User | null> {
   if (!supabase) return null;
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
     return user;
   } catch (error) {
     console.error('Error getting current user:', error);

@@ -45,7 +45,7 @@ export const groupMessagesByDate = (messages: Message[]): {
   const groups: { [key: string]: Message[] } = {};
   
   messages.forEach(message => {
-    const date = format(new Date(message.timestamp), 'yyyy-MM-dd');
+    const date = format(new Date(message.createdAt), 'yyyy-MM-dd');
     if (!groups[date]) {
       groups[date] = [];
     }
@@ -57,7 +57,7 @@ export const groupMessagesByDate = (messages: Message[]): {
     .map(([date, messages]) => ({
       date,
       messages: messages.sort((a, b) => 
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       )
     }));
 };
@@ -71,8 +71,8 @@ export const shouldShowAvatar = (
   
   return (
     message.senderId !== previousMessage.senderId ||
-    new Date(message.timestamp).getTime() -
-      new Date(previousMessage.timestamp).getTime() >
+    new Date(message.createdAt).getTime() -
+      new Date(previousMessage.createdAt).getTime() >
       timeThreshold
   );
 };

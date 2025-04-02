@@ -1,17 +1,25 @@
 'use client';
 
-import { Button, Input } from '@heroui/react';
 import { Formik, Form, Field, FieldInputProps, FieldMetaProps } from 'formik';
 import { LoginFormValues } from '@/types/auth';
 import { FormError } from '../FormError';
 import Link from 'next/link';
-import { useState } from 'react';
+import { SetStateAction, useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import WordDivider from '@/components/ui/WordDivider';
 import AgeVerificationModal from './AgeVerificationModal';
-import { useDisclosure, Modal, ModalHeader, ModalBody, ModalFooter, ModalContent } from '@heroui/react';
+import {
+  Button,
+  Input,
+  useDisclosure,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalContent
+} from '@heroui/react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useToast } from '@/components/ui/use-toast';
 import { loginValidationSchema } from '@/utils/validation/auth';
@@ -24,8 +32,16 @@ export default function LoginForm() {
   const [isAnonymousLoading, setIsAnonymousLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { isOpen: isMagicLinkOpen, onOpen: onMagicLinkOpen, onClose: onMagicLinkClose } = useDisclosure();
-  const { isOpen: isAgeModalOpen, onOpen: onAgeModalOpen, onClose: onAgeModalClose } = useDisclosure();
+  const {
+    isOpen: isMagicLinkOpen,
+    onOpen: onMagicLinkOpen,
+    onClose: onMagicLinkClose
+  } = useDisclosure();
+  const {
+    isOpen: isAgeModalOpen,
+    onOpen: onAgeModalOpen,
+    onClose: onAgeModalClose
+  } = useDisclosure();
   const supabase = useSupabaseClient();
   const { setIsSignupFlow } = useAgeVerification();
 
@@ -42,13 +58,13 @@ export default function LoginForm() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email: magicLinkEmail,
+        email: magicLinkEmail
       });
       if (error) throw error;
       onMagicLinkClose();
       toast({
         title: 'Success',
-        description: 'Check your email for the magic link',
+        description: 'Check your email for the magic link'
       });
     } catch (error) {
       const err = error as { message: string };
@@ -81,44 +97,6 @@ export default function LoginForm() {
 
   const [magicLinkEmail, setMagicLinkEmail] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
-  // Add a function to create a test user
-  const createTestUser = async () => {
-    try {
-      const testEmail = `test${Date.now()}@example.com`;
-      const testPassword = 'password123';
-      
-      console.log('Creating test user:', testEmail);
-      const { data, error } = await supabase.auth.signUp({
-        email: testEmail,
-        password: testPassword
-      });
-
-      if (error) {
-        console.error('Error creating test user:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to create test user: ' + error.message,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      console.log('Test user created:', data);
-      toast({
-        title: 'Test User Created',
-        description: `Email: ${testEmail}\nPassword: ${testPassword}`,
-      });
-    } catch (error) {
-      const err = error as { message: string };
-      console.error('Error:', error);
-      toast({
-        title: 'Error',
-        description: err.message,
-        variant: 'destructive'
-      });
-    }
-  };
 
   return (
     <div className="flex h-full w-full items-center justify-center">
@@ -157,7 +135,7 @@ export default function LoginForm() {
           {({ isSubmitting }) => (
             <Form className="space-y-4">
               <Field name="email">
-                {({ 
+                {({
                   field,
                   meta
                 }: {
@@ -181,7 +159,7 @@ export default function LoginForm() {
               </Field>
 
               <Field name="password">
-                {({ 
+                {({
                   field,
                   meta
                 }: {
@@ -190,7 +168,7 @@ export default function LoginForm() {
                 }) => (
                   <div>
                     <Input
-                      type={isPasswordVisible ? "text" : "password"}
+                      type={isPasswordVisible ? 'text' : 'password'}
                       label="Password"
                       variant="bordered"
                       value={field.value}
@@ -200,10 +178,12 @@ export default function LoginForm() {
                       isInvalid={meta.touched && !!meta.error}
                       errorMessage={meta.touched && meta.error}
                       endContent={
-                        <button 
-                          className="focus:outline-none" 
-                          type="button" 
-                          onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                        <button
+                          className="focus:outline-none"
+                          type="button"
+                          onClick={() =>
+                            setIsPasswordVisible(!isPasswordVisible)
+                          }
                         >
                           {isPasswordVisible ? (
                             <Icon
@@ -234,16 +214,6 @@ export default function LoginForm() {
                 >
                   Sign In
                 </Button>
-
-                {process.env.NODE_ENV === 'development' && (
-                  <Button
-                    color="secondary"
-                    onClick={createTestUser}
-                    className="w-full"
-                  >
-                    Create Test User
-                  </Button>
-                )}
 
                 <WordDivider
                   word="OR"
@@ -281,10 +251,7 @@ export default function LoginForm() {
 
                 <p className="text-center text-sm">
                   Don&apos;t have an account?{' '}
-                  <Link
-                    href="/signup"
-                    className="text-primary hover:underline"
-                  >
+                  <Link href="/signup" className="text-primary hover:underline">
                     Sign up
                   </Link>
                 </p>
@@ -304,10 +271,7 @@ export default function LoginForm() {
       </div>
 
       {/* Age Verification Modal */}
-      <AgeVerificationModal
-        isOpen={isAgeModalOpen}
-        onClose={onAgeModalClose}
-      />
+      <AgeVerificationModal isOpen={isAgeModalOpen} onClose={onAgeModalClose} />
 
       {/* Magic Link Modal */}
       <Modal isOpen={isMagicLinkOpen} onClose={onMagicLinkClose}>
@@ -318,7 +282,7 @@ export default function LoginForm() {
               type="email"
               label="Email"
               value={magicLinkEmail}
-              onChange={(e) => setMagicLinkEmail(e.target.value)}
+              onChange={(e: { target: { value: SetStateAction<string>; }; }) => setMagicLinkEmail(e.target.value)}
               variant="bordered"
             />
           </ModalBody>

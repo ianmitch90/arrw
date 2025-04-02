@@ -36,12 +36,20 @@ export class WebXRSceneManager {
 
   private async setupHitTesting(session: XRSession) {
     const referenceSpace = await session.requestReferenceSpace('local');
-    const hitTestSource = await session.requestHitTestSource({
-      space: referenceSpace
-    });
+    
+    // Check if requestHitTestSource method exists before calling it
+    if (session.requestHitTestSource) {
+      try {
+        const hitTestSource = await session.requestHitTestSource({
+          space: referenceSpace
+        });
 
-    if (hitTestSource) {
-      this.hitTestSource = hitTestSource;
+        if (hitTestSource) {
+          this.hitTestSource = hitTestSource;
+        }
+      } catch (error) {
+        console.error('Error setting up hit testing:', error);
+      }
     }
   }
 
@@ -85,16 +93,20 @@ export class WebXRSceneManager {
     this.lastFrameTime = now;
 
     // Process hit test results
-    if (this.hitTestSource) {
-      const hitTestResults = frame.getHitTestResults(this.hitTestSource);
-      if (hitTestResults.length > 0) {
-        const pose = hitTestResults[0].getPose(
-          await frame.session.requestReferenceSpace('local')
-        );
-        if (pose) {
-          // Update object positions based on hit test
-          this.updateObjectsFromHitTest(pose);
+    if (this.hitTestSource && frame.getHitTestResults) {
+      try {
+        const hitTestResults = frame.getHitTestResults(this.hitTestSource);
+        if (hitTestResults.length > 0) {
+          const pose = hitTestResults[0].getPose(
+            await frame.session.requestReferenceSpace('local')
+          );
+          if (pose) {
+            // Update object positions based on hit test
+            this.updateObjectsFromHitTest(pose);
+          }
         }
+      } catch (error) {
+        console.error('Error processing hit test results:', error);
       }
     }
 
@@ -106,7 +118,9 @@ export class WebXRSceneManager {
       fps: 1000 / deltaTime,
       cpuTime: performance.now() - now,
       gpuTime: 0, // Would need GPU timer queries
-      memoryUsage: performance?.memory?.usedJSHeapSize || 0
+      memoryUsage: performance?.memory?.usedJSHeapSize || 0,
+      frameTime: deltaTime,
+      networkLatency: 0 // Initialize with default value
     };
 
     this.performanceMonitor.subscribe((data) => {

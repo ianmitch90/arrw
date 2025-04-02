@@ -42,7 +42,7 @@ export class RealtimeMessaging {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'chat_messages',
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
@@ -65,7 +65,7 @@ export class RealtimeMessaging {
     } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { error } = await supabase.from('messages').insert({
+    const { error } = await supabase.from('chat_messages').insert({
       room_id: roomId,
       sender_id: user.id,
       content,

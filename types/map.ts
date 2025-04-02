@@ -2,18 +2,15 @@ import { Database } from '@/types_db';
 import { Dispatch, SetStateAction } from 'react';
 import type { GeolocateControlProps, ControlPosition } from 'react-map-gl';
 
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
 
-export type PostGISPoint = {
-  type: 'Point';
-  coordinates: [number, number]; // [longitude, latitude]
-  crs?: {
-    type: string;
-    properties: {
-      name: string;
-    };
-  };
-};
+import { PostGISPoint } from './index';
 
 export interface LocationJson {
   latitude: number;
@@ -43,7 +40,7 @@ export type Places = Database['public']['Tables']['places']['Row'] & {
   created_at: string | null;
   created_by: string | null;
   description: string | null;
-  current_location: PostGISPoint; 
+  current_location: PostGISPoint;
   metadata: Json;
   name: string;
   photo_url: string | null;

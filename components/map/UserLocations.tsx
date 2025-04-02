@@ -32,18 +32,11 @@ export const UserLocations = () => {
     if (!user) return;
 
     const fetchNearbyUsers = async () => {
-const { data, error } = await supabase
-  .from('profiles')
-  .select(`
-    id,
-    full_name,
-    avatar_url,
-    current_location,
-    last_location_update
-  `)
-  .neq('id', user.id)
-  .not('current_location', 'is', null)
-  .gte('last_location_update', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+const { data, error } = await supabase.rpc('get_nearby_users', {
+  user_id: user.id,
+  hours: 24,
+  limit_count: 50
+});
 
       if (error) {
         console.error('Error fetching nearby users:', error);

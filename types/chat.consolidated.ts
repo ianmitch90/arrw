@@ -1,4 +1,12 @@
-import { Database } from '../types_db';
+/**
+ * Consolidated Chat Types
+ * 
+ * This file demonstrates the consolidated approach to type definitions
+ * by leveraging the centralized database type aliases and providing
+ * clear domain-specific extensions and conversion utilities.
+ */
+
+import { DbChatMessage, DbChatRoom, DbChatParticipant } from './db-aliases';
 
 /** Type of message that can be sent in a chat */
 export type MessageType = 'text' | 'image' | 'file' | 'voice' | 'system';
@@ -68,18 +76,12 @@ export interface ChatRoom {
   };
 }
 
-// Type-safe database types
-type DbResult<T> = T extends PromiseLike<infer U> ? U : never;
-type DbMessage = Database['public']['Tables']['chat_messages']['Row'];
-type DbRoom = Database['public']['Tables']['chat_rooms']['Row'];
-type DbParticipant = Database['public']['Tables']['chat_participants']['Row'];
-
 /**
  * Converts a database message to a client Message object
  * @param dbMessage - The message from the database
  * @returns A client-side Message object
  */
-export const toMessage = (dbMessage: DbMessage): Message => ({
+export const toMessage = (dbMessage: DbChatMessage): Message => ({
   id: dbMessage.id,
   roomId: dbMessage.room_id || '',
   senderId: dbMessage.sender_id || '',
@@ -99,7 +101,7 @@ export const toMessage = (dbMessage: DbMessage): Message => ({
  * @returns A client-side ChatRoom object
  */
 export const toChatRoom = (
-  dbRoom: DbRoom,
+  dbRoom: DbChatRoom,
   participants: ChatParticipant[]
 ): ChatRoom => ({
   id: dbRoom.id,

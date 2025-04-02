@@ -10,6 +10,9 @@ declare global {
     XRWebGLLayer: any;
   }
 
+  // Extend global interfaces
+  
+  // Extend the Performance interface to include memory property
   interface Performance {
     memory?: {
       jsHeapSizeLimit: number;

@@ -151,7 +151,42 @@ export class PerformanceMonitor {
     const gl = canvas.getContext('webgl2');
 
     this.deviceCapabilities = {
-      // ... (implementation details)
+      webXR: {
+        supported: 'xr' in navigator,
+        features: {
+          immersiveAR: false,
+          immersiveVR: false,
+          inlineViewer: false
+        }
+      },
+      hardware: {
+        gpu: {
+          tier: 'medium',
+          vendor: gl?.getParameter(gl.VENDOR) || 'unknown',
+          renderer: gl?.getParameter(gl.RENDERER) || 'unknown'
+        },
+        sensors: {
+          accelerometer: 'DeviceMotionEvent' in window,
+          gyroscope: 'DeviceOrientationEvent' in window,
+          magnetometer: 'DeviceOrientationEvent' in window
+        },
+        camera: {
+          available: 'mediaDevices' in navigator,
+          hasPermission: false
+        }
+      },
+      browser: {
+        name: navigator.userAgent,
+        version: navigator.appVersion,
+        webGL2: !!gl,
+        webGPU: 'gpu' in navigator
+      },
+      performance: {
+        devicePixelRatio: window.devicePixelRatio,
+        maxTextureSize: gl?.getParameter(gl.MAX_TEXTURE_SIZE) || 2048,
+        maxViewportDims: gl?.getParameter(gl.MAX_VIEWPORT_DIMS) || [2048, 2048],
+        powerPreference: 'default'
+      }
     };
 
     return this.deviceCapabilities;
